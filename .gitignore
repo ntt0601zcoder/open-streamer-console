@@ -6,3 +6,4 @@ coverage
 *.tsbuildinfo
 CLAUDE.md
 .cursor
+public/samples/**
