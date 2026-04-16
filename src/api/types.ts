@@ -46,13 +46,6 @@ export const VideoCodec = {
 } as const;
 export type VideoCodec = (typeof VideoCodec)[keyof typeof VideoCodec];
 
-export const TranscodeMode = {
-  passthrough: 'passthrough',
-  remux: 'remux',
-  transcode: 'transcode',
-} as const;
-export type TranscodeMode = (typeof TranscodeMode)[keyof typeof TranscodeMode];
-
 export const WatermarkType = { text: 'text', image: 'image' } as const;
 export type WatermarkType = (typeof WatermarkType)[keyof typeof WatermarkType];
 
@@ -178,7 +171,6 @@ export interface TranscoderGlobalConfig {
 }
 
 export interface TranscoderConfig {
-  mode?: TranscodeMode;
   decoder?: DecoderConfig;
   video?: VideoTranscodeConfig;
   audio?: AudioTranscodeConfig;

@@ -9,9 +9,9 @@ const navItems = [
   { to: '/hooks', label: 'Hooks', icon: Settings, end: false },
 ] as const;
 
-export function Sidebar() {
+export function Sidebar({ className }: { className?: string }) {
   return (
-    <aside className="flex w-56 flex-col border-r bg-sidebar text-sidebar-foreground">
+    <aside className={cn('flex w-56 flex-col border-r bg-sidebar text-sidebar-foreground', className)}>
       <div className="flex h-14 items-center border-b px-4">
         <span className="font-semibold tracking-tight">Open Streamer</span>
       </div>

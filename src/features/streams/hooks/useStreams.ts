@@ -5,6 +5,7 @@ import type { CreateStreamBody, UpdateStreamBody } from '@/api/types';
 export const streamKeys = {
   all: ['streams'] as const,
   detail: (code: string) => ['streams', code] as const,
+  status: (code: string) => ['streams', code, 'status'] as const,
   recordings: (code: string) => ['streams', code, 'recordings'] as const,
 } as const;
 
@@ -27,6 +28,15 @@ export function useStream(code: string) {
       return res.data;
     },
     refetchInterval: 4_000,
+  });
+}
+
+export function useStreamStatus(code: string) {
+  return useQuery({
+    queryKey: streamKeys.status(code),
+    queryFn: () => streamsApi.status(code),
+    refetchInterval: 4_000,
+    select: (res) => res.data,
   });
 }
 
