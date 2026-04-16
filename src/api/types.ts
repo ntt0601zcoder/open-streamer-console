@@ -60,7 +60,7 @@ export type WatermarkPosition = (typeof WatermarkPosition)[keyof typeof Watermar
 
 export const HWAccel = {
   none: 'none',
-  cuda: 'cuda',
+  nvenc: 'nvenc',
   vaapi: 'vaapi',
   qsv: 'qsv',
   videotoolbox: 'videotoolbox',
@@ -92,7 +92,9 @@ export type EventType = (typeof EventType)[keyof typeof EventType];
 export interface InputNetConfig {
   connect_timeout_sec?: number;
   read_timeout_sec?: number;
+  reconnect?: boolean;
   reconnect_delay_sec?: number;
+  reconnect_max_delay_sec?: number;
   max_reconnects?: number;
 }
 
@@ -149,14 +151,22 @@ export interface AudioTranscodeConfig {
   copy?: boolean;
 }
 
-export interface VideoTranscodeConfig {
+export interface VideoProfile {
   codec?: VideoCodec;
   bitrate?: number;
+  max_bitrate?: number;
   width?: number;
   height?: number;
-  fps?: number;
+  framerate?: number;
+  keyframe_interval?: number;
   preset?: string;
+  profile?: string;
+  level?: string;
+}
+
+export interface VideoTranscodeConfig {
   copy?: boolean;
+  profiles?: VideoProfile[];
 }
 
 export interface DecoderConfig {
@@ -192,6 +202,10 @@ export interface WatermarkConfig {
   offset_y?: number;
 }
 
+export interface StreamRuntime {
+  active_input_priority?: number;
+}
+
 export interface Stream {
   code: string;
   name: string;
@@ -207,6 +221,7 @@ export interface Stream {
   transcoder?: TranscoderConfig;
   watermark?: WatermarkConfig;
   tags?: string[];
+  runtime?: StreamRuntime;
   created_at: string;
   updated_at: string;
 }

@@ -61,7 +61,7 @@ function toFormValues(stream: Stream): TranscoderFormValues {
 
 const HW_LABELS: Record<string, string> = {
   none: 'None (CPU)',
-  cuda: 'NVIDIA CUDA',
+  nvenc: 'NVIDIA NVENC',
   vaapi: 'Intel / AMD VAAPI',
   qsv: 'Intel QSV',
   videotoolbox: 'Apple VideoToolbox',

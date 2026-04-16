@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import type { Stream } from '@/api/types';
+import { cn } from '@/lib/utils';
 import { useUpdateStream } from '@/features/streams/hooks/useStreams';
 import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
 
@@ -110,6 +111,7 @@ export function InputTab({ stream }: InputTabProps) {
                 key={field.id}
                 index={index}
                 total={fields.length}
+                activeIndex={stream.runtime?.active_input_priority ?? null}
                 form={form}
                 onRemove={() => remove(index)}
                 onMoveUp={() => move(index, index - 1)}
@@ -141,20 +143,22 @@ export function InputTab({ stream }: InputTabProps) {
 interface InputRowProps {
   index: number;
   total: number;
+  activeIndex: number | null;
   form: ReturnType<typeof useForm<InputsFormValues>>;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
 }
 
-function InputRow({ index, total, form, onRemove, onMoveUp, onMoveDown }: InputRowProps) {
+function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveDown }: InputRowProps) {
   const isFirst = index === 0;
   const isLast = index === total - 1;
+  const isActive = activeIndex === index;
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className={cn('rounded-lg border bg-card', isActive && 'border-primary/50')}>
       {/* Row header */}
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-muted/40">
+      <div className={cn('flex items-center gap-3 px-4 py-2.5 border-b', isActive ? 'bg-primary/5' : 'bg-muted/40')}>
         <div className="flex flex-col">
           <Button
             type="button"
@@ -183,6 +187,11 @@ function InputRow({ index, total, form, onRemove, onMoveUp, onMoveDown }: InputR
             <Badge variant="default" className="h-4 px-1.5 text-[10px]">primary</Badge>
           ) : (
             <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">fallback</Badge>
+          )}
+          {isActive && (
+            <Badge className="h-4 px-1.5 text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">
+              active
+            </Badge>
           )}
         </div>
         <Button
