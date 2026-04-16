@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,7 @@ export function InputTab({ stream }: InputTabProps) {
     defaultValues: toFormValues(stream),
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control: form.control,
     name: 'inputs',
   });
@@ -62,8 +62,9 @@ export function InputTab({ stream }: InputTabProps) {
   }, [stream, form]);
 
   function onSubmit(values: InputsFormValues) {
+    const inputs = values.inputs.map((inp, i) => ({ ...inp, priority: i }));
     update.mutate(
-      { code: stream.code, patch: { inputs: values.inputs } },
+      { code: stream.code, patch: { inputs } },
       {
         onSuccess: () => {
           toast.success('Inputs updated');
@@ -87,8 +88,8 @@ export function InputTab({ stream }: InputTabProps) {
               <div>
                 <CardTitle className="text-base">Input sources</CardTitle>
                 <CardDescription>
-                  Ordered by priority — lower number = higher priority. Stream manager switches to
-                  the next input on failure.
+                  First input is primary. Stream manager switches to the next input on failure.
+                  Use the arrows to reorder.
                 </CardDescription>
               </div>
               <Button type="button" variant="outline" size="sm" className="gap-2" onClick={addInput}>
@@ -108,9 +109,11 @@ export function InputTab({ stream }: InputTabProps) {
               <InputRow
                 key={field.id}
                 index={index}
+                total={fields.length}
                 form={form}
                 onRemove={() => remove(index)}
-                isFirst={index === 0}
+                onMoveUp={() => move(index, index - 1)}
+                onMoveDown={() => move(index, index + 1)}
               />
             ))}
           </CardContent>
@@ -137,28 +140,49 @@ export function InputTab({ stream }: InputTabProps) {
 
 interface InputRowProps {
   index: number;
+  total: number;
   form: ReturnType<typeof useForm<InputsFormValues>>;
   onRemove: () => void;
-  isFirst: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }
 
-function InputRow({ index, form, onRemove, isFirst }: InputRowProps) {
+function InputRow({ index, total, form, onRemove, onMoveUp, onMoveDown }: InputRowProps) {
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
   return (
     <div className="rounded-lg border bg-card">
       {/* Row header */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-muted/40">
-        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+        <div className="flex flex-col">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-4 w-6 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            onClick={onMoveUp}
+            disabled={isFirst}
+          >
+            <ChevronUp className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-4 w-6 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            onClick={onMoveDown}
+            disabled={isLast}
+          >
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </div>
         <div className="flex items-center gap-2 flex-1">
           <span className="text-sm font-medium">Input {index + 1}</span>
-          {isFirst && (
-            <Badge variant="default" className="h-4 px-1.5 text-[10px]">
-              primary
-            </Badge>
-          )}
-          {!isFirst && (
-            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
-              fallback
-            </Badge>
+          {isFirst ? (
+            <Badge variant="default" className="h-4 px-1.5 text-[10px]">primary</Badge>
+          ) : (
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">fallback</Badge>
           )}
         </div>
         <Button
@@ -173,13 +197,13 @@ function InputRow({ index, form, onRemove, isFirst }: InputRowProps) {
       </div>
 
       {/* Row content */}
-      <div className="grid gap-4 p-4 sm:grid-cols-3">
+      <div className="grid gap-4 p-4 sm:grid-cols-1">
         {/* URL */}
         <FormField
           control={form.control}
           name={`inputs.${index}.url`}
           render={({ field }) => (
-            <FormItem className="sm:col-span-2">
+            <FormItem>
               <FormLabel>Source URL</FormLabel>
               <FormControl>
                 <Input
@@ -193,23 +217,7 @@ function InputRow({ index, form, onRemove, isFirst }: InputRowProps) {
           )}
         />
 
-        {/* Priority */}
-        <FormField
-          control={form.control}
-          name={`inputs.${index}.priority`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Priority</FormLabel>
-              <FormControl>
-                <Input type="number" min={0} {...field} />
-              </FormControl>
-              <FormDescription>Lower = higher priority</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Net config (collapsible) */}
+        {/* Net config */}
         <NetConfig index={index} form={form} />
       </div>
     </div>

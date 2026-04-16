@@ -1,5 +1,6 @@
-import { Activity, Radio, Settings, Video } from 'lucide-react';
+import { Activity, PanelLeftClose, PanelLeftOpen, Radio, Settings, Video } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -9,29 +10,69 @@ const navItems = [
   { to: '/hooks', label: 'Hooks', icon: Settings, end: false },
 ] as const;
 
-export function Sidebar({ className }: { className?: string }) {
+interface SidebarProps {
+  open: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ open, onToggle }: SidebarProps) {
   return (
-    <aside className={cn('flex w-56 flex-col border-r bg-sidebar text-sidebar-foreground', className)}>
-      <div className="flex h-14 items-center border-b px-4">
-        <span className="font-semibold tracking-tight">Open Streamer</span>
+    <aside
+      className={cn(
+        'sticky top-0 h-screen flex flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out overflow-hidden shrink-0',
+        open ? 'w-56' : 'w-14',
+      )}
+    >
+      {/* Header */}
+      <div className="flex h-14 items-center border-b px-3 gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          onClick={onToggle}
+          title={open ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          {open
+            ? <PanelLeftClose className="h-4 w-4" />
+            : <PanelLeftOpen className="h-4 w-4" />}
+        </Button>
+
+        <span
+          className={cn(
+            'font-semibold tracking-tight whitespace-nowrap transition-all duration-300',
+            open ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden',
+          )}
+        >
+          Open Streamer
+        </span>
       </div>
+
+      {/* Nav */}
       <nav className="flex-1 space-y-1 p-2">
         {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
+            title={!open ? label : undefined}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors',
                 isActive
                   ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                   : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
               )
             }
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            <Icon className="h-4 w-4 shrink-0" />
+            <span
+              className={cn(
+                'whitespace-nowrap transition-all duration-300',
+                open ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden',
+              )}
+            >
+              {label}
+            </span>
           </NavLink>
         ))}
       </nav>
