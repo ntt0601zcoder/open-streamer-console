@@ -1,4 +1,4 @@
-import { Activity, PanelLeftClose, PanelLeftOpen, Radio, Settings, SlidersHorizontal, Video } from 'lucide-react';
+import { Activity, PanelLeftClose, PanelLeftOpen, Radio, Settings, SlidersHorizontal } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: Activity, end: true },
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
-  { to: '/recordings', label: 'Recordings', icon: Video, end: false },
   { to: '/hooks', label: 'Hooks', icon: Settings, end: false },
   { to: '/settings', label: 'Settings', icon: SlidersHorizontal, end: false },
 ] as const;

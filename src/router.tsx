@@ -2,7 +2,6 @@ import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { HooksPage } from '@/pages/HooksPage';
-import { RecordingsPage } from '@/pages/RecordingsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { StreamDetailPage } from '@/pages/StreamDetailPage';
 import { StreamsPage } from '@/pages/StreamsPage';
@@ -15,7 +14,6 @@ export const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'streams', element: <StreamsPage /> },
       { path: 'streams/:code', element: <StreamDetailPage /> },
-      { path: 'recordings', element: <RecordingsPage /> },
       { path: 'hooks', element: <HooksPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
