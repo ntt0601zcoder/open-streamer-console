@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import type { Stream } from '@/api/types';
 import { cn } from '@/lib/utils';
 import { useUpdateStream } from '@/features/streams/hooks/useStreams';
@@ -200,8 +199,7 @@ function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveD
       </div>
 
       {/* Row content */}
-      <div className="grid gap-4 p-4 sm:grid-cols-1">
-        {/* URL */}
+      <div className="p-4 space-y-3">
         <FormField
           control={form.control}
           name={`inputs.${index}.url`}
@@ -219,58 +217,70 @@ function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveD
             </FormItem>
           )}
         />
-
-        {/* Net config */}
-        <NetConfig index={index} form={form} />
+        <AdvancedToggle index={index} form={form} />
       </div>
     </div>
   );
 }
 
-function NetConfig({
+function AdvancedToggle({
   index,
   form,
 }: {
   index: number;
   form: ReturnType<typeof useForm<InputsFormValues>>;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="sm:col-span-3 space-y-3">
-      <Separator />
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        Network timeouts
-      </p>
-      <div className="grid gap-3 sm:grid-cols-4">
-        {(
-          [
-            ['connect_timeout_sec', 'Connect timeout (s)'],
-            ['read_timeout_sec', 'Read timeout (s)'],
-            ['reconnect_delay_sec', 'Reconnect delay (s)'],
-            ['max_reconnects', 'Max reconnects'],
-          ] as const
-        ).map(([name, label]) => (
-          <FormField
-            key={name}
-            control={form.control}
-            name={`inputs.${index}.net.${name}`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">{label}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    {...field}
-                    value={field.value ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        Advanced
+      </button>
+
+      {open && (
+        <div className="mt-4 space-y-3 border-t pt-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Network timeouts
+          </p>
+          <div className="grid gap-3 sm:grid-cols-4">
+            {(
+              [
+                ['connect_timeout_sec', 'Connect timeout (s)'],
+                ['read_timeout_sec', 'Read timeout (s)'],
+                ['reconnect_delay_sec', 'Reconnect delay (s)'],
+                ['max_reconnects', 'Max reconnects'],
+              ] as const
+            ).map(([name, label]) => (
+              <FormField
+                key={name}
+                control={form.control}
+                name={`inputs.${index}.net.${name}`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">{label}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
