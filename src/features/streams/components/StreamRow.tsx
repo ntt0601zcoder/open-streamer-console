@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { Stream } from '@/api/types';
 import { StreamInputSummary } from './StreamInputSummary';
