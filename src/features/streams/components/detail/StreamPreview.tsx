@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
-import { BASE_URL } from '@/api/client';
+import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { dashUrl, hlsUrl, rtmpUrl } from '@/lib/streamUrls';
 import { StreamPlayer } from './StreamPlayer';
 
 interface StreamPreviewProps {
@@ -13,8 +14,10 @@ interface StreamPreviewProps {
 
 export function StreamPreview({ stream }: StreamPreviewProps) {
   const [copied, setCopied] = useState<string | null>(null);
+  const { data: serverConfig } = useServerConfig();
+  const ports = serverConfig?.ports;
 
-  const hlsUrl = `${BASE_URL}/${stream.code}/index.m3u8`;
+  const hlsUrl_ = hlsUrl(stream.code);
   const isRunning = stream.status === 'active' || stream.status === 'degraded';
   const hlsEnabled = stream.protocols?.hls ?? false;
 
@@ -34,7 +37,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
             <CardTitle className="text-sm font-medium">Preview</CardTitle>
             {isRunning && hlsEnabled && (
               <a
-                href={hlsUrl}
+                href={hlsUrl_}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -47,7 +50,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
         </CardHeader>
         <CardContent>
           {hlsEnabled ? (
-            <StreamPlayer hlsUrl={hlsUrl} active={isRunning} />
+            <StreamPlayer hlsUrl={hlsUrl_} active={isRunning} />
           ) : (
             <NoHlsPlaceholder isRunning={isRunning} />
           )}
@@ -102,29 +105,25 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
               {hlsEnabled && (
                 <UrlRow
                   label="HLS"
-                  url={hlsUrl}
+                  url={hlsUrl_}
                   copied={copied === 'hls'}
-                  onCopy={() => copyToClipboard(hlsUrl, 'hls')}
+                  onCopy={() => copyToClipboard(hlsUrl_, 'hls')}
                 />
               )}
               {stream.protocols?.dash && (
                 <UrlRow
                   label="DASH"
-                  url={`${BASE_URL}/${stream.code}/index.mpd`}
+                  url={dashUrl(stream.code)}
                   copied={copied === 'dash'}
-                  onCopy={() =>
-                    copyToClipboard(`${BASE_URL}/${stream.code}/index.mpd`, 'dash')
-                  }
+                  onCopy={() => copyToClipboard(dashUrl(stream.code), 'dash')}
                 />
               )}
-              {stream.protocols?.rtmp && (
+              {stream.protocols?.rtmp && rtmpUrl(stream.code, ports) && (
                 <UrlRow
                   label="RTMP"
-                  url={`rtmp://${new URL(BASE_URL).hostname}/live/${stream.code}`}
+                  url={rtmpUrl(stream.code, ports)!}
                   copied={copied === 'rtmp'}
-                  onCopy={() =>
-                    copyToClipboard(`rtmp://${new URL(BASE_URL).hostname}/live/${stream.code}`, 'rtmp')
-                  }
+                  onCopy={() => copyToClipboard(rtmpUrl(stream.code, ports)!, 'rtmp')}
                 />
               )}
             </div>

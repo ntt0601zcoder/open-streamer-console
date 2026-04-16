@@ -17,9 +17,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
-import { BASE_URL } from '@/api/client';
+import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
+import { dashUrl, hlsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
 
 interface OutputTabProps {
   stream: Stream;
@@ -61,6 +62,8 @@ function toFormValues(stream: Stream): OutputFormValues {
 
 export function OutputTab({ stream }: OutputTabProps) {
   const update = useSaveStream();
+  const { data: serverConfig } = useServerConfig();
+  const ports = serverConfig?.ports;
 
   const form = useForm<OutputFormValues>({
     resolver: zodResolver(outputFormSchema),
@@ -168,34 +171,19 @@ export function OutputTab({ stream }: OutputTabProps) {
             </CardHeader>
             <CardContent className="space-y-2">
               {protocols.hls && (
-                <OutputUrlRow
-                  label="HLS"
-                  url={`${BASE_URL}/${stream.code}/index.m3u8`}
-                />
+                <OutputUrlRow label="HLS" url={hlsUrl(stream.code)} />
               )}
               {protocols.dash && (
-                <OutputUrlRow
-                  label="DASH"
-                  url={`${BASE_URL}/${stream.code}/index.mpd`}
-                />
+                <OutputUrlRow label="DASH" url={dashUrl(stream.code)} />
               )}
-              {protocols.rtmp && (
-                <OutputUrlRow
-                  label="RTMP"
-                  url={`rtmp://${new URL(BASE_URL).hostname}/live/${stream.code}`}
-                />
+              {protocols.rtmp && rtmpUrl(stream.code, ports) && (
+                <OutputUrlRow label="RTMP" url={rtmpUrl(stream.code, ports)!} />
               )}
-              {protocols.rtsp && (
-                <OutputUrlRow
-                  label="RTSP"
-                  url={`rtsp://${new URL(BASE_URL).hostname}:554/streams/${stream.code}`}
-                />
+              {protocols.rtsp && rtspUrl(stream.code, ports) && (
+                <OutputUrlRow label="RTSP" url={rtspUrl(stream.code, ports)!} />
               )}
-              {protocols.srt && (
-                <OutputUrlRow
-                  label="SRT"
-                  url={`srt://${new URL(BASE_URL).hostname}:7777?streamid=${stream.code}`}
-                />
+              {protocols.srt && srtUrl(stream.code, ports) && (
+                <OutputUrlRow label="SRT" url={srtUrl(stream.code, ports)!} />
               )}
             </CardContent>
           </Card>
