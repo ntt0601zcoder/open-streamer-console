@@ -151,7 +151,6 @@ interface InputRowProps {
 }
 
 function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveDown }: InputRowProps) {
-  const isFirst = index === 0;
   const isLast = index === total - 1;
   const isActive = activeIndex === index;
 
@@ -166,7 +165,7 @@ function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveD
             variant="ghost"
             className="h-4 w-6 text-muted-foreground hover:text-foreground disabled:opacity-30"
             onClick={onMoveUp}
-            disabled={isFirst}
+            disabled={index === 0}
           >
             <ChevronUp className="h-3 w-3" />
           </Button>
@@ -183,11 +182,6 @@ function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveD
         </div>
         <div className="flex items-center gap-2 flex-1">
           <span className="text-sm font-medium">Input {index + 1}</span>
-          {isFirst ? (
-            <Badge variant="default" className="h-4 px-1.5 text-[10px]">primary</Badge>
-          ) : (
-            <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">fallback</Badge>
-          )}
           {isActive && (
             <Badge className="h-4 px-1.5 text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">
               active
