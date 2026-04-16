@@ -46,7 +46,8 @@ export function StreamList({ streams, filter }: StreamListProps) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[220px]">Stream</TableHead>
+          <TableHead className="w-[200px]">Stream</TableHead>
+          <TableHead className="w-[90px]">Status</TableHead>
           <TableHead className="w-[200px]">Input</TableHead>
           <TableHead className="w-[180px]">Output</TableHead>
           <TableHead className="w-[80px]">DVR</TableHead>

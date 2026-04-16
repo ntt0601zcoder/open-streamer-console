@@ -1,5 +1,4 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { Stream } from '@/api/types';
 import { StreamInputSummary } from './StreamInputSummary';
@@ -27,9 +26,9 @@ export function StreamRow({ stream }: StreamRowProps) {
 
   return (
     <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => void navigate(detailPath)}>
-      {/* Stream name + code + status */}
-      <TableCell className="min-w-[200px]">
-        <div className="space-y-1">
+      {/* Stream name + code */}
+      <TableCell className="min-w-[160px]">
+        <div className="space-y-0.5">
           <Link
             to={detailPath}
             className="font-medium hover:underline"
@@ -37,16 +36,13 @@ export function StreamRow({ stream }: StreamRowProps) {
           >
             {stream.name}
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-muted-foreground">{stream.code}</span>
-            {stream.disabled && (
-              <Badge variant="outline" className="h-4 px-1 text-[10px]">
-                disabled
-              </Badge>
-            )}
-          </div>
-          <StreamStatusBadge status={stream.status} />
+          <span className="font-mono text-xs text-muted-foreground">{stream.code}</span>
         </div>
+      </TableCell>
+
+      {/* Status */}
+      <TableCell>
+        <StreamStatusBadge status={stream.status} />
       </TableCell>
 
       {/* Inputs */}
