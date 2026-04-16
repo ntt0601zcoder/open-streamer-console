@@ -29,8 +29,10 @@ const afterResponse: NonNullable<Options['hooks']>['afterResponse'] = [
   },
 ];
 
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+
 export const api = ky.create({
-  prefixUrl: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080',
+  prefixUrl: BASE_URL,
   hooks: { afterResponse },
   timeout: 15_000,
 });

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { BASE_URL } from '@/api/client';
 import { StreamList } from '@/features/streams/components/StreamList';
 import { useStreams } from '@/features/streams/hooks/useStreams';
 
@@ -70,7 +71,7 @@ export function StreamsPage() {
       {error ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
           Failed to load streams. Make sure the Open Streamer server is running at{' '}
-          <code className="font-mono">{import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'}</code>.
+          <code className="font-mono">{BASE_URL}</code>.
         </div>
       ) : isLoading ? (
         <div className="rounded-md border">

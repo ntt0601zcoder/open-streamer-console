@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { Stream } from '@/api/types';
-import { useUpdateStream } from '@/features/streams/hooks/useStreams';
+import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { generalSchema, type GeneralFormValues } from '@/features/streams/schemas';
 
 interface GeneralTabProps {
@@ -35,7 +35,7 @@ function toFormValues(stream: Stream): GeneralFormValues {
 }
 
 export function GeneralTab({ stream }: GeneralTabProps) {
-  const update = useUpdateStream();
+  const update = useSaveStream();
 
   const form = useForm<GeneralFormValues>({
     resolver: zodResolver(generalSchema),

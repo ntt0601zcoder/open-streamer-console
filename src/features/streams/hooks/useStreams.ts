@@ -62,12 +62,6 @@ export function useSaveStream() {
   });
 }
 
-/** @deprecated use useSaveStream */
-export const useCreateStream = useSaveStream;
-/** @deprecated use useSaveStream */
-export const useUpdateStream = useSaveStream;
-
-
 export function useDeleteStream() {
   const qc = useQueryClient();
   return useMutation({

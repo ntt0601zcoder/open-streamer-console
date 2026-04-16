@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
-import { useUpdateStream } from '@/features/streams/hooks/useStreams';
+import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { dvrFormSchema, type DvrFormValues } from '@/features/streams/schemas';
 
 interface DvrTabProps {
@@ -35,7 +35,7 @@ function toFormValues(stream: Stream): DvrFormValues {
 }
 
 export function DvrTab({ stream }: DvrTabProps) {
-  const update = useUpdateStream();
+  const update = useSaveStream();
 
   const form = useForm<DvrFormValues>({
     resolver: zodResolver(dvrFormSchema),

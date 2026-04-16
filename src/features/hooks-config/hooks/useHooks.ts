@@ -17,16 +17,6 @@ export function useHooks() {
   });
 }
 
-export function useHook(hid: string) {
-  return useQuery({
-    queryKey: hookKeys.detail(hid),
-    queryFn: async () => {
-      const res = await hooksApi.get(hid);
-      return res.data;
-    },
-  });
-}
-
 export function useCreateHook() {
   const qc = useQueryClient();
   return useMutation({

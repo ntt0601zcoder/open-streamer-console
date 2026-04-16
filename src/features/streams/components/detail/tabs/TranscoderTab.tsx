@@ -24,7 +24,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { Stream, TranscoderConfig, VideoCodec } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
-import { useUpdateStream } from '@/features/streams/hooks/useStreams';
+import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { transcoderFormSchema, type TranscoderFormValues } from '@/features/streams/schemas';
 
 interface TranscoderTabProps {
@@ -87,7 +87,7 @@ const CHANNEL_LABELS: Record<number, string> = {
 
 export function TranscoderTab({ stream }: TranscoderTabProps) {
   const { data: serverConfig } = useServerConfig();
-  const update = useUpdateStream();
+  const update = useSaveStream();
 
   const form = useForm<TranscoderFormValues>({
     resolver: zodResolver(transcoderFormSchema),

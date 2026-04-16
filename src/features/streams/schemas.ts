@@ -17,7 +17,9 @@ export type GeneralFormValues = z.infer<typeof generalSchema>;
 export const inputNetSchema = z.object({
   connect_timeout_sec: z.coerce.number().int().min(0).optional(),
   read_timeout_sec: z.coerce.number().int().min(0).optional(),
+  reconnect: z.boolean().optional(),
   reconnect_delay_sec: z.coerce.number().int().min(0).optional(),
+  reconnect_max_delay_sec: z.coerce.number().int().min(0).optional(),
   max_reconnects: z.coerce.number().int().min(0).optional(),
 });
 

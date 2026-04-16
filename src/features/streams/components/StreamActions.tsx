@@ -1,5 +1,6 @@
 import { Loader2, Play, Square, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -33,10 +34,11 @@ export function StreamActions({ stream }: StreamActionsProps) {
   const isBusy = start.isPending || stop.isPending;
 
   function handleStartStop() {
+    const onError = (err: Error) => toast.error(err.message);
     if (isRunning) {
-      stop.mutate(stream.code);
+      stop.mutate(stream.code, { onError });
     } else {
-      start.mutate(stream.code);
+      start.mutate(stream.code, { onError });
     }
   }
 

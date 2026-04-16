@@ -273,11 +273,6 @@ export type StreamBody = {
   tags?: string[];
 };
 
-/** @deprecated use StreamBody */
-export type CreateStreamBody = StreamBody & { code: string };
-/** @deprecated use StreamBody */
-export type UpdateStreamBody = StreamBody;
-
 export type CreateHookBody = Omit<Hook, 'id'>;
 export type UpdateHookBody = Partial<Omit<Hook, 'id'>>;
 

@@ -17,14 +17,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
-import { useUpdateStream } from '@/features/streams/hooks/useStreams';
+import { BASE_URL } from '@/api/client';
+import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
 
 interface OutputTabProps {
   stream: Stream;
 }
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
 const PROTOCOL_LABELS: Record<string, { label: string; description: string }> = {
   hls: { label: 'HLS', description: 'Adaptive bitrate streaming over HTTP — compatible with all browsers and mobile devices' },
@@ -61,7 +60,7 @@ function toFormValues(stream: Stream): OutputFormValues {
 }
 
 export function OutputTab({ stream }: OutputTabProps) {
-  const update = useUpdateStream();
+  const update = useSaveStream();
 
   const form = useForm<OutputFormValues>({
     resolver: zodResolver(outputFormSchema),

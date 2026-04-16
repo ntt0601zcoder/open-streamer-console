@@ -1,5 +1,6 @@
 import { ChevronRight, Loader2, Play, RefreshCw, Square } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Stream } from '@/api/types';
@@ -21,16 +22,21 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
   const isBusy = start.isPending || stop.isPending;
 
   function handleStartStop() {
+    const onError = (err: Error) => toast.error(err.message);
     if (isRunning) {
-      stop.mutate(stream.code);
+      stop.mutate(stream.code, { onError });
     } else {
-      start.mutate(stream.code);
+      start.mutate(stream.code, { onError });
     }
   }
 
-  async function handleRestart() {
-    await stop.mutateAsync(stream.code);
-    start.mutate(stream.code);
+  function handleRestart() {
+    stop.mutate(stream.code, {
+      onSuccess: () => start.mutate(stream.code, {
+        onError: (err) => toast.error(err.message),
+      }),
+      onError: (err) => toast.error(err.message),
+    });
   }
 
   return (

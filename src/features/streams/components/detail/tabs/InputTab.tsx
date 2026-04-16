@@ -15,10 +15,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
 import { cn } from '@/lib/utils';
-import { useSwitchInput, useUpdateStream } from '@/features/streams/hooks/useStreams';
+import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStreams';
 import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
 
 interface InputTabProps {
@@ -34,7 +35,9 @@ function toFormValues(stream: Stream): InputsFormValues {
         ? {
             connect_timeout_sec: inp.net.connect_timeout_sec,
             read_timeout_sec: inp.net.read_timeout_sec,
+            reconnect: inp.net.reconnect,
             reconnect_delay_sec: inp.net.reconnect_delay_sec,
+            reconnect_max_delay_sec: inp.net.reconnect_max_delay_sec,
             max_reconnects: inp.net.max_reconnects,
           }
         : undefined,
@@ -43,7 +46,7 @@ function toFormValues(stream: Stream): InputsFormValues {
 }
 
 export function InputTab({ stream }: InputTabProps) {
-  const update = useUpdateStream();
+  const update = useSaveStream();
   const switchInput = useSwitchInput();
   const isStreamLive =
     stream.status === StreamStatus.active || stream.status === StreamStatus.degraded;
@@ -276,7 +279,24 @@ function AdvancedToggle({
       </button>
 
       {open && (
-        <div className="mt-4 space-y-3 border-t pt-4">
+        <div className="mt-4 space-y-4 border-t pt-4">
+          {/* Reconnect toggle */}
+          <FormField
+            control={form.control}
+            name={`inputs.${index}.net.reconnect`}
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-2 space-y-0">
+                <FormControl>
+                  <Switch
+                    checked={field.value ?? true}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel className="text-xs">Auto-reconnect on failure</FormLabel>
+              </FormItem>
+            )}
+          />
+
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Network timeouts
           </p>
@@ -286,6 +306,7 @@ function AdvancedToggle({
                 ['connect_timeout_sec', 'Connect timeout (s)'],
                 ['read_timeout_sec', 'Read timeout (s)'],
                 ['reconnect_delay_sec', 'Reconnect delay (s)'],
+                ['reconnect_max_delay_sec', 'Max delay (s)'],
                 ['max_reconnects', 'Max reconnects'],
               ] as const
             ).map(([name, label]) => (

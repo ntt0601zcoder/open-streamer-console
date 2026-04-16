@@ -4,14 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
+import { BASE_URL } from '@/api/client';
 import { useStreamStatus } from '@/features/streams/hooks/useStreams';
 import { StreamPlayer } from './StreamPlayer';
 
 interface StreamPreviewProps {
   stream: Stream;
 }
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
 export function StreamPreview({ stream }: StreamPreviewProps) {
   const { data: status } = useStreamStatus(stream.code);
