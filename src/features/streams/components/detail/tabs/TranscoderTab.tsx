@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { Stream, TranscoderConfig } from '@/api/types';
+import type { Stream, TranscoderConfig, VideoCodec } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { useUpdateStream } from '@/features/streams/hooks/useStreams';
 import { transcoderFormSchema, type TranscoderFormValues } from '@/features/streams/schemas';
@@ -44,11 +44,11 @@ function toFormValues(stream: Stream): TranscoderFormValues {
     },
     video: {
       copy: t?.video?.copy ?? false,
-      codec: t?.video?.codec,
-      bitrate: t?.video?.bitrate,
-      width: t?.video?.width,
-      height: t?.video?.height,
-      fps: t?.video?.fps,
+      codec: t?.video?.profiles?.[0]?.codec,
+      bitrate: t?.video?.profiles?.[0]?.bitrate,
+      width: t?.video?.profiles?.[0]?.width,
+      height: t?.video?.profiles?.[0]?.height,
+      framerate: t?.video?.profiles?.[0]?.framerate,
     },
     global: {
       hw: t?.global?.hw,
@@ -104,8 +104,20 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
   const videoCopy = useWatch({ control: form.control, name: 'video.copy' });
 
   function onSubmit(values: TranscoderFormValues) {
+    const { copy, codec, bitrate, width, height, framerate } = values.video;
+    const hasProfile = [codec, bitrate, width, height, framerate].some((v) => v !== undefined);
+    const transcoder: TranscoderConfig = {
+      audio: values.audio as TranscoderConfig['audio'],
+      video: {
+        copy,
+        profiles: hasProfile
+          ? [{ codec: codec as VideoCodec | undefined, bitrate, width, height, framerate }]
+          : undefined,
+      },
+      global: values.global as TranscoderConfig['global'],
+    };
     update.mutate(
-      { code: stream.code, patch: { transcoder: values as unknown as TranscoderConfig } },
+      { code: stream.code, body: { transcoder } },
       {
         onSuccess: () => {
           toast.success('Transcoder settings updated');
@@ -254,7 +266,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
               />
               <FormField
                 control={form.control}
-                name="video.fps"
+                name="video.framerate"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>FPS</FormLabel>

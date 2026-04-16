@@ -52,7 +52,7 @@ export function DvrTab({ stream }: DvrTabProps) {
 
   function onSubmit(values: DvrFormValues) {
     update.mutate(
-      { code: stream.code, patch: { dvr: values } },
+      { code: stream.code, body: { dvr: values } },
       {
         onSuccess: () => {
           toast.success('DVR settings updated');

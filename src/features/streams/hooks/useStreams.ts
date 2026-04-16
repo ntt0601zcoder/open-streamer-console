@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { streamsApi } from '@/api/streams';
-import type { CreateStreamBody, UpdateStreamBody } from '@/api/types';
+import type { StreamBody } from '@/api/types';
 
 export const streamKeys = {
   all: ['streams'] as const,
@@ -50,27 +50,23 @@ export function useStreamRecordings(code: string) {
   });
 }
 
-export function useCreateStream() {
+export function useSaveStream() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateStreamBody) => streamsApi.create(body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: streamKeys.all });
-    },
-  });
-}
-
-export function useUpdateStream() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ code, patch }: { code: string; patch: Partial<UpdateStreamBody> }) =>
-      streamsApi.update(code, patch),
+    mutationFn: ({ code, body }: { code: string; body: StreamBody }) =>
+      streamsApi.save(code, body),
     onSuccess: (res, { code }) => {
       qc.setQueryData(streamKeys.detail(code), res.data);
       void qc.invalidateQueries({ queryKey: streamKeys.all });
     },
   });
 }
+
+/** @deprecated use useSaveStream */
+export const useCreateStream = useSaveStream;
+/** @deprecated use useSaveStream */
+export const useUpdateStream = useSaveStream;
+
 
 export function useDeleteStream() {
   const qc = useQueryClient();
@@ -121,6 +117,17 @@ export function useStopRecording() {
     mutationFn: (code: string) => streamsApi.stopRecording(code),
     onSuccess: (_res, code) => {
       void qc.invalidateQueries({ queryKey: streamKeys.recordings(code) });
+    },
+  });
+}
+
+export function useSwitchInput() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ code, priority }: { code: string; priority: number }) =>
+      streamsApi.switchInput(code, priority),
+    onSuccess: (_res, { code }) => {
+      void qc.invalidateQueries({ queryKey: streamKeys.detail(code) });
     },
   });
 }

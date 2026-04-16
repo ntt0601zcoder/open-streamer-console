@@ -96,7 +96,7 @@ export function OutputTab({ stream }: OutputTabProps) {
     }
 
     update.mutate(
-      { code: stream.code, patch },
+      { code: stream.code, body: patch },
       {
         onSuccess: () => {
           toast.success('Output settings updated');

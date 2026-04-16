@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import type { Stream } from '@/api/types';
+import { StreamStatus } from '@/api/types';
 import { cn } from '@/lib/utils';
-import { useUpdateStream } from '@/features/streams/hooks/useStreams';
+import { useSwitchInput, useUpdateStream } from '@/features/streams/hooks/useStreams';
 import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
 
 interface InputTabProps {
@@ -44,6 +45,19 @@ function toFormValues(stream: Stream): InputsFormValues {
 
 export function InputTab({ stream }: InputTabProps) {
   const update = useUpdateStream();
+  const switchInput = useSwitchInput();
+  const isStreamLive =
+    stream.status === StreamStatus.active || stream.status === StreamStatus.degraded;
+
+  function handleSwitch(priority: number) {
+    switchInput.mutate(
+      { code: stream.code, priority },
+      {
+        onSuccess: () => toast.success(`Switched to input ${priority + 1}`),
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Switch failed'),
+      },
+    );
+  }
 
   const form = useForm<InputsFormValues>({
     resolver: zodResolver(inputsFormSchema),
@@ -64,7 +78,7 @@ export function InputTab({ stream }: InputTabProps) {
   function onSubmit(values: InputsFormValues) {
     const inputs = values.inputs.map((inp, i) => ({ ...inp, priority: i }));
     update.mutate(
-      { code: stream.code, patch: { inputs } },
+      { code: stream.code, body: { inputs } },
       {
         onSuccess: () => {
           toast.success('Inputs updated');
@@ -111,10 +125,13 @@ export function InputTab({ stream }: InputTabProps) {
                 index={index}
                 total={fields.length}
                 activeIndex={stream.runtime?.active_input_priority ?? null}
+                canSwitch={isStreamLive}
+                switchPending={switchInput.isPending && switchInput.variables?.priority === index}
                 form={form}
                 onRemove={() => remove(index)}
                 onMoveUp={() => move(index, index - 1)}
                 onMoveDown={() => move(index, index + 1)}
+                onSwitch={() => handleSwitch(index)}
               />
             ))}
           </CardContent>
@@ -143,13 +160,16 @@ interface InputRowProps {
   index: number;
   total: number;
   activeIndex: number | null;
+  canSwitch: boolean;
+  switchPending: boolean;
   form: ReturnType<typeof useForm<InputsFormValues>>;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onSwitch: () => void;
 }
 
-function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveDown }: InputRowProps) {
+function InputRow({ index, total, activeIndex, canSwitch, switchPending, form, onRemove, onMoveUp, onMoveDown, onSwitch }: InputRowProps) {
   const isLast = index === total - 1;
   const isActive = activeIndex === index;
 
@@ -187,6 +207,19 @@ function InputRow({ index, total, activeIndex, form, onRemove, onMoveUp, onMoveD
             </Badge>
           )}
         </div>
+        {canSwitch && !isActive && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-6 gap-1 px-2 text-xs"
+            onClick={onSwitch}
+            disabled={switchPending}
+          >
+            <RefreshCw className={cn('h-3 w-3', switchPending && 'animate-spin')} />
+            Switch
+          </Button>
+        )}
         <Button
           type="button"
           size="icon"

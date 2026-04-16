@@ -74,7 +74,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
     }
 
     update.mutate(
-      { code: stream.code, patch },
+      { code: stream.code, body: patch },
       {
         onSuccess: () => {
           toast.success('Stream updated');

@@ -70,11 +70,12 @@ export const transcoderFormSchema = z.object({
   }),
   video: z.object({
     copy: z.boolean(),
+    // profile[0] fields
     codec: z.string().optional(),
     bitrate: z.coerce.number().int().min(0).optional(),
     width: z.coerce.number().int().min(0).optional(),
     height: z.coerce.number().int().min(0).optional(),
-    fps: z.coerce.number().int().min(0).optional(),
+    framerate: z.coerce.number().min(0).optional(),
   }),
   global: z.object({
     hw: z.string().optional(),

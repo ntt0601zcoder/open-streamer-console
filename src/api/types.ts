@@ -235,6 +235,11 @@ export interface Recording {
   stopped_at?: string;
 }
 
+export interface StreamCodeFilter {
+  only?: string[];
+  except?: string[];
+}
+
 export interface Hook {
   id: string;
   name: string;
@@ -242,6 +247,8 @@ export interface Hook {
   target: string;
   enabled?: boolean;
   event_types?: EventType[];
+  stream_codes?: StreamCodeFilter;
+  metadata?: Record<string, string>;
   secret?: string;
   max_retries?: number;
   timeout_sec?: number;
@@ -249,9 +256,10 @@ export interface Hook {
 
 // ─── API request bodies ───────────────────────────────────────────────────────
 
-export type CreateStreamBody = {
-  code: string;
-  name: string;
+// Unified body for POST /streams/:code (create or partial-update).
+// code is a path param — all fields are optional for partial update.
+export type StreamBody = {
+  name?: string;
   description?: string;
   stream_key?: string;
   disabled?: boolean;
@@ -265,7 +273,10 @@ export type CreateStreamBody = {
   tags?: string[];
 };
 
-export type UpdateStreamBody = Omit<CreateStreamBody, 'code'>;
+/** @deprecated use StreamBody */
+export type CreateStreamBody = StreamBody & { code: string };
+/** @deprecated use StreamBody */
+export type UpdateStreamBody = StreamBody;
 
 export type CreateHookBody = Omit<Hook, 'id'>;
 export type UpdateHookBody = Partial<Omit<Hook, 'id'>>;
