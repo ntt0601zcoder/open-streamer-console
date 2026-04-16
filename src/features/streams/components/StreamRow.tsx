@@ -11,6 +11,9 @@ interface StreamRowProps {
 
 export function StreamRow({ stream }: StreamRowProps) {
   const navigate = useNavigate();
+  const detailPath = `/streams/${stream.code}`;
+
+  // Output summary
   const enabledProtocols = stream.protocols
     ? (Object.entries(stream.protocols) as [string, boolean | undefined][])
         .filter(([, v]) => v)
@@ -20,40 +23,77 @@ export function StreamRow({ stream }: StreamRowProps) {
   const activePushCount = stream.push?.filter(
     (p) => p.enabled && p.status === 'active',
   ).length ?? 0;
-
   const totalPushCount = stream.push?.filter((p) => p.enabled).length ?? 0;
 
-  const detailPath = `/streams/${stream.code}`;
+  // Transcode summary
+  const tc = stream.transcoder;
+  const hasTranscoder = !!(tc?.video || tc?.audio);
+  const videoCodec = tc?.video?.copy
+    ? 'copy'
+    : tc?.video?.profiles?.[0]?.codec;
+  const audioCodec = tc?.audio?.copy
+    ? 'copy'
+    : tc?.audio?.codec;
 
   return (
-    <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => void navigate(detailPath)}>
-      {/* Stream name + code */}
-      <TableCell className="min-w-[160px]">
+    <TableRow
+      className="cursor-pointer hover:bg-muted/50"
+      onClick={() => void navigate(detailPath)}
+    >
+      {/* Stream */}
+      <TableCell>
         <div className="space-y-0.5">
           <Link
             to={detailPath}
             className="font-medium hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {stream.name}
+            {stream.code}
           </Link>
-          <span className="font-mono text-xs text-muted-foreground">{stream.code}</span>
+          <p className="text-xs text-muted-foreground truncate max-w-[180px]">{stream.name}</p>
+          <StreamStatusBadge status={stream.status} />
         </div>
       </TableCell>
 
-      {/* Status */}
+      {/* Input */}
       <TableCell>
-        <StreamStatusBadge status={stream.status} />
+        <StreamInputSummary stream={stream} />
       </TableCell>
 
-      {/* Inputs */}
-      <TableCell className="min-w-[180px]">
-        <StreamInputSummary inputs={stream.inputs} />
+      {/* Transcode */}
+      <TableCell>
+        {hasTranscoder ? (
+          <div className="space-y-0.5">
+            {videoCodec && (
+              <p className="text-xs">
+                <span className="text-muted-foreground">Video:</span>{' '}
+                <span className="font-medium">{videoCodec}</span>
+              </p>
+            )}
+            {audioCodec && (
+              <p className="text-xs">
+                <span className="text-muted-foreground">Audio:</span>{' '}
+                <span className="font-medium">{audioCodec}</span>
+              </p>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
       </TableCell>
 
-      {/* Protocols / Output */}
-      <TableCell className="min-w-[160px]">
-        <div className="space-y-1.5">
+      {/* DVR */}
+      <TableCell>
+        {stream.dvr?.enabled ? (
+          <span className="text-xs text-emerald-600 dark:text-emerald-400">Enabled</span>
+        ) : (
+          <span className="text-xs text-muted-foreground">Disabled</span>
+        )}
+      </TableCell>
+
+      {/* Output */}
+      <TableCell>
+        <div className="space-y-1">
           {enabledProtocols.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {enabledProtocols.map((p) => (
@@ -72,34 +112,6 @@ export function StreamRow({ stream }: StreamRowProps) {
           )}
         </div>
       </TableCell>
-
-      {/* DVR */}
-      <TableCell>
-        {stream.dvr?.enabled ? (
-          <span className="text-xs text-emerald-600 dark:text-emerald-400">Enabled</span>
-        ) : (
-          <span className="text-xs text-muted-foreground">Off</span>
-        )}
-      </TableCell>
-
-      {/* Tags */}
-      <TableCell className="hidden lg:table-cell">
-        {stream.tags && stream.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {stream.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="outline" className="h-4 px-1.5 text-[10px]">
-                {tag}
-              </Badge>
-            ))}
-            {stream.tags.length > 3 && (
-              <span className="text-xs text-muted-foreground">+{stream.tags.length - 3}</span>
-            )}
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        )}
-      </TableCell>
-
     </TableRow>
   );
 }

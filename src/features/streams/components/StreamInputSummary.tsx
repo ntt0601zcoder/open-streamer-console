@@ -1,42 +1,118 @@
-import { Link2, Link2Off } from 'lucide-react';
-import type { Input } from '@/api/types';
+import { toast } from 'sonner';
+import type { Input as InputType, Stream } from '@/api/types';
+import { StreamStatus } from '@/api/types';
+import { cn } from '@/lib/utils';
+import { useSwitchInput } from '@/features/streams/hooks/useStreams';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface StreamInputSummaryProps {
-  inputs: Input[] | undefined;
+  stream: Stream;
 }
 
-export function StreamInputSummary({ inputs }: StreamInputSummaryProps) {
+export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
+  const inputs = stream.inputs;
+  const switchInput = useSwitchInput();
+  const activeIndex = stream.runtime?.active_input_priority ?? null;
+  const isStreamLive =
+    stream.status === StreamStatus.active || stream.status === StreamStatus.degraded;
+
   if (!inputs || inputs.length === 0) {
     return <span className="text-xs text-muted-foreground">No inputs</span>;
   }
 
-  const primary = inputs.find((i) => (i.priority ?? 0) === Math.min(...inputs.map((x) => x.priority ?? 0))) ?? inputs[0];
+  const activeInput = activeIndex !== null ? inputs[activeIndex] : inputs[0];
 
-  const short = shortenUrl(primary.url);
+  function handleSwitch(priority: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!isStreamLive) return;
+    if (priority === activeIndex) return;
+    switchInput.mutate(
+      { code: stream.code, priority },
+      {
+        onSuccess: () => toast.success(`Switched to input ${priority + 1}`),
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Switch failed'),
+      },
+    );
+  }
 
   return (
-    <div className="space-y-0.5">
-      <div className="flex items-center gap-1.5">
-        <Link2 className="h-3 w-3 shrink-0 text-muted-foreground" />
-        <span className="max-w-[180px] truncate text-xs font-mono" title={primary.url}>
-          {short}
-        </span>
+    <div className="space-y-1">
+      {/* Input URL */}
+      <span
+        className="block max-w-[220px] truncate font-mono text-xs text-muted-foreground"
+        title={activeInput?.url}
+      >
+        {shortenUrl(activeInput?.url ?? '')}
+      </span>
+
+      {/* Input dots */}
+      <div className="flex items-center gap-1">
+        {inputs.map((inp, i) => (
+          <InputDot
+            key={i}
+            input={inp}
+            index={i}
+            isActive={i === activeIndex}
+            canSwitch={isStreamLive && i !== activeIndex}
+            isPending={switchInput.isPending && switchInput.variables?.priority === i}
+            onClick={(e) => handleSwitch(i, e)}
+          />
+        ))}
       </div>
-      {inputs.length > 1 && (
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Link2Off className="h-3 w-3 shrink-0" />
-          <span className="text-xs">+{inputs.length - 1} fallback</span>
-        </div>
-      )}
     </div>
+  );
+}
+
+interface InputDotProps {
+  input: InputType;
+  index: number;
+  isActive: boolean;
+  canSwitch: boolean;
+  isPending: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}
+
+function InputDot({ input, index, isActive, canSwitch, isPending, onClick }: InputDotProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={!canSwitch || isPending}
+          className={cn(
+            'h-3 w-3 rounded-full border-2 transition-colors shrink-0',
+            isActive
+              ? 'bg-emerald-500 border-emerald-500'
+              : 'border-muted-foreground/40 bg-transparent',
+            canSwitch && !isPending && 'cursor-pointer hover:border-primary hover:bg-primary/20',
+            isPending && 'animate-pulse border-primary bg-primary/30',
+            !canSwitch && !isActive && 'cursor-default',
+          )}
+        />
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-[300px]">
+        <div className="space-y-0.5">
+          <p className="text-xs font-medium">
+            Input {index + 1} {isActive ? '(active)' : ''}
+          </p>
+          <p className="font-mono text-xs break-all">{input.url}</p>
+          {canSwitch && <p className="text-xs text-muted-foreground">Click to switch</p>}
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
 function shortenUrl(url: string): string {
   try {
     const u = new URL(url);
-    return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/(.{28}).*$/, '$1…');
+    return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/(.{35}).*$/, '$1…');
   } catch {
-    return url.length > 32 ? url.slice(0, 32) + '…' : url;
+    return url.length > 38 ? url.slice(0, 38) + '…' : url;
   }
 }

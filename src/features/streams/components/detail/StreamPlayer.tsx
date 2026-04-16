@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { Loader2, RefreshCw, VideoOff, WifiOff } from 'lucide-react';
+import { Loader2, RefreshCw, VideoOff, Volume2, VolumeOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type PlayerState = 'loading' | 'playing' | 'retrying' | 'error' | 'unsupported';
@@ -14,8 +14,10 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const liveChaseRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mediaErrorCountRef = useRef(0);
   const [state, setState] = useState<PlayerState>('loading');
+  const [muted, setMuted] = useState(true);
 
   function clearRetryTimer() {
     if (retryTimerRef.current) {
@@ -24,59 +26,82 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
     }
   }
 
-  function initHls(video: HTMLVideoElement) {
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
+  function clearLiveChase() {
+    if (liveChaseRef.current) {
+      clearInterval(liveChaseRef.current);
+      liveChaseRef.current = null;
     }
-    mediaErrorCountRef.current = 0;
+  }
 
-    const hls = new Hls({
-      liveSyncDurationCount: 3,
-      liveMaxLatencyDurationCount: 8,
-      maxBufferLength: 15,
-      fragLoadingRetryDelay: 1000,
-      manifestLoadingRetryDelay: 1000,
-    });
+  // Periodically chase the live edge so preview doesn't drift
+  const startLiveChase = useCallback((video: HTMLVideoElement) => {
+    clearLiveChase();
+    liveChaseRef.current = setInterval(() => {
+      if (!video.buffered.length || video.paused) return;
+      const liveEdge = video.buffered.end(video.buffered.length - 1);
+      const lag = liveEdge - video.currentTime;
+      // If more than 3s behind live, jump to edge
+      if (lag > 3) {
+        video.currentTime = liveEdge - 0.5;
+      }
+    }, 2000);
+  }, []);
 
-    hlsRef.current = hls;
-    hls.loadSource(hlsUrl);
-    hls.attachMedia(video);
-
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      setState('playing');
+  const initHls = useCallback(
+    (video: HTMLVideoElement) => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+      }
       mediaErrorCountRef.current = 0;
-      void video.play().catch(() => {});
-    });
 
-    hls.on(Hls.Events.ERROR, (_event, data) => {
-      if (!data.fatal) return;
+      const hls = new Hls({
+        // Low-latency live tuning
+        liveSyncDurationCount: 1,
+        liveMaxLatencyDurationCount: 3,
+        maxBufferLength: 4,
+        liveBackBufferLength: 0,
+        liveDurationInfinity: true,
+        // Error recovery
+        fragLoadingRetryDelay: 1000,
+        manifestLoadingRetryDelay: 1000,
+      });
 
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-        // Network hiccup — startLoad is enough
-        hls.startLoad();
-      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        mediaErrorCountRef.current += 1;
-        if (mediaErrorCountRef.current === 1) {
-          // First attempt: soft recovery
-          hls.recoverMediaError();
+      hlsRef.current = hls;
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setState('playing');
+        mediaErrorCountRef.current = 0;
+        void video.play().catch(() => {});
+        startLiveChase(video);
+      });
+
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal) return;
+
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hls.startLoad();
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          mediaErrorCountRef.current += 1;
+          if (mediaErrorCountRef.current === 1) {
+            hls.recoverMediaError();
+          } else {
+            setState('retrying');
+            clearRetryTimer();
+            clearLiveChase();
+            retryTimerRef.current = setTimeout(() => initHls(video), 3000);
+          }
         } else {
-          // Second attempt: full reinit after short delay
           setState('retrying');
           clearRetryTimer();
-          retryTimerRef.current = setTimeout(() => {
-            initHls(video);
-          }, 3000);
+          clearLiveChase();
+          retryTimerRef.current = setTimeout(() => initHls(video), 5000);
         }
-      } else {
-        // Unrecoverable — wait then reinit
-        setState('retrying');
-        clearRetryTimer();
-        retryTimerRef.current = setTimeout(() => {
-          initHls(video);
-        }, 5000);
-      }
-    });
-  }
+      });
+    },
+    [hlsUrl, startLiveChase],
+  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -100,30 +125,59 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
 
     return () => {
       clearRetryTimer();
+      clearLiveChase();
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hlsUrl, active]);
+  }, [hlsUrl, active, initHls]);
 
   function manualRetry() {
     const video = videoRef.current;
     if (!video) return;
     clearRetryTimer();
+    clearLiveChase();
     setState('loading');
     initHls(video);
   }
 
+  function toggleMute() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  }
+
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black">
+    <div className="group relative aspect-video w-full overflow-hidden rounded-md bg-black">
       <video
         ref={videoRef}
         className="h-full w-full"
-        controls
         muted
         playsInline
         style={{ display: state === 'playing' ? 'block' : 'none' }}
       />
+
+      {/* Live controls overlay — visible on hover */}
+      {state === 'playing' && (
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            LIVE
+          </span>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
+            onClick={toggleMute}
+          >
+            {muted ? (
+              <VolumeOff className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
 
       {(state === 'loading' || state === 'retrying') && active && (
         <Overlay>

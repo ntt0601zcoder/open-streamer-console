@@ -47,11 +47,10 @@ export function StreamList({ streams, filter }: StreamListProps) {
       <TableHeader>
         <TableRow>
           <TableHead className="w-[200px]">Stream</TableHead>
-          <TableHead className="w-[90px]">Status</TableHead>
-          <TableHead className="w-[200px]">Input</TableHead>
-          <TableHead className="w-[180px]">Output</TableHead>
+          <TableHead className="w-[260px]">Input</TableHead>
+          <TableHead className="w-[140px]">Transcode</TableHead>
           <TableHead className="w-[80px]">DVR</TableHead>
-          <TableHead className="hidden lg:table-cell">Tags</TableHead>
+          <TableHead className="w-[180px]">Output</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
