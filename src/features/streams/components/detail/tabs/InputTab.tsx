@@ -126,7 +126,7 @@ export function InputTab({ stream }: InputTabProps) {
                 key={field.id}
                 index={index}
                 total={fields.length}
-                activeIndex={stream.runtime?.active_input_priority ?? null}
+                activeIndex={stream.runtime?.override_input_priority ?? stream.runtime?.active_input_priority ?? null}
                 canSwitch={isStreamLive}
                 switchPending={switchInput.isPending && switchInput.variables?.priority === index}
                 form={form}

@@ -18,11 +18,7 @@ export const streamsApi = {
 
   delete: (code: string) => api.delete(`streams/${code}`),
 
-  start: (code: string) => api.post(`streams/${code}/start`),
-
-  stop: (code: string) => api.post(`streams/${code}/stop`),
-
-  status: (code: string) => api.get(`streams/${code}/status`).json<DataResponse<Record<string, unknown>>>(),
+  restart: (code: string) => api.post(`streams/${code}/restart`),
 
   getRecordings: (code: string) =>
     api.get(`streams/${code}/recordings`).json<ListResponse<Recording>>(),

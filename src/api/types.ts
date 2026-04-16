@@ -202,8 +202,17 @@ export interface WatermarkConfig {
   offset_y?: number;
 }
 
+export interface InputRuntimeInfo {
+  bitrate_kbps?: number;
+  packet_loss?: number;
+  status?: string;
+  last_packet_at?: string;
+}
+
 export interface StreamRuntime {
   active_input_priority?: number;
+  override_input_priority?: number;
+  inputs?: InputRuntimeInfo[];
 }
 
 export interface Stream {
@@ -212,6 +221,7 @@ export interface Stream {
   description?: string;
   stream_key?: string;
   status: StreamStatus;
+  pipeline_active?: boolean;
   disabled?: boolean;
   inputs?: Input[];
   protocols?: OutputProtocols;

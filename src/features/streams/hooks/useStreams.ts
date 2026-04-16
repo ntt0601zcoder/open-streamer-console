@@ -5,7 +5,6 @@ import type { StreamBody } from '@/api/types';
 export const streamKeys = {
   all: ['streams'] as const,
   detail: (code: string) => ['streams', code] as const,
-  status: (code: string) => ['streams', code, 'status'] as const,
   recordings: (code: string) => ['streams', code, 'recordings'] as const,
 } as const;
 
@@ -28,15 +27,6 @@ export function useStream(code: string) {
       return res.data;
     },
     refetchInterval: 4_000,
-  });
-}
-
-export function useStreamStatus(code: string) {
-  return useQuery({
-    queryKey: streamKeys.status(code),
-    queryFn: () => streamsApi.status(code),
-    refetchInterval: 4_000,
-    select: (res) => res.data,
   });
 }
 
@@ -73,10 +63,10 @@ export function useDeleteStream() {
   });
 }
 
-export function useStartStream() {
+export function useRestartStream() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (code: string) => streamsApi.start(code),
+    mutationFn: (code: string) => streamsApi.restart(code),
     onSuccess: (_res, code) => {
       void qc.invalidateQueries({ queryKey: streamKeys.detail(code) });
       void qc.invalidateQueries({ queryKey: streamKeys.all });
@@ -84,16 +74,6 @@ export function useStartStream() {
   });
 }
 
-export function useStopStream() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (code: string) => streamsApi.stop(code),
-    onSuccess: (_res, code) => {
-      void qc.invalidateQueries({ queryKey: streamKeys.detail(code) });
-      void qc.invalidateQueries({ queryKey: streamKeys.all });
-    },
-  });
-}
 
 export function useStartRecording() {
   const qc = useQueryClient();

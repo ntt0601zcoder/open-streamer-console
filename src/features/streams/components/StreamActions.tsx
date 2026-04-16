@@ -1,4 +1,4 @@
-import { Loader2, Play, Square, Trash2 } from 'lucide-react';
+import { Loader2, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  useDeleteStream,
-  useStartStream,
-  useStopStream,
-} from '@/features/streams/hooks/useStreams';
+import { useDeleteStream, useRestartStream } from '@/features/streams/hooks/useStreams';
 import type { Stream } from '@/api/types';
 
 interface StreamActionsProps {
@@ -26,42 +22,26 @@ interface StreamActionsProps {
 
 export function StreamActions({ stream }: StreamActionsProps) {
   const navigate = useNavigate();
-  const start = useStartStream();
-  const stop = useStopStream();
+  const restart = useRestartStream();
   const del = useDeleteStream();
 
   const isRunning = stream.status === 'active' || stream.status === 'degraded';
-  const isBusy = start.isPending || stop.isPending;
-
-  function handleStartStop() {
-    const onError = (err: Error) => toast.error(err.message);
-    if (isRunning) {
-      stop.mutate(stream.code, { onError });
-    } else {
-      start.mutate(stream.code, { onError });
-    }
-  }
-
-  function handleDelete() {
-    del.mutate(stream.code, {
-      onSuccess: () => void navigate('/streams'),
-    });
-  }
+  const onError = (err: Error) => toast.error(err.message);
 
   return (
     <div className="flex items-center gap-1">
       <Button
         size="icon"
-        variant={isRunning ? 'destructive' : 'default'}
+        variant={isRunning ? 'outline' : 'default'}
         className="h-7 w-7"
-        disabled={isBusy}
-        onClick={handleStartStop}
-        title={isRunning ? 'Stop stream' : 'Start stream'}
+        disabled={restart.isPending}
+        onClick={() => restart.mutate(stream.code, { onError })}
+        title={isRunning ? 'Restart stream' : 'Start stream'}
       >
-        {isBusy ? (
+        {restart.isPending ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : isRunning ? (
-          <Square className="h-3.5 w-3.5 fill-current" />
+          <RefreshCw className="h-3.5 w-3.5" />
         ) : (
           <Play className="h-3.5 w-3.5 fill-current" />
         )}
@@ -90,7 +70,10 @@ export function StreamActions({ stream }: StreamActionsProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDelete}
+              onClick={() => del.mutate(stream.code, {
+                onSuccess: () => void navigate('/streams'),
+                onError,
+              })}
             >
               Delete
             </AlertDialogAction>

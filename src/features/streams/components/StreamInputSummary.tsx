@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import type { Input as InputType, Stream } from '@/api/types';
+import type { Input as InputType, InputRuntimeInfo, Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
 import { cn } from '@/lib/utils';
 import { useSwitchInput } from '@/features/streams/hooks/useStreams';
@@ -16,7 +16,8 @@ interface StreamInputSummaryProps {
 export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
   const inputs = stream.inputs;
   const switchInput = useSwitchInput();
-  const activeIndex = stream.runtime?.active_input_priority ?? null;
+  const activeIndex = stream.runtime?.override_input_priority ?? stream.runtime?.active_input_priority ?? null;
+  const runtimeInputs = stream.runtime?.inputs;
   const isStreamLive =
     stream.status === StreamStatus.active || stream.status === StreamStatus.degraded;
 
@@ -55,6 +56,7 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
           <InputDot
             key={i}
             input={inp}
+            runtime={runtimeInputs?.[i]}
             index={i}
             isActive={i === activeIndex}
             canSwitch={isStreamLive && i !== activeIndex}
@@ -69,6 +71,7 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
 
 interface InputDotProps {
   input: InputType;
+  runtime?: InputRuntimeInfo;
   index: number;
   isActive: boolean;
   canSwitch: boolean;
@@ -76,7 +79,7 @@ interface InputDotProps {
   onClick: (e: React.MouseEvent) => void;
 }
 
-function InputDot({ input, index, isActive, canSwitch, isPending, onClick }: InputDotProps) {
+function InputDot({ input, runtime, index, isActive, canSwitch, isPending, onClick }: InputDotProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -95,14 +98,27 @@ function InputDot({ input, index, isActive, canSwitch, isPending, onClick }: Inp
           )}
         />
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-[300px]">
-        <div className="space-y-0.5">
-          <p className="text-xs font-medium">
-            Input {index + 1} {isActive ? '(active)' : ''}
-          </p>
-          <p className="font-mono text-xs break-all">{input.url}</p>
-          {canSwitch && <p className="text-xs text-muted-foreground">Click to switch</p>}
-        </div>
+      <TooltipContent side="bottom" className="max-w-[300px] space-y-1">
+        <p className="text-xs font-medium">
+          Input {index + 1}{isActive ? ' (active)' : ''}
+        </p>
+        <p className="font-mono text-xs break-all text-muted-foreground">{input.url}</p>
+        {runtime && (
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 pt-0.5 text-xs text-muted-foreground">
+            {runtime.bitrate_kbps != null && (
+              <span>{runtime.bitrate_kbps} kbps</span>
+            )}
+            {runtime.packet_loss != null && (
+              <span>loss {(runtime.packet_loss * 100).toFixed(1)}%</span>
+            )}
+            {runtime.status && (
+              <span className={runtime.status === 'connected' ? 'text-emerald-400' : 'text-amber-400'}>
+                {runtime.status}
+              </span>
+            )}
+          </div>
+        )}
+        {canSwitch && <p className="text-xs text-muted-foreground">Click to switch</p>}
       </TooltipContent>
     </Tooltip>
   );

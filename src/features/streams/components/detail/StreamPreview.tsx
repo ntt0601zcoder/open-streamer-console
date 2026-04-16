@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
 import { BASE_URL } from '@/api/client';
-import { useStreamStatus } from '@/features/streams/hooks/useStreams';
 import { StreamPlayer } from './StreamPlayer';
 
 interface StreamPreviewProps {
@@ -13,7 +12,6 @@ interface StreamPreviewProps {
 }
 
 export function StreamPreview({ stream }: StreamPreviewProps) {
-  const { data: status } = useStreamStatus(stream.code);
   const [copied, setCopied] = useState<string | null>(null);
 
   const hlsUrl = `${BASE_URL}/${stream.code}/index.m3u8`;
@@ -83,14 +81,14 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
             )}
           </div>
 
-          {/* Pipeline active flag from /status endpoint */}
-          {status != null && (
+          {/* Pipeline active */}
+          {stream.pipeline_active != null && (
             <div className="border-t pt-3">
               <InfoRow
                 label="Pipeline active"
                 value={
-                  <span className={`font-mono text-xs font-medium ${status.pipeline_active ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-                    {status.pipeline_active ? 'true' : 'false'}
+                  <span className={`font-mono text-xs font-medium ${stream.pipeline_active ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                    {stream.pipeline_active ? 'true' : 'false'}
                   </span>
                 }
               />
