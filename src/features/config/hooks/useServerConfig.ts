@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { configApi } from '@/api/config';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { configApi, type GlobalConfig } from '@/api/config';
 
 export const configKeys = {
   all: ['config'] as const,
@@ -9,7 +9,17 @@ export function useServerConfig() {
   return useQuery({
     queryKey: configKeys.all,
     queryFn: () => configApi.get(),
-    staleTime: Infinity, // server config doesn't change at runtime
+    staleTime: Infinity,
     gcTime: Infinity,
+  });
+}
+
+export function useUpdateGlobalConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: GlobalConfig) => configApi.updateGlobal(body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: configKeys.all });
+    },
   });
 }
