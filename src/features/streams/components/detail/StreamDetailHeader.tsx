@@ -28,7 +28,7 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <h1 className="text-2xl font-semibold truncate">{stream.name}</h1>
-          <StreamStatusBadge status={stream.status} />
+          <StreamStatusBadge stream={stream} />
           {stream.disabled && (
             <Badge variant="outline" className="text-muted-foreground">
               disabled

@@ -1,11 +1,13 @@
 import { cn } from '@/lib/utils';
-import type { StreamStatus } from '@/api/types';
+import type { Stream, StreamStatus } from '@/api/types';
 
 interface StreamStatusBadgeProps {
-  status: StreamStatus;
+  stream: Pick<Stream, 'status' | 'runtime'>;
 }
 
-const config: Record<StreamStatus, { label: string; dot: string; text: string }> = {
+type BadgeStyle = { label: string; dot: string; text: string };
+
+const config: Record<StreamStatus, BadgeStyle> = {
   active: {
     label: 'Active',
     dot: 'bg-emerald-500',
@@ -16,8 +18,16 @@ const config: Record<StreamStatus, { label: string; dot: string; text: string }>
   stopped: { label: 'Stopped', dot: 'bg-slate-300', text: 'text-slate-400 dark:text-slate-500' },
 };
 
-export function StreamStatusBadge({ status }: StreamStatusBadgeProps) {
-  const { label, dot, text } = config[status] ?? config.idle;
+const exhaustedStyle: BadgeStyle = {
+  label: 'Exhausted',
+  dot: 'bg-red-500',
+  text: 'text-red-700 dark:text-red-400',
+};
+
+export function StreamStatusBadge({ stream }: StreamStatusBadgeProps) {
+  const { label, dot, text } = stream.runtime?.exhausted
+    ? exhaustedStyle
+    : (config[stream.status] ?? config.idle);
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', text)}>
       <span className={cn('h-2 w-2 rounded-full', dot)} />

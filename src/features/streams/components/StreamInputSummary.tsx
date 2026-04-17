@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import type { Input as InputType, InputRuntimeInfo, Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
+import { formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSwitchInput } from '@/features/streams/hooks/useStreams';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -85,6 +86,8 @@ function InputDot({
   isPending,
   onClick,
 }: InputDotProps) {
+  const isDegraded = runtime?.status === 'degraded' || !!runtime?.last_error;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -94,16 +97,17 @@ function InputDot({
           disabled={!canSwitch || isPending}
           className={cn(
             'h-3 w-3 rounded-full border-2 transition-colors shrink-0',
-            isActive
-              ? 'bg-emerald-500 border-emerald-500'
-              : 'border-muted-foreground/40 bg-transparent',
+            isActive && !isDegraded && 'bg-emerald-500 border-emerald-500',
+            isActive && isDegraded && 'bg-amber-500 border-amber-500',
+            !isActive && isDegraded && 'border-amber-500 bg-amber-500/30',
+            !isActive && !isDegraded && 'border-muted-foreground/40 bg-transparent',
             canSwitch && !isPending && 'cursor-pointer hover:border-primary hover:bg-primary/20',
             isPending && 'animate-pulse border-primary bg-primary/30',
             !canSwitch && !isActive && 'cursor-default',
           )}
         />
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-[300px] space-y-1">
+      <TooltipContent side="bottom" className="max-w-[320px] space-y-1">
         <p className="text-xs font-medium">
           Input {index + 1}
           {isActive ? ' (active)' : ''}
@@ -121,6 +125,15 @@ function InputDot({
               >
                 {runtime.status}
               </span>
+            )}
+          </div>
+        )}
+        {runtime?.last_error && (
+          <div className="rounded border border-amber-500/30 bg-amber-500/10 p-1.5 text-xs text-amber-200">
+            <p className="font-medium">Last error</p>
+            <p className="mt-0.5 break-words font-mono">{runtime.last_error}</p>
+            {runtime.last_error_at && (
+              <p className="mt-0.5 text-amber-300/70">{formatRelativeIso(runtime.last_error_at)}</p>
             )}
           </div>
         )}

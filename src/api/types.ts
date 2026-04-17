@@ -207,12 +207,15 @@ export interface InputRuntimeInfo {
   packet_loss?: number;
   status?: string;
   last_packet_at?: string;
+  last_error?: string;
+  last_error_at?: string;
 }
 
 export interface StreamRuntime {
   active_input_priority?: number;
   override_input_priority?: number;
   inputs?: InputRuntimeInfo[];
+  exhausted?: boolean;
 }
 
 export interface Stream {

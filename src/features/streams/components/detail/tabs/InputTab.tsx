@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +16,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import type { Stream } from '@/api/types';
+import type { InputRuntimeInfo, Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
+import { formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStreams';
 import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
@@ -127,6 +128,19 @@ export function InputTab({ stream }: InputTabProps) {
               </p>
             )}
 
+            {stream.runtime?.exhausted && (
+              <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                <div className="text-red-700 dark:text-red-300">
+                  <p className="font-medium">All inputs exhausted</p>
+                  <p className="text-xs">
+                    Every input is degraded and no failover candidate is available. Check each input
+                    below.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {fields.map((field, index) => (
               <InputRow
                 key={field.id}
@@ -137,6 +151,7 @@ export function InputTab({ stream }: InputTabProps) {
                   stream.runtime?.active_input_priority ??
                   null
                 }
+                runtime={stream.runtime?.inputs?.[index]}
                 canSwitch={isStreamLive}
                 switchPending={switchInput.isPending && switchInput.variables?.priority === index}
                 form={form}
@@ -172,6 +187,7 @@ interface InputRowProps {
   index: number;
   total: number;
   activeIndex: number | null;
+  runtime?: InputRuntimeInfo;
   canSwitch: boolean;
   switchPending: boolean;
   form: ReturnType<typeof useForm<InputsFormValues>>;
@@ -185,6 +201,7 @@ function InputRow({
   index,
   total,
   activeIndex,
+  runtime,
   canSwitch,
   switchPending,
   form,
@@ -195,14 +212,23 @@ function InputRow({
 }: InputRowProps) {
   const isLast = index === total - 1;
   const isActive = activeIndex === index;
+  const isDegraded = runtime?.status === 'degraded' || !!runtime?.last_error;
 
   return (
-    <div className={cn('rounded-lg border bg-card', isActive && 'border-primary/50')}>
+    <div
+      className={cn(
+        'rounded-lg border bg-card',
+        isActive && !isDegraded && 'border-primary/50',
+        isDegraded && 'border-amber-500/50',
+      )}
+    >
       {/* Row header */}
       <div
         className={cn(
           'flex items-center gap-3 px-4 py-2.5 border-b',
-          isActive ? 'bg-primary/5' : 'bg-muted/40',
+          isActive && !isDegraded && 'bg-primary/5',
+          isDegraded && 'bg-amber-500/5',
+          !isActive && !isDegraded && 'bg-muted/40',
         )}
       >
         <div className="flex flex-col">
@@ -234,6 +260,11 @@ function InputRow({
               active
             </Badge>
           )}
+          {isDegraded && (
+            <Badge className="h-4 px-1.5 text-[10px] bg-amber-500 hover:bg-amber-500 text-white">
+              degraded
+            </Badge>
+          )}
         </div>
         {canSwitch && !isActive && (
           <Button
@@ -261,6 +292,24 @@ function InputRow({
 
       {/* Row content */}
       <div className="p-4 space-y-3">
+        {runtime?.last_error && (
+          <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Last error</p>
+                {runtime.last_error_at && (
+                  <p className="text-xs text-amber-600/80 dark:text-amber-400/70">
+                    {formatRelativeIso(runtime.last_error_at)}
+                  </p>
+                )}
+              </div>
+              <p className="break-words font-mono text-xs text-amber-800 dark:text-amber-200">
+                {runtime.last_error}
+              </p>
+            </div>
+          </div>
+        )}
         <FormField
           control={form.control}
           name={`inputs.${index}.url`}

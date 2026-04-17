@@ -46,7 +46,7 @@ export function StreamRow({ stream }: StreamRowProps) {
             {stream.code}
           </Link>
           <p className="text-xs text-muted-foreground truncate max-w-[180px]">{stream.name}</p>
-          <StreamStatusBadge status={stream.status} />
+          <StreamStatusBadge stream={stream} />
         </div>
       </TableCell>
 
