@@ -1,5 +1,6 @@
 import {
   Activity,
+  Film,
   PanelLeftClose,
   PanelLeftOpen,
   Radio,
@@ -13,6 +14,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: Activity, end: true },
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
+  { to: '/vod', label: 'VOD', icon: Film, end: false },
   { to: '/hooks', label: 'Hooks', icon: Settings, end: false },
   { to: '/settings', label: 'Settings', icon: SlidersHorizontal, end: false },
 ] as const;
