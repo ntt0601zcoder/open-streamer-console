@@ -14,7 +14,6 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const liveChaseRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mediaErrorCountRef = useRef(0);
   const [state, setState] = useState<PlayerState>('loading');
   const [muted, setMuted] = useState(true);
@@ -26,27 +25,6 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
     }
   }
 
-  function clearLiveChase() {
-    if (liveChaseRef.current) {
-      clearInterval(liveChaseRef.current);
-      liveChaseRef.current = null;
-    }
-  }
-
-  // Periodically chase the live edge so preview doesn't drift
-  const startLiveChase = useCallback((video: HTMLVideoElement) => {
-    clearLiveChase();
-    liveChaseRef.current = setInterval(() => {
-      if (!video.buffered.length || video.paused) return;
-      const liveEdge = video.buffered.end(video.buffered.length - 1);
-      const lag = liveEdge - video.currentTime;
-      // If more than 3s behind live, jump to edge
-      if (lag > 3) {
-        video.currentTime = liveEdge - 0.5;
-      }
-    }, 2000);
-  }, []);
-
   const initHls = useCallback(
     (video: HTMLVideoElement) => {
       if (hlsRef.current) {
@@ -55,11 +33,11 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
       mediaErrorCountRef.current = 0;
 
       const hls = new Hls({
-        // Low-latency live tuning
-        liveSyncDurationCount: 1,
-        liveMaxLatencyDurationCount: 3,
-        maxBufferLength: 4,
-        liveBackBufferLength: 0,
+        // Live tuning — balanced latency vs stability
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 6,
+        maxBufferLength: 15,
+        liveBackBufferLength: 5,
         liveDurationInfinity: true,
         // Error recovery
         fragLoadingRetryDelay: 1000,
@@ -74,7 +52,6 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
         setState('playing');
         mediaErrorCountRef.current = 0;
         void video.play().catch(() => {});
-        startLiveChase(video);
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -89,18 +66,16 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
           } else {
             setState('retrying');
             clearRetryTimer();
-            clearLiveChase();
             retryTimerRef.current = setTimeout(() => initHls(video), 3000);
           }
         } else {
           setState('retrying');
           clearRetryTimer();
-          clearLiveChase();
           retryTimerRef.current = setTimeout(() => initHls(video), 5000);
         }
       });
     },
-    [hlsUrl, startLiveChase],
+    [hlsUrl],
   );
 
   useEffect(() => {
@@ -125,7 +100,6 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
 
     return () => {
       clearRetryTimer();
-      clearLiveChase();
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
@@ -135,7 +109,6 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
     const video = videoRef.current;
     if (!video) return;
     clearRetryTimer();
-    clearLiveChase();
     setState('loading');
     initHls(video);
   }
