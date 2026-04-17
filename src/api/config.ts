@@ -1,11 +1,18 @@
 import { api } from './client';
-import type { AudioCodec, HWAccel, StreamStatus, VideoCodec, WatermarkPosition, WatermarkType } from './types';
+import type {
+  AudioCodec,
+  HWAccel,
+  StreamStatus,
+  VideoCodec,
+  WatermarkPosition,
+  WatermarkType,
+} from './types';
 
 export interface ServerPorts {
-  http_addr?: string;   // e.g. ":8080"
-  rtsp_port?: number;   // 0 = disabled
-  rtmp_port?: number;   // 0 = disabled
-  srt_port?: number;    // 0 = disabled
+  http_addr?: string; // e.g. ":8080"
+  rtsp_port?: number; // 0 = disabled
+  rtmp_port?: number; // 0 = disabled
+  srt_port?: number; // 0 = disabled
 }
 
 // ─── GlobalConfig sub-types ────────────────────────────────────────────────────
@@ -28,8 +35,8 @@ export interface IngestorConfig {
 }
 
 export interface LogConfig {
-  level?: string;   // "debug" | "info" | "warn" | "error"
-  format?: string;  // "text" | "json"
+  level?: string; // "debug" | "info" | "warn" | "error"
+  format?: string; // "text" | "json"
 }
 
 export interface ManagerConfig {
@@ -61,7 +68,7 @@ export interface PublisherRTMPServeConfig {
 export interface PublisherRTSPConfig {
   listen_host?: string;
   port_min?: number;
-  transport?: string;  // "tcp" | "udp"
+  transport?: string; // "tcp" | "udp"
 }
 
 export interface PublisherSRTListenerConfig {
@@ -137,8 +144,7 @@ export const configApi = {
   get: () => api.get('config').json<ServerConfig>(),
   updateGlobal: (body: GlobalConfig) =>
     api.post('config', { json: body }).json<ConfigUpdateResponse>(),
-  getYaml: () =>
-    api.get('config/yaml', { headers: { Accept: 'application/yaml' } }).text(),
+  getYaml: () => api.get('config/yaml', { headers: { Accept: 'application/yaml' } }).text(),
   updateYaml: (yaml: string) =>
     api
       .put('config/yaml', {

@@ -179,7 +179,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                 <FormItem>
                   <FormLabel>Device ID</FormLabel>
                   <FormControl>
-                    <Input type="number" min={0} placeholder="0" {...field} value={field.value ?? ''} />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,7 +198,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                 <FormItem>
                   <FormLabel>GOP (frames)</FormLabel>
                   <FormControl>
-                    <Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -214,7 +226,9 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                 name="video.copy"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
-                    <FormLabel className="text-sm text-muted-foreground">Copy (passthrough)</FormLabel>
+                    <FormLabel className="text-sm text-muted-foreground">
+                      Copy (passthrough)
+                    </FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
@@ -258,7 +272,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   <FormItem>
                     <FormLabel>Bitrate (kbps)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="source" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="source"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -271,7 +291,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   <FormItem>
                     <FormLabel>FPS</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="source" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="source"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -284,7 +310,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   <FormItem>
                     <FormLabel>Width (px)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="source" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="source"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -297,7 +329,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   <FormItem>
                     <FormLabel>Height (px)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="source" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="source"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -320,7 +358,9 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                 name="audio.copy"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
-                    <FormLabel className="text-sm text-muted-foreground">Copy (passthrough)</FormLabel>
+                    <FormLabel className="text-sm text-muted-foreground">
+                      Copy (passthrough)
+                    </FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
@@ -364,7 +404,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   <FormItem>
                     <FormLabel>Bitrate (kbps)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -387,7 +433,9 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                       </FormControl>
                       <SelectContent>
                         {Object.entries(CHANNEL_LABELS).map(([v, label]) => (
-                          <SelectItem key={v} value={v}>{label}</SelectItem>
+                          <SelectItem key={v} value={v}>
+                            {label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -402,7 +450,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   <FormItem>
                     <FormLabel>Sample rate (Hz)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="source" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="source"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -418,7 +472,9 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                     </FormControl>
                     <div>
                       <FormLabel>Normalize loudness</FormLabel>
-                      <FormDescription className="text-xs">Apply EBU R128 normalization</FormDescription>
+                      <FormDescription className="text-xs">
+                        Apply EBU R128 normalization
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -429,7 +485,11 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
 
         <div className="flex justify-end gap-2">
           {form.formState.isDirty && (
-            <Button type="button" variant="outline" onClick={() => form.reset(toFormValues(stream))}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => form.reset(toFormValues(stream))}
+            >
               Discard
             </Button>
           )}

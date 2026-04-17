@@ -20,20 +20,15 @@ export function StreamRow({ stream }: StreamRowProps) {
         .map(([k]) => k.toUpperCase())
     : [];
 
-  const activePushCount = stream.push?.filter(
-    (p) => p.enabled && p.status === 'active',
-  ).length ?? 0;
+  const activePushCount =
+    stream.push?.filter((p) => p.enabled && p.status === 'active').length ?? 0;
   const totalPushCount = stream.push?.filter((p) => p.enabled).length ?? 0;
 
   // Transcode summary
   const tc = stream.transcoder;
   const hasTranscoder = !!(tc?.video || tc?.audio);
-  const videoCodec = tc?.video?.copy
-    ? 'copy'
-    : tc?.video?.profiles?.[0]?.codec;
-  const audioCodec = tc?.audio?.copy
-    ? 'copy'
-    : tc?.audio?.codec;
+  const videoCodec = tc?.video?.copy ? 'copy' : tc?.video?.profiles?.[0]?.codec;
+  const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec;
 
   return (
     <TableRow

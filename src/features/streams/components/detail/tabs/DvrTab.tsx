@@ -131,7 +131,9 @@ export function DvrTab({ stream }: DvrTabProps) {
                         value={field.value ?? ''}
                       />
                     </FormControl>
-                    <FormDescription>Overrides the global segment length for this stream</FormDescription>
+                    <FormDescription>
+                      Overrides the global segment length for this stream
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

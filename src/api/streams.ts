@@ -1,11 +1,5 @@
 import { api } from './client';
-import type {
-  DataResponse,
-  ListResponse,
-  Recording,
-  Stream,
-  StreamBody,
-} from './types';
+import type { DataResponse, ListResponse, Recording, Stream, StreamBody } from './types';
 
 export const streamsApi = {
   list: () => api.get('streams').json<ListResponse<Stream>>(),
@@ -28,5 +22,7 @@ export const streamsApi = {
   stopRecording: (code: string) => api.post(`streams/${code}/recordings/stop`),
 
   switchInput: (code: string, priority: number) =>
-    api.post(`streams/${code}/inputs/switch`, { json: { priority } }).json<DataResponse<{ status: string }>>(),
+    api
+      .post(`streams/${code}/inputs/switch`, { json: { priority } })
+      .json<DataResponse<{ status: string }>>(),
 };

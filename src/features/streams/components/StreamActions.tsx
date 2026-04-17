@@ -70,10 +70,12 @@ export function StreamActions({ stream }: StreamActionsProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => del.mutate(stream.code, {
-                onSuccess: () => void navigate('/streams'),
-                onError,
-              })}
+              onClick={() =>
+                del.mutate(stream.code, {
+                  onSuccess: () => void navigate('/streams'),
+                  onError,
+                })
+              }
             >
               Delete
             </AlertDialogAction>

@@ -33,15 +33,17 @@ import { useServerConfig, useUpdateGlobalConfig } from '@/features/config/hooks/
 
 const serverSchema = z.object({
   http_addr: z.string().optional(),
-  cors: z.object({
-    enabled: z.boolean().optional(),
-    allowed_origins: z.string().optional(),   // newline-separated in UI
-    allowed_methods: z.string().optional(),
-    allowed_headers: z.string().optional(),
-    exposed_headers: z.string().optional(),
-    allow_credentials: z.boolean().optional(),
-    max_age: z.coerce.number().int().min(0).optional(),
-  }).optional(),
+  cors: z
+    .object({
+      enabled: z.boolean().optional(),
+      allowed_origins: z.string().optional(), // newline-separated in UI
+      allowed_methods: z.string().optional(),
+      allowed_headers: z.string().optional(),
+      exposed_headers: z.string().optional(),
+      allow_credentials: z.boolean().optional(),
+      max_age: z.coerce.number().int().min(0).optional(),
+    })
+    .optional(),
 });
 type ServerValues = z.infer<typeof serverSchema>;
 
@@ -107,7 +109,7 @@ type ManagerValues = z.infer<typeof managerSchema>;
 
 const hooksSchema = z.object({
   worker_count: z.coerce.number().int().min(1).optional(),
-  kafka_brokers: z.string().optional(),  // newline-separated in UI
+  kafka_brokers: z.string().optional(), // newline-separated in UI
 });
 type HooksValues = z.infer<typeof hooksSchema>;
 
@@ -130,7 +132,10 @@ function toLines(arr?: string[]): string {
 
 function fromLines(s?: string): string[] | undefined {
   if (!s?.trim()) return undefined;
-  return s.split('\n').map((l) => l.trim()).filter(Boolean);
+  return s
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -169,18 +174,42 @@ export function SettingsPage() {
           <TabsTrigger value="log">Logging</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="server" className="mt-6"><ServerSection /></TabsContent>
-        <TabsContent value="ingestor" className="mt-6"><IngestorSection /></TabsContent>
-        <TabsContent value="publisher-hls" className="mt-6"><HlsSection /></TabsContent>
-        <TabsContent value="publisher-dash" className="mt-6"><DashSection /></TabsContent>
-        <TabsContent value="publisher-rtmp" className="mt-6"><RtmpServeSection /></TabsContent>
-        <TabsContent value="publisher-rtsp" className="mt-6"><RtspSection /></TabsContent>
-        <TabsContent value="publisher-srt" className="mt-6"><SrtServeSection /></TabsContent>
-        <TabsContent value="transcoder" className="mt-6"><TranscoderSection /></TabsContent>
-        <TabsContent value="manager" className="mt-6"><ManagerSection /></TabsContent>
-        <TabsContent value="hooks" className="mt-6"><HooksSection /></TabsContent>
-        <TabsContent value="buffer" className="mt-6"><BufferSection /></TabsContent>
-        <TabsContent value="log" className="mt-6"><LogSection /></TabsContent>
+        <TabsContent value="server" className="mt-6">
+          <ServerSection />
+        </TabsContent>
+        <TabsContent value="ingestor" className="mt-6">
+          <IngestorSection />
+        </TabsContent>
+        <TabsContent value="publisher-hls" className="mt-6">
+          <HlsSection />
+        </TabsContent>
+        <TabsContent value="publisher-dash" className="mt-6">
+          <DashSection />
+        </TabsContent>
+        <TabsContent value="publisher-rtmp" className="mt-6">
+          <RtmpServeSection />
+        </TabsContent>
+        <TabsContent value="publisher-rtsp" className="mt-6">
+          <RtspSection />
+        </TabsContent>
+        <TabsContent value="publisher-srt" className="mt-6">
+          <SrtServeSection />
+        </TabsContent>
+        <TabsContent value="transcoder" className="mt-6">
+          <TranscoderSection />
+        </TabsContent>
+        <TabsContent value="manager" className="mt-6">
+          <ManagerSection />
+        </TabsContent>
+        <TabsContent value="hooks" className="mt-6">
+          <HooksSection />
+        </TabsContent>
+        <TabsContent value="buffer" className="mt-6">
+          <BufferSection />
+        </TabsContent>
+        <TabsContent value="log" className="mt-6">
+          <LogSection />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -188,7 +217,15 @@ export function SettingsPage() {
 
 // ─── Shared save button row ────────────────────────────────────────────────────
 
-function SaveRow({ isDirty, isPending, onDiscard }: { isDirty: boolean; isPending: boolean; onDiscard: () => void }) {
+function SaveRow({
+  isDirty,
+  isPending,
+  onDiscard,
+}: {
+  isDirty: boolean;
+  isPending: boolean;
+  onDiscard: () => void;
+}) {
   return (
     <div className="flex justify-end gap-2 pt-2">
       {isDirty && (
@@ -241,7 +278,10 @@ function ServerSection() {
       },
     };
     update.mutate(patch, {
-      onSuccess: () => { toast.success('Server settings saved'); form.reset(values); },
+      onSuccess: () => {
+        toast.success('Server settings saved');
+        form.reset(values);
+      },
       onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
     });
   }
@@ -257,14 +297,22 @@ function ServerSection() {
             <CardDescription>API listener bind address.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField control={form.control} name="http_addr" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bind address</FormLabel>
-                <FormControl><Input placeholder=":8080" {...field} /></FormControl>
-                <FormDescription>Host:port to listen on, e.g. <code>:8080</code> or <code>0.0.0.0:8080</code>.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="http_addr"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bind address</FormLabel>
+                  <FormControl>
+                    <Input placeholder=":8080" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Host:port to listen on, e.g. <code>:8080</code> or <code>0.0.0.0:8080</code>.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
@@ -274,66 +322,138 @@ function ServerSection() {
             <CardDescription>Cross-origin request handling for the HTTP API.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField control={form.control} name="cors.enabled" render={({ field }) => (
-              <FormItem className="flex items-center gap-3 space-y-0">
-                <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
-                <FormLabel>Enable CORS</FormLabel>
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="cors.enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable CORS</FormLabel>
+                </FormItem>
+              )}
+            />
 
             {corsEnabled && (
               <>
-                <FormField control={form.control} name="cors.allowed_origins" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Allowed origins</FormLabel>
-                    <FormControl><Textarea rows={3} placeholder="https://example.com&#10;*" {...field} value={field.value ?? ''} /></FormControl>
-                    <FormDescription>One origin per line. Use <code>*</code> for any (cannot combine with Allow-Credentials).</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="cors.allowed_methods" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Allowed methods</FormLabel>
-                    <FormControl><Textarea rows={2} placeholder="GET&#10;POST&#10;PUT&#10;DELETE" {...field} value={field.value ?? ''} /></FormControl>
-                    <FormDescription>One method per line. Leave empty for REST defaults.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="cors.allowed_headers" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Allowed headers</FormLabel>
-                    <FormControl><Textarea rows={2} placeholder="Content-Type&#10;Authorization" {...field} value={field.value ?? ''} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="cors.exposed_headers" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Exposed headers</FormLabel>
-                    <FormControl><Textarea rows={2} placeholder="" {...field} value={field.value ?? ''} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField control={form.control} name="cors.allow_credentials" render={({ field }) => (
-                    <FormItem className="flex items-center gap-3 space-y-0">
-                      <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
-                      <FormLabel>Allow credentials</FormLabel>
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="cors.max_age" render={({ field }) => (
+                <FormField
+                  control={form.control}
+                  name="cors.allowed_origins"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Preflight cache (s)</FormLabel>
-                      <FormControl><Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
+                      <FormLabel>Allowed origins</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={3}
+                          placeholder="https://example.com&#10;*"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        One origin per line. Use <code>*</code> for any (cannot combine with
+                        Allow-Credentials).
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
-                  )} />
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cors.allowed_methods"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Allowed methods</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={2}
+                          placeholder="GET&#10;POST&#10;PUT&#10;DELETE"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        One method per line. Leave empty for REST defaults.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cors.allowed_headers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Allowed headers</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={2}
+                          placeholder="Content-Type&#10;Authorization"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cors.exposed_headers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Exposed headers</FormLabel>
+                      <FormControl>
+                        <Textarea rows={2} placeholder="" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="cors.allow_credentials"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-3 space-y-0">
+                        <FormControl>
+                          <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel>Allow credentials</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cors.max_age"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preflight cache (s)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder="default"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </>
             )}
           </CardContent>
         </Card>
 
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -357,10 +477,22 @@ function IngestorSection() {
   });
 
   function onSubmit(values: IngestorValues) {
-    update.mutate({ ingestor: { ...values, rtmp_addr: values.rtmp_addr || undefined, srt_addr: values.srt_addr || undefined } }, {
-      onSuccess: () => { toast.success('Ingestor settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      {
+        ingestor: {
+          ...values,
+          rtmp_addr: values.rtmp_addr || undefined,
+          srt_addr: values.srt_addr || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Ingestor settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   const rtmpEnabled = form.watch('rtmp_enabled');
@@ -375,20 +507,32 @@ function IngestorSection() {
             <CardDescription>Accept RTMP push streams from external encoders.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField control={form.control} name="rtmp_enabled" render={({ field }) => (
-              <FormItem className="flex items-center gap-3 space-y-0">
-                <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
-                <FormLabel>Enable RTMP push server</FormLabel>
-              </FormItem>
-            )} />
-            {rtmpEnabled && (
-              <FormField control={form.control} name="rtmp_addr" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Listen address</FormLabel>
-                  <FormControl><Input placeholder=":1935" {...field} /></FormControl>
-                  <FormMessage />
+            <FormField
+              control={form.control}
+              name="rtmp_enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable RTMP push server</FormLabel>
                 </FormItem>
-              )} />
+              )}
+            />
+            {rtmpEnabled && (
+              <FormField
+                control={form.control}
+                name="rtmp_addr"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Listen address</FormLabel>
+                    <FormControl>
+                      <Input placeholder=":1935" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
           </CardContent>
         </Card>
@@ -399,20 +543,32 @@ function IngestorSection() {
             <CardDescription>Accept SRT push streams from external encoders.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField control={form.control} name="srt_enabled" render={({ field }) => (
-              <FormItem className="flex items-center gap-3 space-y-0">
-                <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
-                <FormLabel>Enable SRT push server</FormLabel>
-              </FormItem>
-            )} />
-            {srtEnabled && (
-              <FormField control={form.control} name="srt_addr" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Listen address</FormLabel>
-                  <FormControl><Input placeholder=":9999" {...field} /></FormControl>
-                  <FormMessage />
+            <FormField
+              control={form.control}
+              name="srt_enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable SRT push server</FormLabel>
                 </FormItem>
-              )} />
+              )}
+            />
+            {srtEnabled && (
+              <FormField
+                control={form.control}
+                name="srt_addr"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Listen address</FormLabel>
+                    <FormControl>
+                      <Input placeholder=":9999" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
           </CardContent>
         </Card>
@@ -423,18 +579,36 @@ function IngestorSection() {
             <CardDescription>Settings for pulling HLS streams as inputs.</CardDescription>
           </CardHeader>
           <CardContent>
-            <FormField control={form.control} name="hls_max_segment_buffer" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Max segment buffer</FormLabel>
-                <FormControl><Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>Maximum number of pre-fetched HLS segments held in memory.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="hls_max_segment_buffer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Max segment buffer</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Maximum number of pre-fetched HLS segments held in memory.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -459,10 +633,20 @@ function HlsSection() {
   });
 
   function onSubmit(values: HlsValues) {
-    update.mutate({ publisher: { hls: { ...values, dir: values.dir || undefined, base_url: values.base_url || undefined } } }, {
-      onSuccess: () => { toast.success('HLS settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      {
+        publisher: {
+          hls: { ...values, dir: values.dir || undefined, base_url: values.base_url || undefined },
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('HLS settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -471,60 +655,126 @@ function HlsSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">HLS Output</CardTitle>
-            <CardDescription>Apple HLS packaging settings for live stream delivery.</CardDescription>
+            <CardDescription>
+              Apple HLS packaging settings for live stream delivery.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField control={form.control} name="dir" render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Output directory</FormLabel>
-                  <FormControl><Input placeholder="/var/hls" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="base_url" render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Base URL (CDN)</FormLabel>
-                  <FormControl><Input placeholder="https://cdn.example.com" {...field} /></FormControl>
-                  <FormDescription>Override URLs in manifests with a CDN endpoint.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="live_segment_sec" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Segment duration (s)</FormLabel>
-                  <FormControl><Input type="number" min={1} placeholder="2" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="live_window" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Playlist window (segments)</FormLabel>
-                  <FormControl><Input type="number" min={1} placeholder="5" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="live_history" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>History (segments)</FormLabel>
-                  <FormControl><Input type="number" min={0} placeholder="0" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormDescription>Extra segments kept after they leave the manifest.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="dir"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Output directory</FormLabel>
+                    <FormControl>
+                      <Input placeholder="/var/hls" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="base_url"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Base URL (CDN)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://cdn.example.com" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Override URLs in manifests with a CDN endpoint.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="live_segment_sec"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Segment duration (s)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="2"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="live_window"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Playlist window (segments)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="5"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="live_history"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>History (segments)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Extra segments kept after they leave the manifest.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <FormField control={form.control} name="live_ephemeral" render={({ field }) => (
-              <FormItem className="flex items-center gap-3 space-y-0">
-                <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
-                <div>
-                  <FormLabel>Ephemeral mode</FormLabel>
-                  <FormDescription className="text-xs">Sliding manifest — delete old segments to save disk.</FormDescription>
-                </div>
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="live_ephemeral"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <div>
+                    <FormLabel>Ephemeral mode</FormLabel>
+                    <FormDescription className="text-xs">
+                      Sliding manifest — delete old segments to save disk.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -548,10 +798,16 @@ function DashSection() {
   });
 
   function onSubmit(values: DashValues) {
-    update.mutate({ publisher: { dash: { ...values, dir: values.dir || undefined } } }, {
-      onSuccess: () => { toast.success('DASH settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { publisher: { dash: { ...values, dir: values.dir || undefined } } },
+      {
+        onSuccess: () => {
+          toast.success('DASH settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -564,47 +820,101 @@ function DashSection() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField control={form.control} name="dir" render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Output directory</FormLabel>
-                  <FormControl><Input placeholder="/var/dash" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="live_segment_sec" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Segment duration (s)</FormLabel>
-                  <FormControl><Input type="number" min={1} placeholder="2" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="live_window" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Playlist window (segments)</FormLabel>
-                  <FormControl><Input type="number" min={1} placeholder="5" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="live_history" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>History (segments)</FormLabel>
-                  <FormControl><Input type="number" min={0} placeholder="0" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="dir"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Output directory</FormLabel>
+                    <FormControl>
+                      <Input placeholder="/var/dash" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="live_segment_sec"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Segment duration (s)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="2"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="live_window"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Playlist window (segments)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="5"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="live_history"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>History (segments)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <FormField control={form.control} name="live_ephemeral" render={({ field }) => (
-              <FormItem className="flex items-center gap-3 space-y-0">
-                <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
-                <div>
-                  <FormLabel>Ephemeral mode</FormLabel>
-                  <FormDescription className="text-xs">Mirror HLS ephemeral semantics for the DASH muxer.</FormDescription>
-                </div>
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="live_ephemeral"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <div>
+                    <FormLabel>Ephemeral mode</FormLabel>
+                    <FormDescription className="text-xs">
+                      Mirror HLS ephemeral semantics for the DASH muxer.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -622,10 +932,16 @@ function RtmpServeSection() {
   });
 
   function onSubmit(values: RtmpServeValues) {
-    update.mutate({ publisher: { rtmp: { ...values, listen_host: values.listen_host || undefined } } }, {
-      onSuccess: () => { toast.success('RTMP output settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { publisher: { rtmp: { ...values, listen_host: values.listen_host || undefined } } },
+      {
+        onSuccess: () => {
+          toast.success('RTMP output settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -634,27 +950,52 @@ function RtmpServeSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">RTMP Output Listener</CardTitle>
-            <CardDescription>RTMP pull endpoint — clients connect here to receive the stream. Port 0 disables.</CardDescription>
+            <CardDescription>
+              RTMP pull endpoint — clients connect here to receive the stream. Port 0 disables.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField control={form.control} name="listen_host" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bind host</FormLabel>
-                <FormControl><Input placeholder="0.0.0.0" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="port" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Port</FormLabel>
-                <FormControl><Input type="number" min={0} max={65535} placeholder="1935" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>0 = disabled.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="listen_host"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bind host</FormLabel>
+                  <FormControl>
+                    <Input placeholder="0.0.0.0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="port"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Port</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={65535}
+                      placeholder="1935"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>0 = disabled.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -668,14 +1009,24 @@ function RtspSection() {
   const update = useUpdateGlobalConfig();
   const form = useForm<RtspValues>({
     resolver: zodResolver(rtspSchema),
-    values: { listen_host: cfg?.listen_host ?? '', port_min: cfg?.port_min, transport: cfg?.transport as 'tcp' | 'udp' | undefined },
+    values: {
+      listen_host: cfg?.listen_host ?? '',
+      port_min: cfg?.port_min,
+      transport: cfg?.transport as 'tcp' | 'udp' | undefined,
+    },
   });
 
   function onSubmit(values: RtspValues) {
-    update.mutate({ publisher: { rtsp: { ...values, listen_host: values.listen_host || undefined } } }, {
-      onSuccess: () => { toast.success('RTSP settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { publisher: { rtsp: { ...values, listen_host: values.listen_host || undefined } } },
+      {
+        onSuccess: () => {
+          toast.success('RTSP settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -684,41 +1035,72 @@ function RtspSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">RTSP Output</CardTitle>
-            <CardDescription>RTSP pull listener for media players and broadcast tools.</CardDescription>
+            <CardDescription>
+              RTSP pull listener for media players and broadcast tools.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-3">
-            <FormField control={form.control} name="listen_host" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bind host</FormLabel>
-                <FormControl><Input placeholder="0.0.0.0" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="port_min" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Port</FormLabel>
-                <FormControl><Input type="number" min={0} max={65535} placeholder="8554" {...field} value={field.value ?? ''} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="transport" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Transport</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ''}>
+            <FormField
+              control={form.control}
+              name="listen_host"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bind host</FormLabel>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="default (tcp)" /></SelectTrigger>
+                    <Input placeholder="0.0.0.0" {...field} />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="tcp">TCP</SelectItem>
-                    <SelectItem value="udp">UDP</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="port_min"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Port</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={65535}
+                      placeholder="8554"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="transport"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Transport</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="default (tcp)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="tcp">TCP</SelectItem>
+                      <SelectItem value="udp">UDP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -736,10 +1118,16 @@ function SrtServeSection() {
   });
 
   function onSubmit(values: SrtServeValues) {
-    update.mutate({ publisher: { srt: { ...values, listen_host: values.listen_host || undefined } } }, {
-      onSuccess: () => { toast.success('SRT output settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { publisher: { srt: { ...values, listen_host: values.listen_host || undefined } } },
+      {
+        onSuccess: () => {
+          toast.success('SRT output settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -748,34 +1136,71 @@ function SrtServeSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">SRT Output Listener</CardTitle>
-            <CardDescription>SRT pull listener for low-latency delivery. Port 0 disables.</CardDescription>
+            <CardDescription>
+              SRT pull listener for low-latency delivery. Port 0 disables.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-3">
-            <FormField control={form.control} name="listen_host" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bind host</FormLabel>
-                <FormControl><Input placeholder="0.0.0.0" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="port" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Port</FormLabel>
-                <FormControl><Input type="number" min={0} max={65535} placeholder="9000" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>0 = disabled.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="latency_ms" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Latency (ms)</FormLabel>
-                <FormControl><Input type="number" min={0} placeholder="120" {...field} value={field.value ?? ''} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="listen_host"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bind host</FormLabel>
+                  <FormControl>
+                    <Input placeholder="0.0.0.0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="port"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Port</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={65535}
+                      placeholder="9000"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>0 = disabled.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="latency_ms"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Latency (ms)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="120"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -789,14 +1214,24 @@ function TranscoderSection() {
   const update = useUpdateGlobalConfig();
   const form = useForm<TranscoderValues>({
     resolver: zodResolver(transcoderSchema),
-    values: { ffmpeg_path: cfg?.ffmpeg_path ?? '', max_workers: cfg?.max_workers, max_restarts: cfg?.max_restarts },
+    values: {
+      ffmpeg_path: cfg?.ffmpeg_path ?? '',
+      max_workers: cfg?.max_workers,
+      max_restarts: cfg?.max_restarts,
+    },
   });
 
   function onSubmit(values: TranscoderValues) {
-    update.mutate({ transcoder: { ...values, ffmpeg_path: values.ffmpeg_path || undefined } }, {
-      onSuccess: () => { toast.success('Transcoder settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { transcoder: { ...values, ffmpeg_path: values.ffmpeg_path || undefined } },
+      {
+        onSuccess: () => {
+          toast.success('Transcoder settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -805,38 +1240,80 @@ function TranscoderSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">FFmpeg Worker Pool</CardTitle>
-            <CardDescription>Controls the number of concurrent FFmpeg transcoding processes and restart behaviour.</CardDescription>
+            <CardDescription>
+              Controls the number of concurrent FFmpeg transcoding processes and restart behaviour.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField control={form.control} name="ffmpeg_path" render={({ field }) => (
-              <FormItem>
-                <FormLabel>FFmpeg path</FormLabel>
-                <FormControl><Input placeholder="/usr/bin/ffmpeg" {...field} /></FormControl>
-                <FormDescription>Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="ffmpeg_path"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>FFmpeg path</FormLabel>
+                  <FormControl>
+                    <Input placeholder="/usr/bin/ffmpeg" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField control={form.control} name="max_workers" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max workers</FormLabel>
-                  <FormControl><Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormDescription>Maximum concurrent FFmpeg processes. 0 = unlimited.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="max_restarts" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max restarts</FormLabel>
-                  <FormControl><Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
-                  <FormDescription>Max consecutive crashes before marking failure. 0 = unlimited.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="max_workers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max workers</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Maximum concurrent FFmpeg processes. 0 = unlimited.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="max_restarts"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max restarts</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Max consecutive crashes before marking failure. 0 = unlimited.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -854,10 +1331,16 @@ function ManagerSection() {
   });
 
   function onSubmit(values: ManagerValues) {
-    update.mutate({ manager: values }, {
-      onSuccess: () => { toast.success('Manager settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { manager: values },
+      {
+        onSuccess: () => {
+          toast.success('Manager settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -866,20 +1349,40 @@ function ManagerSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Input Health Monitor</CardTitle>
-            <CardDescription>Controls how quickly the manager detects a failing input and triggers a failover.</CardDescription>
+            <CardDescription>
+              Controls how quickly the manager detects a failing input and triggers a failover.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <FormField control={form.control} name="input_packet_timeout_sec" render={({ field }) => (
-              <FormItem className="max-w-xs">
-                <FormLabel>Packet timeout (s)</FormLabel>
-                <FormControl><Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>Maximum gap without a successful read before the active input is marked failed.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="input_packet_timeout_sec"
+              render={({ field }) => (
+                <FormItem className="max-w-xs">
+                  <FormLabel>Packet timeout (s)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Maximum gap without a successful read before the active input is marked failed.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -897,15 +1400,21 @@ function HooksSection() {
   });
 
   function onSubmit(values: HooksValues) {
-    update.mutate({
-      hooks: {
-        worker_count: values.worker_count,
-        kafka_brokers: fromLines(values.kafka_brokers),
+    update.mutate(
+      {
+        hooks: {
+          worker_count: values.worker_count,
+          kafka_brokers: fromLines(values.kafka_brokers),
+        },
       },
-    }, {
-      onSuccess: () => { toast.success('Hooks settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+      {
+        onSuccess: () => {
+          toast.success('Hooks settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -917,25 +1426,54 @@ function HooksSection() {
             <CardDescription>Controls how event webhooks are dispatched.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FormField control={form.control} name="worker_count" render={({ field }) => (
-              <FormItem className="max-w-xs">
-                <FormLabel>Worker count</FormLabel>
-                <FormControl><Input type="number" min={1} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>Number of concurrent hook delivery goroutines.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="kafka_brokers" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Kafka brokers</FormLabel>
-                <FormControl><Textarea rows={3} placeholder="localhost:9092&#10;broker2:9092" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>One broker per line. Leave empty to disable Kafka hook delivery.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="worker_count"
+              render={({ field }) => (
+                <FormItem className="max-w-xs">
+                  <FormLabel>Worker count</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="default"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>Number of concurrent hook delivery goroutines.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="kafka_brokers"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kafka brokers</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={3}
+                      placeholder="localhost:9092&#10;broker2:9092"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    One broker per line. Leave empty to disable Kafka hook delivery.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -953,10 +1491,16 @@ function BufferSection() {
   });
 
   function onSubmit(values: BufferValues) {
-    update.mutate({ buffer: values }, {
-      onSuccess: () => { toast.success('Buffer settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { buffer: values },
+      {
+        onSuccess: () => {
+          toast.success('Buffer settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -968,17 +1512,33 @@ function BufferSection() {
             <CardDescription>Per-stream ring buffer for MPEG-TS packets.</CardDescription>
           </CardHeader>
           <CardContent>
-            <FormField control={form.control} name="capacity" render={({ field }) => (
-              <FormItem className="max-w-xs">
-                <FormLabel>Capacity (packets)</FormLabel>
-                <FormControl><Input type="number" min={0} placeholder="default" {...field} value={field.value ?? ''} /></FormControl>
-                <FormDescription>Number of MPEG-TS packets per stream buffer.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="capacity"
+              render={({ field }) => (
+                <FormItem className="max-w-xs">
+                  <FormLabel>Capacity (packets)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>Number of MPEG-TS packets per stream buffer.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );
@@ -999,10 +1559,16 @@ function LogSection() {
   });
 
   function onSubmit(values: LogValues) {
-    update.mutate({ log: values }, {
-      onSuccess: () => { toast.success('Logging settings saved'); form.reset(values); },
-      onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-    });
+    update.mutate(
+      { log: values },
+      {
+        onSuccess: () => {
+          toast.success('Logging settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
   }
 
   return (
@@ -1014,41 +1580,57 @@ function LogSection() {
             <CardDescription>Server log level and output format.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField control={form.control} name="level" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Log level</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="debug">debug</SelectItem>
-                    <SelectItem value="info">info</SelectItem>
-                    <SelectItem value="warn">warn</SelectItem>
-                    <SelectItem value="error">error</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="format" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Output format</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Select format" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="text">text</SelectItem>
-                    <SelectItem value="json">json</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Log level</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="debug">debug</SelectItem>
+                      <SelectItem value="info">info</SelectItem>
+                      <SelectItem value="warn">warn</SelectItem>
+                      <SelectItem value="error">error</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="format"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Output format</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="text">text</SelectItem>
+                      <SelectItem value="json">json</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
-        <SaveRow isDirty={form.formState.isDirty} isPending={update.isPending} onDiscard={() => form.reset()} />
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
       </form>
     </Form>
   );

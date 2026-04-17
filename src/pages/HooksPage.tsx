@@ -239,7 +239,10 @@ function HookRow({
         </Badge>
       </TableCell>
       <TableCell className="max-w-[260px]">
-        <span className="block truncate font-mono text-xs text-muted-foreground" title={hook.target}>
+        <span
+          className="block truncate font-mono text-xs text-muted-foreground"
+          title={hook.target}
+        >
           {hook.target}
         </span>
       </TableCell>
@@ -299,7 +302,11 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
       target: hook?.target ?? '',
       enabled: hook?.enabled ?? true,
       event_types: hook?.event_types ?? [],
-      stream_filter_mode: hook?.stream_codes?.only ? 'only' : hook?.stream_codes?.except ? 'except' : 'all',
+      stream_filter_mode: hook?.stream_codes?.only
+        ? 'only'
+        : hook?.stream_codes?.except
+          ? 'except'
+          : 'all',
       stream_codes: (hook?.stream_codes?.only ?? hook?.stream_codes?.except ?? []).join(', '),
       metadata: Object.entries(hook?.metadata ?? {}).map(([key, value]) => ({ key, value })),
       secret: hook?.secret ?? '',
@@ -311,7 +318,11 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
   const hookType = form.watch('type');
   const filterMode = form.watch('stream_filter_mode');
   const isPending = createHook.isPending || updateHook.isPending;
-  const { fields: metaFields, append: appendMeta, remove: removeMeta } = useFieldArray({
+  const {
+    fields: metaFields,
+    append: appendMeta,
+    remove: removeMeta,
+  } = useFieldArray({
     control: form.control,
     name: 'metadata',
   });
@@ -323,22 +334,26 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
       .filter(Boolean);
 
     const stream_codes =
-      values.stream_filter_mode === 'only' && codes.length > 0 ? { only: codes }
-      : values.stream_filter_mode === 'except' && codes.length > 0 ? { except: codes }
-      : undefined;
+      values.stream_filter_mode === 'only' && codes.length > 0
+        ? { only: codes }
+        : values.stream_filter_mode === 'except' && codes.length > 0
+          ? { except: codes }
+          : undefined;
 
     const body = {
       name: values.name,
       type: values.type,
       target: values.target,
       enabled: values.enabled,
-      event_types: values.event_types.length > 0
-        ? (values.event_types as (typeof EventType)[keyof typeof EventType][])
-        : undefined,
+      event_types:
+        values.event_types.length > 0
+          ? (values.event_types as (typeof EventType)[keyof typeof EventType][])
+          : undefined,
       stream_codes,
-      metadata: values.metadata.length > 0
-        ? Object.fromEntries(values.metadata.filter((m) => m.key).map((m) => [m.key, m.value]))
-        : undefined,
+      metadata:
+        values.metadata.length > 0
+          ? Object.fromEntries(values.metadata.filter((m) => m.key).map((m) => [m.key, m.value]))
+          : undefined,
       secret: values.secret || undefined,
       max_retries: values.max_retries || undefined,
       timeout_sec: values.timeout_sec || undefined,
@@ -348,13 +363,19 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
       updateHook.mutate(
         { hid: hook.id, patch: body },
         {
-          onSuccess: () => { toast.success('Hook updated'); onClose(); },
+          onSuccess: () => {
+            toast.success('Hook updated');
+            onClose();
+          },
           onError: (err) => toast.error(err instanceof Error ? err.message : 'Update failed'),
         },
       );
     } else {
       createHook.mutate(body, {
-        onSuccess: () => { toast.success('Hook created'); onClose(); },
+        onSuccess: () => {
+          toast.success('Hook created');
+          onClose();
+        },
         onError: (err) => toast.error(err instanceof Error ? err.message : 'Create failed'),
       });
     }
@@ -376,7 +397,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
-                  <FormControl><Input placeholder="My webhook" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="My webhook" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -391,7 +414,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   <FormLabel>Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="http">HTTP</SelectItem>
@@ -412,7 +437,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   <FormLabel>{hookType === 'kafka' ? 'Kafka topic' : 'URL'}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={hookType === 'kafka' ? 'my-topic' : 'https://example.com/webhook'}
+                      placeholder={
+                        hookType === 'kafka' ? 'my-topic' : 'https://example.com/webhook'
+                      }
                       {...field}
                     />
                   </FormControl>
@@ -432,7 +459,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                     <FormControl>
                       <Input placeholder="Leave empty to disable signing" {...field} />
                     </FormControl>
-                    <FormDescription>HMAC-SHA256 signature sent in X-Signature header</FormDescription>
+                    <FormDescription>
+                      HMAC-SHA256 signature sent in X-Signature header
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -448,7 +477,13 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   <FormItem>
                     <FormLabel>Max retries</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="default (3)" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="default (3)"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -461,7 +496,13 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   <FormItem>
                     <FormLabel>Timeout (s)</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} placeholder="default (10)" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="default (10)"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -520,7 +561,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   <FormLabel>Stream filter</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="all">All streams</SelectItem>
@@ -607,14 +650,18 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   </FormControl>
                   <div>
                     <FormLabel>Enabled</FormLabel>
-                    <FormDescription className="text-xs">Deliver events to this hook</FormDescription>
+                    <FormDescription className="text-xs">
+                      Deliver events to this hook
+                    </FormDescription>
                   </div>
                 </FormItem>
               )}
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create hook'}
               </Button>

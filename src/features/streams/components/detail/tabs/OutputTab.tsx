@@ -27,13 +27,24 @@ interface OutputTabProps {
 }
 
 const PROTOCOL_LABELS: Record<string, { label: string; description: string }> = {
-  hls: { label: 'HLS', description: 'Adaptive bitrate streaming over HTTP — compatible with all browsers and mobile devices' },
+  hls: {
+    label: 'HLS',
+    description:
+      'Adaptive bitrate streaming over HTTP — compatible with all browsers and mobile devices',
+  },
   dash: {
     label: 'DASH',
     description: 'Dynamic Adaptive Streaming over HTTP — ideal for multi-DRM and adaptive delivery',
   },
-  rtmp: { label: 'RTMP', description: 'Real-Time Messaging Protocol — push output to CDNs and restream destinations' },
-  rtsp: { label: 'RTSP', description: 'Real-Time Streaming Protocol — pull-based playback for media players and broadcast tools' },
+  rtmp: {
+    label: 'RTMP',
+    description: 'Real-Time Messaging Protocol — push output to CDNs and restream destinations',
+  },
+  rtsp: {
+    label: 'RTSP',
+    description:
+      'Real-Time Streaming Protocol — pull-based playback for media players and broadcast tools',
+  },
   srt: {
     label: 'SRT',
     description: 'Secure Reliable Transport — low-latency contribution over unreliable networks',
@@ -119,8 +130,8 @@ export function OutputTab({ stream }: OutputTabProps) {
           <CardHeader>
             <CardTitle className="text-base">Output protocols</CardTitle>
             <CardDescription>
-              Enable the delivery protocols for this stream. Each enabled protocol activates
-              the corresponding output endpoint.
+              Enable the delivery protocols for this stream. Each enabled protocol activates the
+              corresponding output endpoint.
             </CardDescription>
           </CardHeader>
           <CardContent className="divide-y">
@@ -148,10 +159,7 @@ export function OutputTab({ stream }: OutputTabProps) {
                       </FormLabel>
                     </div>
                     <FormControl>
-                      <Switch
-                        checked={field.value as boolean}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Switch checked={field.value as boolean} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -170,12 +178,8 @@ export function OutputTab({ stream }: OutputTabProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {protocols.hls && (
-                <OutputUrlRow label="HLS" url={hlsUrl(stream.code)} />
-              )}
-              {protocols.dash && (
-                <OutputUrlRow label="DASH" url={dashUrl(stream.code)} />
-              )}
+              {protocols.hls && <OutputUrlRow label="HLS" url={hlsUrl(stream.code)} />}
+              {protocols.dash && <OutputUrlRow label="DASH" url={dashUrl(stream.code)} />}
               {protocols.rtmp && rtmpUrl(stream.code, ports) && (
                 <OutputUrlRow label="RTMP" url={rtmpUrl(stream.code, ports)!} />
               )}
@@ -205,9 +209,7 @@ export function OutputTab({ stream }: OutputTabProps) {
                 variant="outline"
                 size="sm"
                 className="gap-2"
-                onClick={() =>
-                  append({ url: '', enabled: true, comment: '' })
-                }
+                onClick={() => append({ url: '', enabled: true, comment: '' })}
               >
                 <Plus className="h-4 w-4" />
                 Add destination
@@ -221,7 +223,12 @@ export function OutputTab({ stream }: OutputTabProps) {
               </p>
             )}
             {fields.map((field, index) => (
-              <PushDestRow key={field.id} index={index} form={form} onRemove={() => remove(index)} />
+              <PushDestRow
+                key={field.id}
+                index={index}
+                form={form}
+                onRemove={() => remove(index)}
+              />
             ))}
           </CardContent>
         </Card>

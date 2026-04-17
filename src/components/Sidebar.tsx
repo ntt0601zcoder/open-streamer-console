@@ -1,4 +1,11 @@
-import { Activity, PanelLeftClose, PanelLeftOpen, Radio, Settings, SlidersHorizontal } from 'lucide-react';
+import {
+  Activity,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Radio,
+  Settings,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,9 +39,7 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
           onClick={onToggle}
           title={open ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          {open
-            ? <PanelLeftClose className="h-4 w-4" />
-            : <PanelLeftOpen className="h-4 w-4" />}
+          {open ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
         </Button>
 
         <span

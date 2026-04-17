@@ -27,12 +27,14 @@ export function StreamsPage() {
               {counts.total} stream{counts.total !== 1 ? 's' : ''}
               {counts.active > 0 && (
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  {' '}· {counts.active} active
+                  {' '}
+                  · {counts.active} active
                 </span>
               )}
               {counts.degraded > 0 && (
                 <span className="text-amber-600 dark:text-amber-400">
-                  {' '}· {counts.degraded} degraded
+                  {' '}
+                  · {counts.degraded} degraded
                 </span>
               )}
             </p>

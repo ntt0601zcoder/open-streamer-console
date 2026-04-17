@@ -9,10 +9,7 @@ import { toast } from 'sonner';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { APIError } from '@/api/client';
 import { Button } from '@/components/ui/button';
-import {
-  useUpdateYamlConfig,
-  useYamlConfig,
-} from '@/features/config/hooks/useServerConfig';
+import { useUpdateYamlConfig, useYamlConfig } from '@/features/config/hooks/useServerConfig';
 
 interface ApiErrorView {
   title: string;
@@ -187,9 +184,7 @@ export function ConfigEditorPage() {
         </label>
 
         <div className="ml-auto flex items-center gap-2">
-          {isDirty && (
-            <span className="text-xs text-muted-foreground">Unsaved changes</span>
-          )}
+          {isDirty && <span className="text-xs text-muted-foreground">Unsaved changes</span>}
           {isDirty && (
             <Button size="sm" variant="ghost" onClick={handleDiscard} disabled={update.isPending}>
               Discard
@@ -211,9 +206,7 @@ export function ConfigEditorPage() {
       {loadError && (
         <ApiErrorBanner error={parseApiError(loadError, 'Failed to load configuration')} />
       )}
-      {parseError && (
-        <ApiErrorBanner error={{ title: 'YAML parse error', message: parseError }} />
-      )}
+      {parseError && <ApiErrorBanner error={{ title: 'YAML parse error', message: parseError }} />}
       {saveError && <ApiErrorBanner error={saveError} />}
 
       {/* Editor */}
@@ -312,9 +305,7 @@ function parseApiError(err: unknown, fallbackTitle: string): ApiErrorView {
     if (Array.isArray(body.errors)) {
       return {
         title: fallbackTitle,
-        message: body.errors
-          .map((x) => (typeof x === 'string' ? x : JSON.stringify(x)))
-          .join('\n'),
+        message: body.errors.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join('\n'),
       };
     }
     return { title: fallbackTitle, message: err.message };

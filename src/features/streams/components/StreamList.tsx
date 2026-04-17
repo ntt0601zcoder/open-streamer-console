@@ -1,11 +1,5 @@
 import { AlertCircle, Radio } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Stream } from '@/api/types';
 import { StreamRow } from './StreamRow';
 

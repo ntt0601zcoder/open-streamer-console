@@ -143,11 +143,7 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
             className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
             onClick={toggleMute}
           >
-            {muted ? (
-              <VolumeOff className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
+            {muted ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
         </div>
       )}

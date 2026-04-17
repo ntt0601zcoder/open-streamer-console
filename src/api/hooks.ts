@@ -6,8 +6,7 @@ export const hooksApi = {
 
   get: (hid: string) => api.get(`hooks/${hid}`).json<DataResponse<Hook>>(),
 
-  create: (body: CreateHookBody) =>
-    api.post('hooks', { json: body }).json<DataResponse<Hook>>(),
+  create: (body: CreateHookBody) => api.post('hooks', { json: body }).json<DataResponse<Hook>>(),
 
   update: (hid: string, patch: UpdateHookBody) =>
     api.put(`hooks/${hid}`, { json: patch }).json<DataResponse<Hook>>(),

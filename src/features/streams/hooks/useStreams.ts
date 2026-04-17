@@ -43,8 +43,7 @@ export function useStreamRecordings(code: string) {
 export function useSaveStream() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ code, body }: { code: string; body: StreamBody }) =>
-      streamsApi.save(code, body),
+    mutationFn: ({ code, body }: { code: string; body: StreamBody }) => streamsApi.save(code, body),
     onSuccess: (res, { code }) => {
       qc.setQueryData(streamKeys.detail(code), res.data);
       void qc.invalidateQueries({ queryKey: streamKeys.all });
@@ -73,7 +72,6 @@ export function useRestartStream() {
     },
   });
 }
-
 
 export function useStartRecording() {
   const qc = useQueryClient();

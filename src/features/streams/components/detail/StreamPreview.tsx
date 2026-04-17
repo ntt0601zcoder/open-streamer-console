@@ -65,12 +65,18 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
         <CardContent className="space-y-4">
           {/* Static stream info */}
           <div className="space-y-2 text-sm">
-            <InfoRow label="Code" value={<span className="font-mono text-xs">{stream.code}</span>} />
+            <InfoRow
+              label="Code"
+              value={<span className="font-mono text-xs">{stream.code}</span>}
+            />
             {stream.stream_key && (
               <InfoRow
                 label="Stream key"
                 value={
-                  <span className="font-mono text-xs truncate max-w-[120px]" title={stream.stream_key}>
+                  <span
+                    className="font-mono text-xs truncate max-w-[120px]"
+                    title={stream.stream_key}
+                  >
                     {stream.stream_key}
                   </span>
                 }
@@ -90,7 +96,9 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
               <InfoRow
                 label="Pipeline active"
                 value={
-                  <span className={`font-mono text-xs font-medium ${stream.pipeline_active ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                  <span
+                    className={`font-mono text-xs font-medium ${stream.pipeline_active ? 'text-emerald-500' : 'text-muted-foreground'}`}
+                  >
                     {stream.pipeline_active ? 'true' : 'false'}
                   </span>
                 }
@@ -146,7 +154,6 @@ function NoHlsPlaceholder({ isRunning }: { isRunning: boolean }) {
     </div>
   );
 }
-
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (

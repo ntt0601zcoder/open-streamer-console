@@ -30,7 +30,9 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
           <h1 className="text-2xl font-semibold truncate">{stream.name}</h1>
           <StreamStatusBadge status={stream.status} />
           {stream.disabled && (
-            <Badge variant="outline" className="text-muted-foreground">disabled</Badge>
+            <Badge variant="outline" className="text-muted-foreground">
+              disabled
+            </Badge>
           )}
         </div>
 
@@ -39,9 +41,11 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
           variant={isRunning ? 'outline' : 'default'}
           className="gap-2 shrink-0"
           disabled={restart.isPending}
-          onClick={() => restart.mutate(stream.code, {
-            onError: (err) => toast.error(err.message),
-          })}
+          onClick={() =>
+            restart.mutate(stream.code, {
+              onError: (err) => toast.error(err.message),
+            })
+          }
         >
           {restart.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

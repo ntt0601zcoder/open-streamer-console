@@ -104,11 +104,17 @@ export function InputTab({ stream }: InputTabProps) {
               <div>
                 <CardTitle className="text-base">Input sources</CardTitle>
                 <CardDescription>
-                  First input is primary. Stream manager switches to the next input on failure.
-                  Use the arrows to reorder.
+                  First input is primary. Stream manager switches to the next input on failure. Use
+                  the arrows to reorder.
                 </CardDescription>
               </div>
-              <Button type="button" variant="outline" size="sm" className="gap-2" onClick={addInput}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={addInput}
+              >
                 <Plus className="h-4 w-4" />
                 Add input
               </Button>
@@ -126,7 +132,11 @@ export function InputTab({ stream }: InputTabProps) {
                 key={field.id}
                 index={index}
                 total={fields.length}
-                activeIndex={stream.runtime?.override_input_priority ?? stream.runtime?.active_input_priority ?? null}
+                activeIndex={
+                  stream.runtime?.override_input_priority ??
+                  stream.runtime?.active_input_priority ??
+                  null
+                }
                 canSwitch={isStreamLive}
                 switchPending={switchInput.isPending && switchInput.variables?.priority === index}
                 form={form}
@@ -171,14 +181,30 @@ interface InputRowProps {
   onSwitch: () => void;
 }
 
-function InputRow({ index, total, activeIndex, canSwitch, switchPending, form, onRemove, onMoveUp, onMoveDown, onSwitch }: InputRowProps) {
+function InputRow({
+  index,
+  total,
+  activeIndex,
+  canSwitch,
+  switchPending,
+  form,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  onSwitch,
+}: InputRowProps) {
   const isLast = index === total - 1;
   const isActive = activeIndex === index;
 
   return (
     <div className={cn('rounded-lg border bg-card', isActive && 'border-primary/50')}>
       {/* Row header */}
-      <div className={cn('flex items-center gap-3 px-4 py-2.5 border-b', isActive ? 'bg-primary/5' : 'bg-muted/40')}>
+      <div
+        className={cn(
+          'flex items-center gap-3 px-4 py-2.5 border-b',
+          isActive ? 'bg-primary/5' : 'bg-muted/40',
+        )}
+      >
         <div className="flex flex-col">
           <Button
             type="button"
@@ -287,10 +313,7 @@ function AdvancedToggle({
             render={({ field }) => (
               <FormItem className="flex items-center gap-2 space-y-0">
                 <FormControl>
-                  <Switch
-                    checked={field.value ?? true}
-                    onCheckedChange={field.onChange}
-                  />
+                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 </FormControl>
                 <FormLabel className="text-xs">Auto-reconnect on failure</FormLabel>
               </FormItem>

@@ -186,7 +186,11 @@ export function GeneralTab({ stream }: GeneralTabProps) {
 
         <div className="flex justify-end gap-2">
           {form.formState.isDirty && (
-            <Button type="button" variant="outline" onClick={() => form.reset(toFormValues(stream))}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => form.reset(toFormValues(stream))}
+            >
               Discard
             </Button>
           )}
