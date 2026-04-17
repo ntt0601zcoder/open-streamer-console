@@ -128,9 +128,9 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
     );
   }
 
-  const hwOptions = serverConfig?.hwAccels ?? [];
-  const videoCodecOptions = serverConfig?.videoCodecs ?? [];
-  const audioCodecOptions = serverConfig?.audioCodecs ?? [];
+  const hwOptions = serverConfig?.hw_accels ?? [];
+  const videoCodecOptions = serverConfig?.video_codecs ?? [];
+  const audioCodecOptions = serverConfig?.audio_codecs ?? [];
 
   return (
     <Form {...form}>

@@ -9,8 +9,6 @@ export function useServerConfig() {
   return useQuery({
     queryKey: configKeys.all,
     queryFn: () => configApi.get(),
-    staleTime: Infinity,
-    gcTime: Infinity,
   });
 }
 

@@ -15,16 +15,16 @@ export interface BufferConfig {
 }
 
 export interface HooksConfig {
-  kafkaBrokers?: string[];
-  workerCount?: number;
+  kafka_brokers?: string[];
+  worker_count?: number;
 }
 
 export interface IngestorConfig {
-  rtmpenabled?: boolean;
-  rtmpaddr?: string;
-  srtenabled?: boolean;
-  srtaddr?: string;
-  hlsmaxSegmentBuffer?: number;
+  rtmp_enabled?: boolean;
+  rtmp_addr?: string;
+  srt_enabled?: boolean;
+  srt_addr?: string;
+  hls_max_segment_buffer?: number;
 }
 
 export interface LogConfig {
@@ -33,46 +33,41 @@ export interface LogConfig {
 }
 
 export interface ManagerConfig {
-  inputPacketTimeoutSec?: number;
-}
-
-export interface MetricsConfig {
-  addr?: string;
-  path?: string;
+  input_packet_timeout_sec?: number;
 }
 
 export interface PublisherHLSConfig {
   dir?: string;
-  baseURL?: string;
-  liveSegmentSec?: number;
-  liveWindow?: number;
-  liveHistory?: number;
-  liveEphemeral?: boolean;
+  base_url?: string;
+  live_segment_sec?: number;
+  live_window?: number;
+  live_history?: number;
+  live_ephemeral?: boolean;
 }
 
 export interface PublisherDASHConfig {
   dir?: string;
-  liveSegmentSec?: number;
-  liveWindow?: number;
-  liveHistory?: number;
-  liveEphemeral?: boolean;
+  live_segment_sec?: number;
+  live_window?: number;
+  live_history?: number;
+  live_ephemeral?: boolean;
 }
 
 export interface PublisherRTMPServeConfig {
-  listenHost?: string;
+  listen_host?: string;
   port?: number;
 }
 
 export interface PublisherRTSPConfig {
-  listenHost?: string;
-  portMin?: number;
+  listen_host?: string;
+  port_min?: number;
   transport?: string;  // "tcp" | "udp"
 }
 
 export interface PublisherSRTListenerConfig {
-  listenHost?: string;
+  listen_host?: string;
   port?: number;
-  latencyMS?: number;
+  latency_ms?: number;
 }
 
 export interface PublisherConfig {
@@ -85,23 +80,23 @@ export interface PublisherConfig {
 
 export interface CORSConfig {
   enabled?: boolean;
-  allowedOrigins?: string[];
-  allowedMethods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  allowCredentials?: boolean;
-  maxAge?: number;
+  allowed_origins?: string[];
+  allowed_methods?: string[];
+  allowed_headers?: string[];
+  exposed_headers?: string[];
+  allow_credentials?: boolean;
+  max_age?: number;
 }
 
 export interface AppServerConfig {
-  httpaddr?: string;
+  http_addr?: string;
   cors?: CORSConfig;
 }
 
 export interface TranscoderConfig {
-  ffmpegPath?: string;
-  maxWorkers?: number;
-  maxRestarts?: number;
+  ffmpeg_path?: string;
+  max_workers?: number;
+  max_restarts?: number;
 }
 
 export interface GlobalConfig {
@@ -110,7 +105,6 @@ export interface GlobalConfig {
   ingestor?: IngestorConfig;
   log?: LogConfig;
   manager?: ManagerConfig;
-  metrics?: MetricsConfig;
   publisher?: PublisherConfig;
   server?: AppServerConfig;
   transcoder?: TranscoderConfig;
@@ -119,21 +113,21 @@ export interface GlobalConfig {
 // ─── GET /config response ──────────────────────────────────────────────────────
 
 export interface ServerConfig {
-  hwAccels: HWAccel[];
-  videoCodecs: VideoCodec[];
-  audioCodecs: AudioCodec[];
-  outputProtocols: string[];
-  streamStatuses: StreamStatus[];
-  watermarkTypes: WatermarkType[];
-  watermarkPositions: WatermarkPosition[];
+  hw_accels: HWAccel[];
+  video_codecs: VideoCodec[];
+  audio_codecs: AudioCodec[];
+  output_protocols: string[];
+  stream_statuses: StreamStatus[];
+  watermark_types: WatermarkType[];
+  watermark_positions: WatermarkPosition[];
   ports?: ServerPorts;
-  globalConfig?: GlobalConfig;
+  global_config?: GlobalConfig;
 }
 
 // ─── POST /config response ─────────────────────────────────────────────────────
 
 export interface ConfigUpdateResponse {
-  globalConfig: GlobalConfig;
+  global_config: GlobalConfig;
   ports: ServerPorts;
 }
 
