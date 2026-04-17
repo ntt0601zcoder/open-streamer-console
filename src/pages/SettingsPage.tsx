@@ -1,5 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Code2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -136,11 +138,19 @@ function fromLines(s?: string): string[] | undefined {
 export function SettingsPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Server Configuration</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage global server settings. Changes are applied immediately without restart.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Server Configuration</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage global server settings. Changes are applied immediately without restart.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="gap-1.5">
+          <Link to="/settings/editor">
+            <Code2 className="h-3.5 w-3.5" />
+            YAML editor
+          </Link>
+        </Button>
       </div>
 
       <Tabs defaultValue="server">

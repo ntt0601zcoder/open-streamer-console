@@ -137,4 +137,13 @@ export const configApi = {
   get: () => api.get('config').json<ServerConfig>(),
   updateGlobal: (body: GlobalConfig) =>
     api.post('config', { json: body }).json<ConfigUpdateResponse>(),
+  getYaml: () =>
+    api.get('config/yaml', { headers: { Accept: 'application/yaml' } }).text(),
+  updateYaml: (yaml: string) =>
+    api
+      .put('config/yaml', {
+        body: yaml,
+        headers: { 'Content-Type': 'application/yaml' },
+      })
+      .json<Record<string, unknown>>(),
 };
