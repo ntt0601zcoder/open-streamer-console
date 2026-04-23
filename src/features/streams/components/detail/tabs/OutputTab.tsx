@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Copy, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Copy, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Form,
   FormControl,
@@ -16,11 +18,24 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import type { ServerPorts } from '@/api/config';
 import type { Stream } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
 import { dashUrl, hlsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
+
+function protocolDisabledReason(
+  key: 'hls' | 'dash' | 'rtmp' | 'rtsp' | 'srt',
+  ports: ServerPorts | undefined,
+): string | null {
+  if (key === 'hls' || key === 'dash') return null;
+  const portField = key === 'rtmp' ? 'rtmp_port' : key === 'rtsp' ? 'rtsp_port' : 'srt_port';
+  if (!ports?.[portField]) {
+    return `Server publisher.${key}.port is not configured.`;
+  }
+  return null;
+}
 
 interface OutputTabProps {
   stream: Stream;
@@ -29,25 +44,23 @@ interface OutputTabProps {
 const PROTOCOL_LABELS: Record<string, { label: string; description: string }> = {
   hls: {
     label: 'HLS',
-    description:
-      'Adaptive bitrate streaming over HTTP — compatible with all browsers and mobile devices',
+    description: 'Adaptive bitrate streaming over HTTP',
   },
   dash: {
     label: 'DASH',
-    description: 'Dynamic Adaptive Streaming over HTTP — ideal for multi-DRM and adaptive delivery',
+    description: 'Dynamic Adaptive Streaming over HTTP',
   },
   rtmp: {
     label: 'RTMP',
-    description: 'Real-Time Messaging Protocol — push output to CDNs and restream destinations',
+    description: 'Real-Time Messaging Protocol',
   },
   rtsp: {
     label: 'RTSP',
-    description:
-      'Real-Time Streaming Protocol — pull-based playback for media players and broadcast tools',
+    description: 'Real-Time Streaming Protocol',
   },
   srt: {
     label: 'SRT',
-    description: 'Secure Reliable Transport — low-latency contribution over unreliable networks',
+    description: 'Secure Reliable Transport',
   },
 };
 
@@ -143,28 +156,50 @@ export function OutputTab({ stream }: OutputTabProps) {
                 ['protocols.rtsp', 'rtsp'],
                 ['protocols.srt', 'srt'],
               ] as const
-            ).map(([fieldName, key]) => (
-              <FormField
-                key={key}
-                control={form.control}
-                name={fieldName}
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <div className="space-y-0.5">
-                      <FormLabel className="flex items-center gap-2">
-                        <Badge variant="outline" className="h-5 w-12 justify-center text-[11px]">
-                          {PROTOCOL_LABELS[key].label}
-                        </Badge>
-                        <span>{PROTOCOL_LABELS[key].description}</span>
-                      </FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value as boolean} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            ))}
+            ).map(([fieldName, key]) => {
+              const disabledReason = protocolDisabledReason(key, ports);
+              return (
+                <FormField
+                  key={key}
+                  control={form.control}
+                  name={fieldName}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                      <div className="space-y-0.5">
+                        <FormLabel className="flex items-center gap-2">
+                          <Badge variant="outline" className="h-5 w-12 justify-center text-[11px]">
+                            {PROTOCOL_LABELS[key].label}
+                          </Badge>
+                          <span>{PROTOCOL_LABELS[key].description}</span>
+                          {disabledReason && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[260px]">
+                                <p className="text-xs">
+                                  {disabledReason}{' '}
+                                  <Link to="/settings" className="underline hover:no-underline">
+                                    Open global config
+                                  </Link>
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value as boolean}
+                          onCheckedChange={field.onChange}
+                          disabled={!!disabledReason && !field.value}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              );
+            })}
           </CardContent>
         </Card>
 
@@ -180,14 +215,14 @@ export function OutputTab({ stream }: OutputTabProps) {
             <CardContent className="space-y-2">
               {protocols.hls && <OutputUrlRow label="HLS" url={hlsUrl(stream.code)} />}
               {protocols.dash && <OutputUrlRow label="DASH" url={dashUrl(stream.code)} />}
-              {protocols.rtmp && rtmpUrl(stream.code, ports) && (
-                <OutputUrlRow label="RTMP" url={rtmpUrl(stream.code, ports)!} />
+              {protocols.rtmp && (
+                <OutputUrlRow label="RTMP" url={rtmpUrl(stream.code, ports)} protocol="rtmp" />
               )}
-              {protocols.rtsp && rtspUrl(stream.code, ports) && (
-                <OutputUrlRow label="RTSP" url={rtspUrl(stream.code, ports)!} />
+              {protocols.rtsp && (
+                <OutputUrlRow label="RTSP" url={rtspUrl(stream.code, ports)} protocol="rtsp" />
               )}
-              {protocols.srt && srtUrl(stream.code, ports) && (
-                <OutputUrlRow label="SRT" url={srtUrl(stream.code, ports)!} />
+              {protocols.srt && (
+                <OutputUrlRow label="SRT" url={srtUrl(stream.code, ports)} protocol="srt" />
               )}
             </CardContent>
           </Card>
@@ -252,9 +287,36 @@ export function OutputTab({ stream }: OutputTabProps) {
   );
 }
 
-function OutputUrlRow({ label, url }: { label: string; url: string }) {
+interface OutputUrlRowProps {
+  label: string;
+  url: string | null;
+  protocol?: 'rtmp' | 'rtsp' | 'srt';
+}
+
+function OutputUrlRow({ label, url, protocol }: OutputUrlRowProps) {
+  if (!url) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+        <Badge variant="secondary" className="h-5 w-12 justify-center text-[11px] shrink-0">
+          {label}
+        </Badge>
+        <div className="flex-1 flex items-center gap-2 text-xs">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <span className="text-amber-700 dark:text-amber-300">
+            Server publisher not configured
+            {protocol ? ` (set publisher.${protocol}.port in ` : ' (configure ports in '}
+            <Link to="/settings" className="underline hover:no-underline">
+              global config
+            </Link>
+            )
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   function copy() {
-    void navigator.clipboard.writeText(url).then(() => toast.success('Copied'));
+    void navigator.clipboard.writeText(url!).then(() => toast.success('Copied'));
   }
 
   return (

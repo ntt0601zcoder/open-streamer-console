@@ -27,11 +27,35 @@ export interface HooksConfig {
 }
 
 export interface IngestorConfig {
-  rtmp_enabled?: boolean;
-  rtmp_addr?: string;
-  srt_enabled?: boolean;
-  srt_addr?: string;
   hls_max_segment_buffer?: number;
+}
+
+// ─── Listeners (shared by ingest + play) ───────────────────────────────────────
+
+export interface RTMPListenerConfig {
+  enabled?: boolean;
+  listen_host?: string;
+  port?: number;
+}
+
+export interface RTSPListenerConfig {
+  enabled?: boolean;
+  listen_host?: string;
+  port?: number;
+  transport?: string; // "tcp" | "udp"
+}
+
+export interface SRTListenerConfig {
+  enabled?: boolean;
+  listen_host?: string;
+  port?: number;
+  latency_ms?: number;
+}
+
+export interface ListenersConfig {
+  rtmp?: RTMPListenerConfig;
+  rtsp?: RTSPListenerConfig;
+  srt?: SRTListenerConfig;
 }
 
 export interface LogConfig {
@@ -60,29 +84,9 @@ export interface PublisherDASHConfig {
   live_ephemeral?: boolean;
 }
 
-export interface PublisherRTMPServeConfig {
-  listen_host?: string;
-  port?: number;
-}
-
-export interface PublisherRTSPConfig {
-  listen_host?: string;
-  port_min?: number;
-  transport?: string; // "tcp" | "udp"
-}
-
-export interface PublisherSRTListenerConfig {
-  listen_host?: string;
-  port?: number;
-  latency_ms?: number;
-}
-
 export interface PublisherConfig {
   hls?: PublisherHLSConfig;
   dash?: PublisherDASHConfig;
-  rtmp?: PublisherRTMPServeConfig;
-  rtsp?: PublisherRTSPConfig;
-  srt?: PublisherSRTListenerConfig;
 }
 
 export interface CORSConfig {
@@ -110,6 +114,7 @@ export interface GlobalConfig {
   buffer?: BufferConfig;
   hooks?: HooksConfig;
   ingestor?: IngestorConfig;
+  listeners?: ListenersConfig;
   log?: LogConfig;
   manager?: ManagerConfig;
   publisher?: PublisherConfig;

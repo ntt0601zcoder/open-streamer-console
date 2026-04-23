@@ -48,13 +48,50 @@ const serverSchema = z.object({
 type ServerValues = z.infer<typeof serverSchema>;
 
 const ingestorSchema = z.object({
-  rtmp_enabled: z.boolean().optional(),
-  rtmp_addr: z.string().optional(),
-  srt_enabled: z.boolean().optional(),
-  srt_addr: z.string().optional(),
   hls_max_segment_buffer: z.coerce.number().int().min(0).optional(),
 });
 type IngestorValues = z.infer<typeof ingestorSchema>;
+
+const listenerPort = z.coerce.number().int().min(0).max(65535).optional();
+const listenersSchema = z
+  .object({
+    rtmp: z
+      .object({
+        enabled: z.boolean().optional(),
+        listen_host: z.string().optional(),
+        port: listenerPort,
+      })
+      .optional(),
+    rtsp: z
+      .object({
+        enabled: z.boolean().optional(),
+        listen_host: z.string().optional(),
+        port: listenerPort,
+        transport: z.enum(['tcp', 'udp']).optional(),
+      })
+      .optional(),
+    srt: z
+      .object({
+        enabled: z.boolean().optional(),
+        listen_host: z.string().optional(),
+        port: listenerPort,
+        latency_ms: z.coerce.number().int().min(0).optional(),
+      })
+      .optional(),
+  })
+  .superRefine((val, ctx) => {
+    (['rtmp', 'rtsp', 'srt'] as const).forEach((key) => {
+      const l = val[key];
+      if (l?.enabled && (!l.port || l.port <= 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key, 'port'],
+          message: 'Port is required when this listener is enabled.',
+        });
+      }
+    });
+  });
+type ListenersValues = z.infer<typeof listenersSchema>;
 
 const hlsSchema = z.object({
   dir: z.string().optional(),
@@ -74,26 +111,6 @@ const dashSchema = z.object({
   live_ephemeral: z.boolean().optional(),
 });
 type DashValues = z.infer<typeof dashSchema>;
-
-const rtmpServeSchema = z.object({
-  listen_host: z.string().optional(),
-  port: z.coerce.number().int().min(0).max(65535).optional(),
-});
-type RtmpServeValues = z.infer<typeof rtmpServeSchema>;
-
-const rtspSchema = z.object({
-  listen_host: z.string().optional(),
-  port_min: z.coerce.number().int().min(0).max(65535).optional(),
-  transport: z.enum(['tcp', 'udp']).optional(),
-});
-type RtspValues = z.infer<typeof rtspSchema>;
-
-const srtServeSchema = z.object({
-  listen_host: z.string().optional(),
-  port: z.coerce.number().int().min(0).max(65535).optional(),
-  latency_ms: z.coerce.number().int().min(0).optional(),
-});
-type SrtServeValues = z.infer<typeof srtServeSchema>;
 
 const transcoderSchema = z.object({
   ffmpeg_path: z.string().optional(),
@@ -161,12 +178,10 @@ export function SettingsPage() {
       <Tabs defaultValue="server">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="server">Server</TabsTrigger>
+          <TabsTrigger value="listeners">Listeners</TabsTrigger>
           <TabsTrigger value="ingestor">Ingestor</TabsTrigger>
           <TabsTrigger value="publisher-hls">HLS</TabsTrigger>
           <TabsTrigger value="publisher-dash">DASH</TabsTrigger>
-          <TabsTrigger value="publisher-rtmp">RTMP out</TabsTrigger>
-          <TabsTrigger value="publisher-rtsp">RTSP out</TabsTrigger>
-          <TabsTrigger value="publisher-srt">SRT out</TabsTrigger>
           <TabsTrigger value="transcoder">Transcoder</TabsTrigger>
           <TabsTrigger value="manager">Manager</TabsTrigger>
           <TabsTrigger value="hooks">Hooks</TabsTrigger>
@@ -177,6 +192,9 @@ export function SettingsPage() {
         <TabsContent value="server" className="mt-6">
           <ServerSection />
         </TabsContent>
+        <TabsContent value="listeners" className="mt-6">
+          <ListenersSection />
+        </TabsContent>
         <TabsContent value="ingestor" className="mt-6">
           <IngestorSection />
         </TabsContent>
@@ -185,15 +203,6 @@ export function SettingsPage() {
         </TabsContent>
         <TabsContent value="publisher-dash" className="mt-6">
           <DashSection />
-        </TabsContent>
-        <TabsContent value="publisher-rtmp" className="mt-6">
-          <RtmpServeSection />
-        </TabsContent>
-        <TabsContent value="publisher-rtsp" className="mt-6">
-          <RtspSection />
-        </TabsContent>
-        <TabsContent value="publisher-srt" className="mt-6">
-          <SrtServeSection />
         </TabsContent>
         <TabsContent value="transcoder" className="mt-6">
           <TranscoderSection />
@@ -467,24 +476,12 @@ function IngestorSection() {
   const update = useUpdateGlobalConfig();
   const form = useForm<IngestorValues>({
     resolver: zodResolver(ingestorSchema),
-    values: {
-      rtmp_enabled: cfg?.rtmp_enabled ?? false,
-      rtmp_addr: cfg?.rtmp_addr ?? '',
-      srt_enabled: cfg?.srt_enabled ?? false,
-      srt_addr: cfg?.srt_addr ?? '',
-      hls_max_segment_buffer: cfg?.hls_max_segment_buffer,
-    },
+    values: { hls_max_segment_buffer: cfg?.hls_max_segment_buffer },
   });
 
   function onSubmit(values: IngestorValues) {
     update.mutate(
-      {
-        ingestor: {
-          ...values,
-          rtmp_addr: values.rtmp_addr || undefined,
-          srt_addr: values.srt_addr || undefined,
-        },
-      },
+      { ingestor: values },
       {
         onSuccess: () => {
           toast.success('Ingestor settings saved');
@@ -495,95 +492,23 @@ function IngestorSection() {
     );
   }
 
-  const rtmpEnabled = form.watch('rtmp_enabled');
-  const srtEnabled = form.watch('srt_enabled');
-
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">RTMP Ingestor</CardTitle>
-            <CardDescription>Accept RTMP push streams from external encoders.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="rtmp_enabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3 space-y-0">
-                  <FormControl>
-                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <FormLabel>Enable RTMP push server</FormLabel>
-                </FormItem>
-              )}
-            />
-            {rtmpEnabled && (
-              <FormField
-                control={form.control}
-                name="rtmp_addr"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Listen address</FormLabel>
-                    <FormControl>
-                      <Input placeholder=":1935" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">SRT Ingestor</CardTitle>
-            <CardDescription>Accept SRT push streams from external encoders.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="srt_enabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3 space-y-0">
-                  <FormControl>
-                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <FormLabel>Enable SRT push server</FormLabel>
-                </FormItem>
-              )}
-            />
-            {srtEnabled && (
-              <FormField
-                control={form.control}
-                name="srt_addr"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Listen address</FormLabel>
-                    <FormControl>
-                      <Input placeholder=":9999" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
             <CardTitle className="text-base">HLS Pull</CardTitle>
-            <CardDescription>Settings for pulling HLS streams as inputs.</CardDescription>
+            <CardDescription>
+              Settings for pulling HLS streams as inputs. RTMP and SRT push ingest are configured in
+              the <strong>Listeners</strong> tab (shared with pull endpoints).
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <FormField
               control={form.control}
               name="hls_max_segment_buffer"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="max-w-xs">
                   <FormLabel>Max segment buffer</FormLabel>
                   <FormControl>
                     <Input
@@ -601,6 +526,293 @@ function IngestorSection() {
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
+      </form>
+    </Form>
+  );
+}
+
+// ─── Listeners section ─────────────────────────────────────────────────────────
+
+function ListenersSection() {
+  const { data: serverConfig } = useServerConfig();
+  const cfg = serverConfig?.global_config?.listeners;
+  const update = useUpdateGlobalConfig();
+  const form = useForm<ListenersValues>({
+    resolver: zodResolver(listenersSchema),
+    values: {
+      rtmp: {
+        enabled: cfg?.rtmp?.enabled ?? false,
+        listen_host: cfg?.rtmp?.listen_host ?? '',
+        port: cfg?.rtmp?.port,
+      },
+      rtsp: {
+        enabled: cfg?.rtsp?.enabled ?? false,
+        listen_host: cfg?.rtsp?.listen_host ?? '',
+        port: cfg?.rtsp?.port,
+        transport: (cfg?.rtsp?.transport as 'tcp' | 'udp' | undefined) ?? undefined,
+      },
+      srt: {
+        enabled: cfg?.srt?.enabled ?? false,
+        listen_host: cfg?.srt?.listen_host ?? '',
+        port: cfg?.srt?.port,
+        latency_ms: cfg?.srt?.latency_ms,
+      },
+    },
+  });
+
+  function onSubmit(values: ListenersValues) {
+    update.mutate(
+      {
+        listeners: {
+          rtmp: { ...values.rtmp, listen_host: values.rtmp?.listen_host || undefined },
+          rtsp: { ...values.rtsp, listen_host: values.rtsp?.listen_host || undefined },
+          srt: { ...values.srt, listen_host: values.srt?.listen_host || undefined },
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Listeners saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
+  }
+
+  const rtmpEnabled = form.watch('rtmp.enabled');
+  const rtspEnabled = form.watch('rtsp.enabled');
+  const srtEnabled = form.watch('srt.enabled');
+
+  return (
+    <Form {...form}>
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">RTMP Listener</CardTitle>
+            <CardDescription>
+              Shared port for RTMP push (ingest) and pull (play). Required when any stream uses
+              RTMP.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="rtmp.enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable RTMP listener</FormLabel>
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="rtmp.listen_host"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bind host</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0.0.0.0" {...field} disabled={!rtmpEnabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rtmp.port"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Port</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={65535}
+                        placeholder="1935"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={!rtmpEnabled}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">RTSP Listener</CardTitle>
+            <CardDescription>Shared port for RTSP push (ingest) and pull (play).</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="rtsp.enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable RTSP listener</FormLabel>
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="rtsp.listen_host"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bind host</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0.0.0.0" {...field} disabled={!rtspEnabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rtsp.port"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Port</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={65535}
+                        placeholder="554"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={!rtspEnabled}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rtsp.transport"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Transport</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? ''}
+                      disabled={!rtspEnabled}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="default (tcp)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="tcp">TCP</SelectItem>
+                        <SelectItem value="udp">UDP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">SRT Listener</CardTitle>
+            <CardDescription>
+              Shared port for SRT push (ingest) and pull (play). Stream is selected via{' '}
+              <code>streamid</code>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="srt.enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable SRT listener</FormLabel>
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="srt.listen_host"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bind host</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0.0.0.0" {...field} disabled={!srtEnabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="srt.port"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Port</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={65535}
+                        placeholder="9999"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={!srtEnabled}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="srt.latency_ms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latency (ms)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="120"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={!srtEnabled}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -905,292 +1117,6 @@ function DashSection() {
                       Mirror HLS ephemeral semantics for the DASH muxer.
                     </FormDescription>
                   </div>
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-        <SaveRow
-          isDirty={form.formState.isDirty}
-          isPending={update.isPending}
-          onDiscard={() => form.reset()}
-        />
-      </form>
-    </Form>
-  );
-}
-
-// ─── RTMP Serve section ────────────────────────────────────────────────────────
-
-function RtmpServeSection() {
-  const { data: serverConfig } = useServerConfig();
-  const cfg = serverConfig?.global_config?.publisher?.rtmp;
-  const update = useUpdateGlobalConfig();
-  const form = useForm<RtmpServeValues>({
-    resolver: zodResolver(rtmpServeSchema),
-    values: { listen_host: cfg?.listen_host ?? '', port: cfg?.port },
-  });
-
-  function onSubmit(values: RtmpServeValues) {
-    update.mutate(
-      { publisher: { rtmp: { ...values, listen_host: values.listen_host || undefined } } },
-      {
-        onSuccess: () => {
-          toast.success('RTMP output settings saved');
-          form.reset(values);
-        },
-        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-      },
-    );
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">RTMP Output Listener</CardTitle>
-            <CardDescription>
-              RTMP pull endpoint — clients connect here to receive the stream. Port 0 disables.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="listen_host"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bind host</FormLabel>
-                  <FormControl>
-                    <Input placeholder="0.0.0.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="port"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Port</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={65535}
-                      placeholder="1935"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormDescription>0 = disabled.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-        <SaveRow
-          isDirty={form.formState.isDirty}
-          isPending={update.isPending}
-          onDiscard={() => form.reset()}
-        />
-      </form>
-    </Form>
-  );
-}
-
-// ─── RTSP section ──────────────────────────────────────────────────────────────
-
-function RtspSection() {
-  const { data: serverConfig } = useServerConfig();
-  const cfg = serverConfig?.global_config?.publisher?.rtsp;
-  const update = useUpdateGlobalConfig();
-  const form = useForm<RtspValues>({
-    resolver: zodResolver(rtspSchema),
-    values: {
-      listen_host: cfg?.listen_host ?? '',
-      port_min: cfg?.port_min,
-      transport: cfg?.transport as 'tcp' | 'udp' | undefined,
-    },
-  });
-
-  function onSubmit(values: RtspValues) {
-    update.mutate(
-      { publisher: { rtsp: { ...values, listen_host: values.listen_host || undefined } } },
-      {
-        onSuccess: () => {
-          toast.success('RTSP settings saved');
-          form.reset(values);
-        },
-        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-      },
-    );
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">RTSP Output</CardTitle>
-            <CardDescription>
-              RTSP pull listener for media players and broadcast tools.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <FormField
-              control={form.control}
-              name="listen_host"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bind host</FormLabel>
-                  <FormControl>
-                    <Input placeholder="0.0.0.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="port_min"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Port</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={65535}
-                      placeholder="8554"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="transport"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Transport</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="default (tcp)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="tcp">TCP</SelectItem>
-                      <SelectItem value="udp">UDP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-        <SaveRow
-          isDirty={form.formState.isDirty}
-          isPending={update.isPending}
-          onDiscard={() => form.reset()}
-        />
-      </form>
-    </Form>
-  );
-}
-
-// ─── SRT Serve section ─────────────────────────────────────────────────────────
-
-function SrtServeSection() {
-  const { data: serverConfig } = useServerConfig();
-  const cfg = serverConfig?.global_config?.publisher?.srt;
-  const update = useUpdateGlobalConfig();
-  const form = useForm<SrtServeValues>({
-    resolver: zodResolver(srtServeSchema),
-    values: { listen_host: cfg?.listen_host ?? '', port: cfg?.port, latency_ms: cfg?.latency_ms },
-  });
-
-  function onSubmit(values: SrtServeValues) {
-    update.mutate(
-      { publisher: { srt: { ...values, listen_host: values.listen_host || undefined } } },
-      {
-        onSuccess: () => {
-          toast.success('SRT output settings saved');
-          form.reset(values);
-        },
-        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-      },
-    );
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">SRT Output Listener</CardTitle>
-            <CardDescription>
-              SRT pull listener for low-latency delivery. Port 0 disables.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <FormField
-              control={form.control}
-              name="listen_host"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bind host</FormLabel>
-                  <FormControl>
-                    <Input placeholder="0.0.0.0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="port"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Port</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={65535}
-                      placeholder="9000"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormDescription>0 = disabled.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="latency_ms"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Latency (ms)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="120"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
