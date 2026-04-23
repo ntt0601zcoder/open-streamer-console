@@ -1,0 +1,14 @@
+services:
+  console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # URL of the Open Streamer API. Baked into the JS bundle at build time.
+        # Override with `VITE_API_BASE_URL=… docker compose build` or in a .env file.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    image: open-streamer-console:latest
+    container_name: open-streamer-console
+    ports:
+      - '${CONSOLE_PORT:-8081}:80'
+    restart: unless-stopped

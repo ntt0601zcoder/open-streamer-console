@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.git
+.github
+.husky
+.vscode
+.idea
+*.log
+.env
+.env.*
+.DS_Store
+Dockerfile
+docker-compose.yml
