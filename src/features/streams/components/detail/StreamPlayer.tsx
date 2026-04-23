@@ -1,9 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Hls from 'hls.js';
-import { Loader2, RefreshCw, VideoOff, Volume2, VolumeOff, WifiOff } from 'lucide-react';
+import Hls, { type Level } from 'hls.js';
+import { Loader2, RefreshCw, Settings, VideoOff, Volume2, VolumeOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type PlayerState = 'loading' | 'playing' | 'retrying' | 'error' | 'unsupported';
+
+const AUTO_LEVEL = -1;
+
+function formatLevel(level: Level): string {
+  const height = level.height || level.attrs?.RESOLUTION?.split('x')[1];
+  const bitrateMbps = level.bitrate ? (level.bitrate / 1_000_000).toFixed(1) : null;
+  if (height && bitrateMbps) return `${height}p · ${bitrateMbps} Mbps`;
+  if (height) return `${height}p`;
+  if (bitrateMbps) return `${bitrateMbps} Mbps`;
+  return level.name ?? 'Unknown';
+}
 
 interface StreamPlayerProps {
   hlsUrl: string;
@@ -17,6 +37,9 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
   const mediaErrorCountRef = useRef(0);
   const [state, setState] = useState<PlayerState>('loading');
   const [muted, setMuted] = useState(true);
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<number>(AUTO_LEVEL);
+  const [autoLevel, setAutoLevel] = useState<number>(AUTO_LEVEL);
 
   function clearRetryTimer() {
     if (retryTimerRef.current) {
@@ -45,13 +68,22 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
       });
 
       hlsRef.current = hls;
+      setLevels([]);
+      setSelectedLevel(AUTO_LEVEL);
+      setAutoLevel(AUTO_LEVEL);
       hls.loadSource(hlsUrl);
       hls.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
         setState('playing');
         mediaErrorCountRef.current = 0;
+        setLevels(data.levels ?? []);
+        setSelectedLevel(hls.currentLevel < 0 ? AUTO_LEVEL : hls.currentLevel);
         void video.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+        setAutoLevel(data.level);
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -120,6 +152,14 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
     setMuted(video.muted);
   }
 
+  function selectQuality(value: string) {
+    const level = Number(value);
+    const hls = hlsRef.current;
+    if (!hls) return;
+    hls.currentLevel = level;
+    setSelectedLevel(level);
+  }
+
   return (
     <div className="group relative aspect-video w-full overflow-hidden rounded-md bg-black">
       <video
@@ -137,14 +177,49 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
             LIVE
           </span>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
-            onClick={toggleMute}
-          >
-            {muted ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            {levels.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                    {selectedLevel === AUTO_LEVEL
+                      ? `Auto${autoLevel >= 0 && levels[autoLevel] ? ` (${formatLevel(levels[autoLevel])})` : ''}`
+                      : levels[selectedLevel]
+                        ? formatLevel(levels[selectedLevel])
+                        : 'Quality'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  <DropdownMenuLabel>Quality</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={String(selectedLevel)}
+                    onValueChange={selectQuality}
+                  >
+                    <DropdownMenuRadioItem value={String(AUTO_LEVEL)}>Auto</DropdownMenuRadioItem>
+                    {levels.map((level, index) => (
+                      <DropdownMenuRadioItem key={index} value={String(index)}>
+                        {formatLevel(level)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
+              onClick={toggleMute}
+            >
+              {muted ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,9 +52,11 @@ export function StreamsPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
           </Button>
-          <Button size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            New stream
+          <Button asChild size="sm" className="gap-2">
+            <Link to="/streams/new">
+              <Plus className="h-4 w-4" />
+              New stream
+            </Link>
           </Button>
         </div>
       </div>

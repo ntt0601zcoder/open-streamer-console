@@ -61,7 +61,23 @@ export type OutputFormValues = z.infer<typeof outputFormSchema>;
 
 // ─── Transcoder ───────────────────────────────────────────────────────────────
 
+export const videoProfileSchema = z.object({
+  codec: z.string().optional(),
+  bitrate: z.coerce.number().int().min(0).optional(),
+  max_bitrate: z.coerce.number().int().min(0).optional(),
+  width: z.coerce.number().int().min(0).optional(),
+  height: z.coerce.number().int().min(0).optional(),
+  framerate: z.coerce.number().min(0).optional(),
+  keyframe_interval: z.coerce.number().int().min(0).optional(),
+  preset: z.string().optional(),
+  profile: z.string().optional(),
+  level: z.string().optional(),
+});
+
+export type VideoProfileFormValues = z.infer<typeof videoProfileSchema>;
+
 export const transcoderFormSchema = z.object({
+  enabled: z.boolean(),
   audio: z.object({
     copy: z.boolean(),
     codec: z.string().optional(),
@@ -72,12 +88,7 @@ export const transcoderFormSchema = z.object({
   }),
   video: z.object({
     copy: z.boolean(),
-    // profile[0] fields
-    codec: z.string().optional(),
-    bitrate: z.coerce.number().int().min(0).optional(),
-    width: z.coerce.number().int().min(0).optional(),
-    height: z.coerce.number().int().min(0).optional(),
-    framerate: z.coerce.number().min(0).optional(),
+    profiles: z.array(videoProfileSchema),
   }),
   global: z.object({
     hw: z.string().optional(),
@@ -100,3 +111,20 @@ export const dvrFormSchema = z.object({
 });
 
 export type DvrFormValues = z.infer<typeof dvrFormSchema>;
+
+// ─── Create stream (combined) ─────────────────────────────────────────────────
+
+export const createStreamSchema = z.object({
+  code: z
+    .string()
+    .min(1, 'Code is required')
+    .regex(/^[a-z0-9][a-z0-9-_]*$/, 'Lowercase letters, numbers, hyphens, underscores only'),
+  general: generalSchema,
+  inputs: z.array(inputSchema).min(1, 'At least one input is required'),
+  protocols: outputFormSchema.shape.protocols,
+  push: z.array(pushDestSchema),
+  transcoder: transcoderFormSchema,
+  dvr: dvrFormSchema,
+});
+
+export type CreateStreamValues = z.infer<typeof createStreamSchema>;

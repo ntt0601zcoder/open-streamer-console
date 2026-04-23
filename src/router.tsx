@@ -4,6 +4,7 @@ import { ConfigEditorPage } from '@/pages/ConfigEditorPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { HooksPage } from '@/pages/HooksPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { StreamCreatePage } from '@/pages/StreamCreatePage';
 import { StreamDetailPage } from '@/pages/StreamDetailPage';
 import { StreamsPage } from '@/pages/StreamsPage';
 import { VodMountPage } from '@/pages/VodMountPage';
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'streams', element: <StreamsPage /> },
+      { path: 'streams/new', element: <StreamCreatePage /> },
       { path: 'streams/:code', element: <StreamDetailPage /> },
       { path: 'vod', element: <VodPage /> },
       { path: 'vod/:name', element: <VodMountPage /> },
