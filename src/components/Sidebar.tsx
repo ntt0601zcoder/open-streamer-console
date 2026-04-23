@@ -11,6 +11,7 @@ import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 
 const navItems = [
@@ -88,6 +89,11 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      {/* Theme toggle */}
+      <div className={cn('border-t p-2', open ? '' : 'flex justify-center')}>
+        <ThemeToggle compact={!open} />
+      </div>
 
       {/* Version footer */}
       {version?.version && (
