@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: Activity, end: true },
@@ -25,6 +27,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onToggle }: SidebarProps) {
+  const { data: serverConfig } = useServerConfig();
+  const version = serverConfig?.version;
+
   return (
     <aside
       className={cn(
@@ -83,6 +88,36 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      {/* Version footer */}
+      {version?.version && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className={cn(
+                'border-t px-3 py-2 text-[10px] text-sidebar-foreground/60',
+                open ? 'text-left' : 'text-center',
+              )}
+              title={!open ? `version: ${version.version}` : undefined}
+            >
+              <span className="font-mono">
+                {open ? `version: ${version.version}` : version.version}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="space-y-0.5">
+            <p className="text-xs font-medium">Open Streamer {version.version}</p>
+            {version.commit && (
+              <p className="font-mono text-[10px] text-muted-foreground">
+                commit {version.commit.slice(0, 12)}
+              </p>
+            )}
+            {version.built_at && (
+              <p className="text-[10px] text-muted-foreground">built {version.built_at}</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      )}
     </aside>
   );
 }

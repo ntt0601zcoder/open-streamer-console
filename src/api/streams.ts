@@ -17,10 +17,6 @@ export const streamsApi = {
   getRecordings: (code: string) =>
     api.get(`streams/${code}/recordings`).json<ListResponse<Recording>>(),
 
-  startRecording: (code: string) => api.post(`streams/${code}/recordings/start`),
-
-  stopRecording: (code: string) => api.post(`streams/${code}/recordings/stop`),
-
   switchInput: (code: string, priority: number) =>
     api
       .post(`streams/${code}/inputs/switch`, { json: { priority } })

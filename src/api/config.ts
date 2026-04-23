@@ -122,6 +122,14 @@ export interface GlobalConfig {
   transcoder?: TranscoderConfig;
 }
 
+// ─── Version info ──────────────────────────────────────────────────────────────
+
+export interface VersionInfo {
+  version?: string;
+  commit?: string;
+  built_at?: string;
+}
+
 // ─── GET /config response ──────────────────────────────────────────────────────
 
 export interface ServerConfig {
@@ -134,6 +142,7 @@ export interface ServerConfig {
   watermark_positions: WatermarkPosition[];
   ports?: ServerPorts;
   global_config?: GlobalConfig;
+  version?: VersionInfo;
 }
 
 // ─── POST /config response ─────────────────────────────────────────────────────

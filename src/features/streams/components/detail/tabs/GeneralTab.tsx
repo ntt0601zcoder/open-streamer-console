@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { Stream } from '@/api/types';
+import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { generalSchema, type GeneralFormValues } from '@/features/streams/schemas';
 
@@ -42,12 +42,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
     defaultValues: toFormValues(stream),
   });
 
-  // Sync form when fresh data arrives from polling (only if user hasn't made changes)
-  useEffect(() => {
-    if (!form.formState.isDirty) {
-      form.reset(toFormValues(stream));
-    }
-  }, [stream, form]);
+  useFormConfigSync(form, toFormValues(stream));
 
   function onSubmit(values: GeneralFormValues) {
     const original = toFormValues(stream);

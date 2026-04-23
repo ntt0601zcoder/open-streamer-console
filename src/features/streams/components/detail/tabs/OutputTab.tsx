@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, Copy, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -21,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import type { ServerPorts } from '@/api/config';
 import type { Stream } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
 import { dashUrl, hlsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
@@ -99,11 +99,7 @@ export function OutputTab({ stream }: OutputTabProps) {
     name: 'push',
   });
 
-  useEffect(() => {
-    if (!form.formState.isDirty) {
-      form.reset(toFormValues(stream));
-    }
-  }, [stream, form]);
+  useFormConfigSync(form, toFormValues(stream));
 
   function onSubmit(values: OutputFormValues) {
     const original = toFormValues(stream);

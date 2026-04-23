@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -19,7 +19,10 @@ import { Switch } from '@/components/ui/switch';
 import type { InputHealthSnapshot, Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
 import { cn } from '@/lib/utils';
+import { listToRecord, recordToList } from '@/lib/kvList';
+import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStreams';
+import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
 
@@ -42,6 +45,8 @@ function toFormValues(stream: Stream): InputsFormValues {
             max_reconnects: inp.net.max_reconnects,
           }
         : undefined,
+      headers: recordToList(inp.headers),
+      params: recordToList(inp.params),
     })),
   };
 }
@@ -73,14 +78,15 @@ export function InputTab({ stream }: InputTabProps) {
     name: 'inputs',
   });
 
-  useEffect(() => {
-    if (!form.formState.isDirty) {
-      form.reset(toFormValues(stream));
-    }
-  }, [stream, form]);
+  useFormConfigSync(form, toFormValues(stream));
 
   function onSubmit(values: InputsFormValues) {
-    const inputs = values.inputs.map((inp, i) => ({ ...inp, priority: i }));
+    const inputs = values.inputs.map((inp, i) => ({
+      ...inp,
+      priority: i,
+      headers: listToRecord(inp.headers),
+      params: listToRecord(inp.params),
+    }));
     update.mutate(
       { code: stream.code, body: { inputs } },
       {
@@ -393,6 +399,34 @@ function AdvancedToggle({
                 )}
               />
             ))}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              HTTP headers
+            </p>
+            <KeyValueListEditor
+              control={form.control}
+              name={`inputs.${index}.headers`}
+              keyPlaceholder="Authorization"
+              valuePlaceholder="Bearer …"
+              emptyHint="Sent with every request for HTTP/HLS pull inputs."
+              addLabel="Add header"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              URL params
+            </p>
+            <KeyValueListEditor
+              control={form.control}
+              name={`inputs.${index}.params`}
+              keyPlaceholder="passphrase"
+              valuePlaceholder="value"
+              emptyHint="Merged into the source URL — useful for SRT passphrases, S3 keys, etc."
+              addLabel="Add param"
+            />
           </div>
         </div>
       )}

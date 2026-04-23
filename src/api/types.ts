@@ -273,8 +273,8 @@ export interface Stream {
   watermark?: WatermarkConfig;
   tags?: string[];
   runtime?: StreamRuntime;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Recording {

@@ -39,9 +39,11 @@ import type {
   VideoCodec,
 } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { streamKeys } from '@/features/streams/hooks/useStreams';
 import { createStreamSchema, type CreateStreamValues } from '@/features/streams/schemas';
+import { listToRecord } from '@/lib/kvList';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const DEFAULT_VALUES: CreateStreamValues = {
@@ -211,7 +213,12 @@ function buildCreateBody(v: CreateStreamValues): StreamBody {
     stream_key: v.general.stream_key || undefined,
     disabled: v.general.disabled,
     tags: tags.length ? tags : undefined,
-    inputs: v.inputs.map((inp, i) => ({ ...inp, priority: i })),
+    inputs: v.inputs.map((inp, i) => ({
+      ...inp,
+      priority: i,
+      headers: listToRecord(inp.headers),
+      params: listToRecord(inp.params),
+    })),
     protocols: v.protocols,
     push: v.push.length ? v.push : undefined,
     transcoder,
@@ -370,7 +377,7 @@ function InputsSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
-            <div className="p-4">
+            <div className="space-y-4 p-4">
               <FormField
                 control={form.control}
                 name={`inputs.${index}.url`}
@@ -388,6 +395,34 @@ function InputsSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  HTTP headers
+                </p>
+                <KeyValueListEditor
+                  control={form.control}
+                  name={`inputs.${index}.headers`}
+                  keyPlaceholder="Authorization"
+                  valuePlaceholder="Bearer …"
+                  emptyHint="Sent with every request for HTTP/HLS pull inputs."
+                  addLabel="Add header"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  URL params
+                </p>
+                <KeyValueListEditor
+                  control={form.control}
+                  name={`inputs.${index}.params`}
+                  keyPlaceholder="passphrase"
+                  valuePlaceholder="value"
+                  emptyHint="Merged into the source URL — useful for SRT passphrases, S3 keys, etc."
+                  addLabel="Add param"
+                />
+              </div>
             </div>
           </div>
         ))}

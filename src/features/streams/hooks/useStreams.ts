@@ -73,26 +73,6 @@ export function useRestartStream() {
   });
 }
 
-export function useStartRecording() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (code: string) => streamsApi.startRecording(code),
-    onSuccess: (_res, code) => {
-      void qc.invalidateQueries({ queryKey: streamKeys.recordings(code) });
-    },
-  });
-}
-
-export function useStopRecording() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (code: string) => streamsApi.stopRecording(code),
-    onSuccess: (_res, code) => {
-      void qc.invalidateQueries({ queryKey: streamKeys.recordings(code) });
-    },
-  });
-}
-
 export function useSwitchInput() {
   const qc = useQueryClient();
   return useMutation({

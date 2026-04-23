@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -16,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
+import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { dvrFormSchema, type DvrFormValues } from '@/features/streams/schemas';
 
@@ -42,11 +42,7 @@ export function DvrTab({ stream }: DvrTabProps) {
     defaultValues: toFormValues(stream),
   });
 
-  useEffect(() => {
-    if (!form.formState.isDirty) {
-      form.reset(toFormValues(stream));
-    }
-  }, [stream, form]);
+  useFormConfigSync(form, toFormValues(stream));
 
   const enabled = useWatch({ control: form.control, name: 'enabled' });
 

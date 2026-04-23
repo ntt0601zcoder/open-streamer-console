@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -26,6 +25,7 @@ import type { InterlaceMode, ResizeMode, Stream, TranscoderConfig, VideoCodec } 
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
+import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { transcoderFormSchema, type TranscoderFormValues } from '@/features/streams/schemas';
 
@@ -116,11 +116,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
     defaultValues: toFormValues(stream),
   });
 
-  useEffect(() => {
-    if (!form.formState.isDirty) {
-      form.reset(toFormValues(stream));
-    }
-  }, [stream, form]);
+  useFormConfigSync(form, toFormValues(stream));
 
   const enabled = useWatch({ control: form.control, name: 'enabled' });
   const audioCopy = useWatch({ control: form.control, name: 'audio.copy' });

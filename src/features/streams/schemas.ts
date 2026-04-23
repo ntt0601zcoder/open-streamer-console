@@ -23,11 +23,20 @@ export const inputNetSchema = z.object({
   max_reconnects: z.coerce.number().int().min(0).optional(),
 });
 
+export const httpKeyValueSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
 export const inputSchema = z.object({
   url: z.string().min(1, 'URL is required'),
   priority: z.coerce.number().int().min(0),
   net: inputNetSchema.optional(),
+  headers: z.array(httpKeyValueSchema).optional(),
+  params: z.array(httpKeyValueSchema).optional(),
 });
+
+export type HttpKeyValue = z.infer<typeof httpKeyValueSchema>;
 
 export const inputsFormSchema = z.object({
   inputs: z.array(inputSchema),
