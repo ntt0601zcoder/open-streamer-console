@@ -41,6 +41,13 @@ const PRESET_OPTIONS = [
 const H264_PROFILE_OPTIONS = ['baseline', 'main', 'high'];
 const H264_LEVEL_OPTIONS = ['3.0', '3.1', '4.0', '4.1', '4.2', '5.0', '5.1'];
 
+const RESIZE_MODE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'pad', label: 'Pad — letterbox (keep aspect, fill black)' },
+  { value: 'crop', label: 'Crop — fill (keep aspect, crop excess)' },
+  { value: 'stretch', label: 'Stretch — distort to W×H' },
+  { value: 'fit', label: 'Fit — keep aspect, no padding' },
+];
+
 interface VideoProfilesEditorProps<T extends FieldValues> {
   control: Control<T>;
   setValue: UseFormSetValue<T>;
@@ -83,6 +90,10 @@ export function VideoProfilesEditor<T extends FieldValues>({
               preset: undefined,
               profile: undefined,
               level: undefined,
+              bframes: undefined,
+              refs: undefined,
+              sar: undefined,
+              resize_mode: undefined,
             } as never)
           }
         >
@@ -133,6 +144,10 @@ function ProfileCard<T extends FieldValues>({
   const presetPath = `${basePath}.preset` as Path<T>;
   const profilePath = `${basePath}.profile` as Path<T>;
   const levelPath = `${basePath}.level` as Path<T>;
+  const bframesPath = `${basePath}.bframes` as Path<T>;
+  const refsPath = `${basePath}.refs` as Path<T>;
+  const sarPath = `${basePath}.sar` as Path<T>;
+  const resizeModePath = `${basePath}.resize_mode` as Path<T>;
 
   const width = useWatch({ control, name: widthPath }) as number | undefined;
   const height = useWatch({ control, name: heightPath }) as number | undefined;
@@ -394,6 +409,91 @@ function ProfileCard<T extends FieldValues>({
                     value={(field.value as number | string | undefined) ?? ''}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-4">
+          <FormField
+            control={control}
+            name={bframesPath}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>B-frames</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="default"
+                    className="placeholder:italic"
+                    {...field}
+                    value={(field.value as number | string | undefined) ?? ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name={refsPath}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reference frames</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="default"
+                    className="placeholder:italic"
+                    {...field}
+                    value={(field.value as number | string | undefined) ?? ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name={sarPath}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SAR (e.g. 1:1)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="default"
+                    className="placeholder:italic"
+                    {...field}
+                    value={(field.value as string | undefined) ?? ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name={resizeModePath}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Resize mode</FormLabel>
+                <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                  <FormControl>
+                    <SelectTrigger className="data-[placeholder]:italic">
+                      <SelectValue placeholder="default" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {RESIZE_MODE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

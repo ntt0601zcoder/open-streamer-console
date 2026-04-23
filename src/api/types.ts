@@ -151,6 +151,22 @@ export interface AudioTranscodeConfig {
   copy?: boolean;
 }
 
+export const ResizeMode = {
+  pad: 'pad',
+  crop: 'crop',
+  stretch: 'stretch',
+  fit: 'fit',
+} as const;
+export type ResizeMode = (typeof ResizeMode)[keyof typeof ResizeMode];
+
+export const InterlaceMode = {
+  auto: 'auto',
+  tff: 'tff',
+  bff: 'bff',
+  progressive: 'progressive',
+} as const;
+export type InterlaceMode = (typeof InterlaceMode)[keyof typeof InterlaceMode];
+
 export interface VideoProfile {
   codec?: VideoCodec;
   bitrate?: number;
@@ -162,10 +178,15 @@ export interface VideoProfile {
   preset?: string;
   profile?: string;
   level?: string;
+  bframes?: number;
+  refs?: number;
+  sar?: string;
+  resize_mode?: ResizeMode;
 }
 
 export interface VideoTranscodeConfig {
   copy?: boolean;
+  interlace?: InterlaceMode;
   profiles?: VideoProfile[];
 }
 

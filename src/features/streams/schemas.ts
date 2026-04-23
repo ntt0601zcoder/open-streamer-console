@@ -61,6 +61,14 @@ export type OutputFormValues = z.infer<typeof outputFormSchema>;
 
 // ─── Transcoder ───────────────────────────────────────────────────────────────
 
+// For fields where 0 is a meaningful, distinct value from "unset" (e.g. bframes=0
+// means "explicit no B-frames" while undefined means "encoder default"), preprocess
+// the empty string into undefined so it doesn't silently coerce to 0.
+const optionalIntPreserveUnset = z.preprocess(
+  (v) => (v === '' || v === null ? undefined : v),
+  z.coerce.number().int().min(0).optional(),
+);
+
 export const videoProfileSchema = z.object({
   codec: z.string().optional(),
   bitrate: z.coerce.number().int().min(0).optional(),
@@ -72,6 +80,10 @@ export const videoProfileSchema = z.object({
   preset: z.string().optional(),
   profile: z.string().optional(),
   level: z.string().optional(),
+  bframes: optionalIntPreserveUnset,
+  refs: optionalIntPreserveUnset,
+  sar: z.string().optional(),
+  resize_mode: z.enum(['pad', 'crop', 'stretch', 'fit']).optional(),
 });
 
 export type VideoProfileFormValues = z.infer<typeof videoProfileSchema>;
@@ -88,6 +100,7 @@ export const transcoderFormSchema = z.object({
   }),
   video: z.object({
     copy: z.boolean(),
+    interlace: z.enum(['auto', 'tff', 'bff', 'progressive']).optional(),
     profiles: z.array(videoProfileSchema),
   }),
   global: z.object({

@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { Stream, TranscoderConfig, VideoCodec } from '@/api/types';
+import type { InterlaceMode, ResizeMode, Stream, TranscoderConfig, VideoCodec } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
@@ -46,6 +46,7 @@ function toFormValues(stream: Stream): TranscoderFormValues {
     },
     video: {
       copy: t?.video?.copy ?? true,
+      interlace: t?.video?.interlace,
       profiles: (t?.video?.profiles ?? []).map((p) => ({
         codec: p.codec,
         bitrate: p.bitrate,
@@ -57,6 +58,10 @@ function toFormValues(stream: Stream): TranscoderFormValues {
         preset: p.preset,
         profile: p.profile,
         level: p.level,
+        bframes: p.bframes,
+        refs: p.refs,
+        sar: p.sar,
+        resize_mode: p.resize_mode,
       })),
     },
     global: {
@@ -94,6 +99,13 @@ const CHANNEL_LABELS: Record<number, string> = {
   6: '6 — 5.1 Surround',
 };
 
+const INTERLACE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'auto', label: 'Auto — detect from source' },
+  { value: 'progressive', label: 'Progressive — force deinterlace' },
+  { value: 'tff', label: 'TFF — top field first' },
+  { value: 'bff', label: 'BFF — bottom field first' },
+];
+
 export function TranscoderTab({ stream }: TranscoderTabProps) {
   const { data: serverConfig } = useServerConfig();
   const update = useSaveStream();
@@ -128,11 +140,12 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
   }
 
   function buildTranscoderConfig(values: TranscoderFormValues): TranscoderConfig {
-    const { copy, profiles } = values.video;
+    const { copy, interlace, profiles } = values.video;
     return {
       audio: values.audio as TranscoderConfig['audio'],
       video: {
         copy,
+        interlace: interlace as InterlaceMode | undefined,
         profiles:
           !copy && profiles.length > 0
             ? profiles.map((p) => ({
@@ -146,6 +159,10 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                 preset: p.preset,
                 profile: p.profile,
                 level: p.level,
+                bframes: p.bframes,
+                refs: p.refs,
+                sar: p.sar,
+                resize_mode: p.resize_mode as ResizeMode | undefined,
               }))
             : undefined,
       },
@@ -294,7 +311,33 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                 </div>
               </CardHeader>
               {!videoCopy && (
-                <CardContent>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="video.interlace"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Interlace handling</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                            <FormControl>
+                              <SelectTrigger className="data-[placeholder]:italic">
+                                <SelectValue placeholder="default" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {INTERLACE_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <VideoProfilesEditor
                     control={form.control}
                     setValue={form.setValue}
