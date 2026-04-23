@@ -1,10 +1,10 @@
-import { ChevronRight, Loader2, Play, RefreshCw } from 'lucide-react';
+import { ChevronRight, Loader2, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Stream } from '@/api/types';
 import { useRestartStream } from '@/features/streams/hooks/useStreams';
+import { StreamActionConfirmDialog } from '../StreamActionConfirmDialog';
 import { StreamStatusBadge } from '../StreamStatusBadge';
 
 interface StreamDetailHeaderProps {
@@ -37,26 +37,44 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
           )}
         </div>
 
-        <Button
-          size="sm"
-          variant={isRunning ? 'outline' : 'default'}
-          className="gap-2 shrink-0"
-          disabled={restart.isPending}
-          onClick={() =>
-            restart.mutate(stream.code, {
-              onError: (err) => toast.error(err.message),
-            })
-          }
-        >
-          {restart.isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : isRunning ? (
-            <RefreshCw className="h-3.5 w-3.5" />
-          ) : (
-            <Play className="h-3.5 w-3.5 fill-current" />
-          )}
-          {isRunning ? 'Restart' : 'Start'}
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <StreamActionConfirmDialog
+            stream={stream}
+            action="restart"
+            trigger={
+              <Button
+                size="sm"
+                variant={isRunning ? 'outline' : 'default'}
+                className="gap-2"
+                disabled={restart.isPending}
+              >
+                {restart.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : isRunning ? (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                ) : (
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                )}
+                {isRunning ? 'Restart' : 'Start'}
+              </Button>
+            }
+          />
+          <StreamActionConfirmDialog
+            stream={stream}
+            action="delete"
+            redirectTo="/streams"
+            trigger={
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </Button>
+            }
+          />
+        </div>
       </div>
     </div>
   );
