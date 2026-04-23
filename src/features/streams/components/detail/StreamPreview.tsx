@@ -18,7 +18,9 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
   const ports = serverConfig?.ports;
 
   const hlsUrl_ = hlsUrl(stream.code);
-  const isRunning = stream.status === 'active' || stream.status === 'degraded';
+  const status = stream.runtime?.status;
+  const pipelineActive = stream.runtime?.pipeline_active;
+  const isRunning = status === 'active' || status === 'degraded';
   const hlsEnabled = stream.protocols?.hls ?? false;
 
   function copyToClipboard(text: string, key: string) {
@@ -91,15 +93,15 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
           </div>
 
           {/* Pipeline active */}
-          {stream.pipeline_active != null && (
+          {pipelineActive != null && (
             <div className="border-t pt-3">
               <InfoRow
                 label="Pipeline active"
                 value={
                   <span
-                    className={`font-mono text-xs font-medium ${stream.pipeline_active ? 'text-emerald-500' : 'text-muted-foreground'}`}
+                    className={`font-mono text-xs font-medium ${pipelineActive ? 'text-emerald-500' : 'text-muted-foreground'}`}
                   >
-                    {stream.pipeline_active ? 'true' : 'false'}
+                    {pipelineActive ? 'true' : 'false'}
                   </span>
                 }
               />

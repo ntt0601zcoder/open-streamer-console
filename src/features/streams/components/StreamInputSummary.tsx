@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import type { Input as InputType, InputRuntimeInfo, Stream } from '@/api/types';
+import type { Input as InputType, InputHealthSnapshot, Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
 import { formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -16,8 +16,9 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
   const activeIndex =
     stream.runtime?.override_input_priority ?? stream.runtime?.active_input_priority ?? null;
   const runtimeInputs = stream.runtime?.inputs;
+  const streamStatus = stream.runtime?.status;
   const isStreamLive =
-    stream.status === StreamStatus.active || stream.status === StreamStatus.degraded;
+    streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
 
   if (!inputs || inputs.length === 0) {
     return <span className="text-xs text-muted-foreground">No inputs</span>;
@@ -69,7 +70,7 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
 
 interface InputDotProps {
   input: InputType;
-  runtime?: InputRuntimeInfo;
+  runtime?: InputHealthSnapshot;
   index: number;
   isActive: boolean;
   canSwitch: boolean;
@@ -86,7 +87,8 @@ function InputDot({
   isPending,
   onClick,
 }: InputDotProps) {
-  const isDegraded = runtime?.status === 'degraded' || !!runtime?.last_error;
+  const errors = runtime?.errors ?? [];
+  const isDegraded = runtime?.status === 'degraded' || errors.length > 0;
 
   return (
     <Tooltip>
@@ -107,35 +109,40 @@ function InputDot({
           )}
         />
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-[320px] space-y-1">
-        <p className="text-xs font-medium">
-          Input {index + 1}
-          {isActive ? ' (active)' : ''}
-        </p>
-        <p className="font-mono text-xs break-all text-muted-foreground">{input.url}</p>
-        {runtime && (
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 pt-0.5 text-xs text-muted-foreground">
+      <TooltipContent side="bottom" className="max-w-[360px] space-y-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium">
+            Input {index + 1}
+            {isActive ? ' (active)' : ''}
+          </p>
+          {runtime?.status && (
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              {runtime.status}
+            </p>
+          )}
+        </div>
+        <p className="font-mono text-[11px] break-all text-muted-foreground">{input.url}</p>
+        {runtime && (runtime.bitrate_kbps != null || runtime.packet_loss != null) && (
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
             {runtime.bitrate_kbps != null && <span>{runtime.bitrate_kbps} kbps</span>}
             {runtime.packet_loss != null && (
               <span>loss {(runtime.packet_loss * 100).toFixed(1)}%</span>
             )}
-            {runtime.status && (
-              <span
-                className={runtime.status === 'connected' ? 'text-emerald-400' : 'text-amber-400'}
-              >
-                {runtime.status}
-              </span>
-            )}
           </div>
         )}
-        {runtime?.last_error && (
-          <div className="rounded border border-amber-500/30 bg-amber-500/10 p-1.5 text-xs text-amber-200">
-            <p className="font-medium">Last error</p>
-            <p className="mt-0.5 break-words font-mono">{runtime.last_error}</p>
-            {runtime.last_error_at && (
-              <p className="mt-0.5 text-amber-300/70">{formatRelativeIso(runtime.last_error_at)}</p>
-            )}
-          </div>
+        {errors.length > 0 && (
+          <ul className="space-y-1">
+            {errors.slice(0, 5).map((e, i) => (
+              <li key={i} className="rounded border border-amber-500/30 bg-amber-500/10 p-1.5">
+                <p className="break-words font-mono text-[11px] leading-snug text-amber-900 dark:text-amber-100">
+                  {e.message}
+                </p>
+                <p className="mt-0.5 text-[10px] text-amber-700/80 dark:text-amber-300/70">
+                  {formatRelativeIso(e.at)}
+                </p>
+              </li>
+            ))}
+          </ul>
         )}
         {canSwitch && <p className="text-xs text-muted-foreground">Click to switch</p>}
       </TooltipContent>

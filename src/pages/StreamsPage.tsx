@@ -13,8 +13,8 @@ export function StreamsPage() {
 
   const counts = {
     total: streams?.length ?? 0,
-    active: streams?.filter((s) => s.status === 'active').length ?? 0,
-    degraded: streams?.filter((s) => s.status === 'degraded').length ?? 0,
+    active: streams?.filter((s) => s.runtime?.status === 'active').length ?? 0,
+    degraded: streams?.filter((s) => s.runtime?.status === 'degraded').length ?? 0,
   };
 
   return (

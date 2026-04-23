@@ -24,6 +24,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { InterlaceMode, ResizeMode, Stream, TranscoderConfig, VideoCodec } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { transcoderFormSchema, type TranscoderFormValues } from '@/features/streams/schemas';
@@ -203,6 +204,45 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             </div>
           </CardHeader>
         </Card>
+
+        {enabled &&
+          stream.runtime?.transcoder?.profiles &&
+          stream.runtime.transcoder.profiles.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Runtime</CardTitle>
+                <CardDescription>
+                  Live status of each profile. Hover a dot to see the most recent FFmpeg errors.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  {stream.runtime.transcoder.profiles.map((p, i) => {
+                    const errors = p.errors ?? [];
+                    const restarts = p.restart_count ?? 0;
+                    const label = p.track || `track_${(p.index ?? i) + 1}`;
+                    const status = errors.length > 0 ? 'degraded' : 'active';
+                    return (
+                      <div key={p.index ?? i} className="flex items-center gap-2 text-sm">
+                        <RuntimeErrorIndicator
+                          status={status}
+                          errors={errors}
+                          label={label}
+                          meta={`Restarts: ${restarts}`}
+                        />
+                        <span className="font-mono text-xs">{label}</span>
+                        {restarts > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            · {restarts} restart{restarts === 1 ? '' : 's'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         {enabled && (
           <>

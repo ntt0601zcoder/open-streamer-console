@@ -13,7 +13,8 @@ interface StreamDetailHeaderProps {
 
 export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
   const restart = useRestartStream();
-  const isRunning = stream.status === 'active' || stream.status === 'degraded';
+  const status = stream.runtime?.status;
+  const isRunning = status === 'active' || status === 'degraded';
 
   return (
     <div className="flex flex-col gap-3">

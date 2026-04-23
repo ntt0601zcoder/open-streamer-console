@@ -223,20 +223,39 @@ export interface WatermarkConfig {
   offset_y?: number;
 }
 
-export interface InputRuntimeInfo {
+export interface ErrorEntry {
+  message: string;
+  at: string;
+}
+
+export interface InputHealthSnapshot {
   bitrate_kbps?: number;
   packet_loss?: number;
-  status?: string;
+  status?: StreamStatus;
   last_packet_at?: string;
-  last_error?: string;
-  last_error_at?: string;
+  errors?: ErrorEntry[];
+  input_priority?: number;
+}
+
+export interface TranscoderProfileSnapshot {
+  index?: number;
+  track?: string;
+  restart_count?: number;
+  errors?: ErrorEntry[];
+}
+
+export interface TranscoderRuntimeStatus {
+  profiles?: TranscoderProfileSnapshot[];
 }
 
 export interface StreamRuntime {
+  pipeline_active?: boolean;
+  status?: StreamStatus;
   active_input_priority?: number;
   override_input_priority?: number;
-  inputs?: InputRuntimeInfo[];
   exhausted?: boolean;
+  inputs?: InputHealthSnapshot[];
+  transcoder?: TranscoderRuntimeStatus;
 }
 
 export interface Stream {
@@ -244,8 +263,6 @@ export interface Stream {
   name: string;
   description?: string;
   stream_key?: string;
-  status: StreamStatus;
-  pipeline_active?: boolean;
   disabled?: boolean;
   inputs?: Input[];
   protocols?: OutputProtocols;

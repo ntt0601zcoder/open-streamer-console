@@ -25,7 +25,8 @@ export function StreamActions({ stream }: StreamActionsProps) {
   const restart = useRestartStream();
   const del = useDeleteStream();
 
-  const isRunning = stream.status === 'active' || stream.status === 'degraded';
+  const status = stream.runtime?.status;
+  const isRunning = status === 'active' || status === 'degraded';
   const onError = (err: Error) => toast.error(err.message);
 
   return (

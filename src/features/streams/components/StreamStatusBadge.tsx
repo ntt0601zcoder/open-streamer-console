@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import type { Stream, StreamStatus } from '@/api/types';
 
 interface StreamStatusBadgeProps {
-  stream: Pick<Stream, 'status' | 'runtime'>;
+  stream: Pick<Stream, 'runtime'>;
 }
 
 type BadgeStyle = { label: string; dot: string; text: string };
@@ -25,9 +25,10 @@ const exhaustedStyle: BadgeStyle = {
 };
 
 export function StreamStatusBadge({ stream }: StreamStatusBadgeProps) {
+  const status = stream.runtime?.status ?? 'idle';
   const { label, dot, text } = stream.runtime?.exhausted
     ? exhaustedStyle
-    : (config[stream.status] ?? config.idle);
+    : (config[status] ?? config.idle);
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', text)}>
       <span className={cn('h-2 w-2 rounded-full', dot)} />
