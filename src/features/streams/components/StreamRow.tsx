@@ -21,7 +21,7 @@ export function StreamRow({ stream }: StreamRowProps) {
     : [];
 
   const activePushCount =
-    stream.push?.filter((p) => p.enabled && p.status === 'active').length ?? 0;
+    stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active').length ?? 0;
   const totalPushCount = stream.push?.filter((p) => p.enabled).length ?? 0;
 
   // Transcode summary. The Go server emits empty strings for unset enum fields

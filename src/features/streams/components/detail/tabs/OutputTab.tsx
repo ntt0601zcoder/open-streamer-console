@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, Copy, Plus, Trash2 } from 'lucide-react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +18,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { ServerPorts } from '@/api/config';
-import type { Stream } from '@/api/types';
+import type { PushSnapshot, Stream } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { CollapsibleRow } from '@/features/streams/components/CollapsibleRow';
+import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
+import { formatDurationSince } from '@/lib/format';
 import { dashUrl, hlsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
 
 function protocolDisabledReason(
@@ -258,6 +261,7 @@ export function OutputTab({ stream }: OutputTabProps) {
                 key={field.id}
                 index={index}
                 form={form}
+                runtimePushes={stream.runtime?.publisher?.pushes}
                 onRemove={() => remove(index)}
               />
             ))}
@@ -331,36 +335,71 @@ function OutputUrlRow({ label, url, protocol }: OutputUrlRowProps) {
 interface PushDestRowProps {
   index: number;
   form: ReturnType<typeof useForm<OutputFormValues>>;
+  runtimePushes?: PushSnapshot[];
   onRemove: () => void;
 }
 
-function PushDestRow({ index, form, onRemove }: PushDestRowProps) {
+function PushDestRow({ index, form, runtimePushes, onRemove }: PushDestRowProps) {
+  const url = useWatch({ control: form.control, name: `push.${index}.url` });
+  const runtime = url ? runtimePushes?.find((p) => p.url === url) : undefined;
+  const errors = runtime?.errors ?? [];
+  const uptime = runtime?.connected_at ? formatDurationSince(runtime.connected_at) : null;
+
   return (
-    <div className="rounded-lg border">
-      <div className="flex items-center gap-3 border-b bg-muted/40 px-4 py-2.5">
-        <span className="flex-1 text-sm font-medium">Destination {index + 1}</span>
-        <FormField
-          control={form.control}
-          name={`push.${index}.enabled`}
-          render={({ field }) => (
-            <FormItem className="flex items-center gap-2 space-y-0">
-              <FormLabel className="text-xs text-muted-foreground">Enabled</FormLabel>
-              <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-          onClick={onRemove}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+    <CollapsibleRow
+      header={
+        <span className="flex min-w-0 flex-1 items-center gap-2.5">
+          <RuntimeErrorIndicator
+            status={runtime?.status}
+            errors={runtime?.errors}
+            label={`Destination ${index + 1}`}
+            meta={runtime?.attempt ? `Attempt ${runtime.attempt}` : undefined}
+          />
+          <span className="flex min-w-0 items-center gap-2 truncate text-sm">
+            <span className="font-medium">Destination {index + 1}</span>
+            {uptime && (
+              <>
+                <span className="text-muted-foreground/40">|</span>
+                <span className="text-xs text-muted-foreground">Uptime {uptime}</span>
+              </>
+            )}
+            {errors.length > 0 && (
+              <>
+                <span className="text-muted-foreground/40">|</span>
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  {errors.length} {errors.length === 1 ? 'error' : 'errors'}
+                </span>
+              </>
+            )}
+          </span>
+        </span>
+      }
+      actions={
+        <>
+          <FormField
+            control={form.control}
+            name={`push.${index}.enabled`}
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-2 space-y-0">
+                <FormLabel className="text-xs text-muted-foreground">Enabled</FormLabel>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </>
+      }
+    >
       <div className="grid gap-4 p-4 sm:grid-cols-2">
         <FormField
           control={form.control}
@@ -431,6 +470,6 @@ function PushDestRow({ index, form, onRemove }: PushDestRowProps) {
           )}
         />
       </div>
-    </div>
+    </CollapsibleRow>
   );
 }

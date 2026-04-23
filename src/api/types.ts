@@ -248,6 +248,26 @@ export interface TranscoderRuntimeStatus {
   profiles?: TranscoderProfileSnapshot[];
 }
 
+export const PublisherPushStatus = {
+  starting: 'starting',
+  active: 'active',
+  reconnecting: 'reconnecting',
+  failed: 'failed',
+} as const;
+export type PublisherPushStatus = (typeof PublisherPushStatus)[keyof typeof PublisherPushStatus];
+
+export interface PushSnapshot {
+  url?: string;
+  status?: PublisherPushStatus;
+  attempt?: number;
+  connected_at?: string;
+  errors?: ErrorEntry[];
+}
+
+export interface PublisherRuntimeStatus {
+  pushes?: PushSnapshot[];
+}
+
 export interface StreamRuntime {
   pipeline_active?: boolean;
   status?: StreamStatus;
@@ -256,6 +276,7 @@ export interface StreamRuntime {
   exhausted?: boolean;
   inputs?: InputHealthSnapshot[];
   transcoder?: TranscoderRuntimeStatus;
+  publisher?: PublisherRuntimeStatus;
 }
 
 export interface Stream {

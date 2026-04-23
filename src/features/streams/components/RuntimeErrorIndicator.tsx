@@ -1,17 +1,21 @@
-import type { ErrorEntry, StreamStatus } from '@/api/types';
+import type { ErrorEntry } from '@/api/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-const COLOR_BY_STATUS: Record<StreamStatus, string> = {
+// Covers domain.StreamStatus + publisher.PushStatus + a generic fallback.
+const COLOR_BY_STATUS: Record<string, string> = {
   active: 'bg-emerald-500',
   degraded: 'bg-amber-500',
+  reconnecting: 'bg-amber-500',
+  starting: 'bg-blue-500',
+  failed: 'bg-red-500',
   idle: 'bg-slate-400',
   stopped: 'bg-slate-300',
 };
 
 interface RuntimeErrorIndicatorProps {
-  status?: StreamStatus;
+  status?: string;
   errors?: ErrorEntry[];
   label: string;
   /** Optional secondary line shown under the label (e.g. "restart count: 2"). */

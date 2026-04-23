@@ -39,6 +39,7 @@ import type {
   VideoCodec,
 } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { CollapsibleRow } from '@/features/streams/components/CollapsibleRow';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { streamKeys } from '@/features/streams/hooks/useStreams';
@@ -525,31 +526,35 @@ function OutputSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
             </p>
           )}
           {fields.map((field, index) => (
-            <div key={field.id} className="rounded-lg border">
-              <div className="flex items-center gap-3 border-b bg-muted/40 px-4 py-2.5">
-                <span className="flex-1 text-sm font-medium">Destination {index + 1}</span>
-                <FormField
-                  control={form.control}
-                  name={`push.${index}.enabled`}
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2 space-y-0">
-                      <FormLabel className="text-xs text-muted-foreground">Enabled</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => remove(index)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+            <CollapsibleRow
+              key={field.id}
+              header={<span className="text-sm font-medium">Destination {index + 1}</span>}
+              actions={
+                <>
+                  <FormField
+                    control={form.control}
+                    name={`push.${index}.enabled`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 space-y-0">
+                        <FormLabel className="text-xs text-muted-foreground">Enabled</FormLabel>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              }
+            >
               <div className="grid gap-4 p-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -582,7 +587,7 @@ function OutputSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
                   )}
                 />
               </div>
-            </div>
+            </CollapsibleRow>
           ))}
         </CardContent>
       </Card>
