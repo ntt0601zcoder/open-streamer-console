@@ -1,4 +1,5 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import {
   useFieldArray,
   useWatch,
@@ -156,21 +157,35 @@ function ProfileCard<T extends FieldValues>({
   const summary = width && height ? `${width}×${height}` : 'Unscaled';
   const summaryBitrate = bitrate ? ` · ${bitrate} kbps` : '';
 
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div className="rounded-lg border">
-      <div className="flex items-center gap-3 border-b bg-muted/40 px-4 py-2.5">
-        <span className="flex-1 text-sm font-medium">
-          Profile {index + 1}
-          <span className="ml-2 text-xs font-normal text-muted-foreground">
-            {summary}
-            {summaryBitrate}
+      <div className="flex items-stretch border-b bg-muted/40">
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          className="flex flex-1 items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/60"
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          )}
+          <span className="text-sm font-medium">
+            Profile {index + 1}
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              {summary}
+              {summaryBitrate}
+            </span>
           </span>
-        </span>
+        </button>
         <Button
           type="button"
           size="icon"
           variant="ghost"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          className="mx-2 my-auto h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={onRemove}
           title="Remove profile"
         >
@@ -178,328 +193,330 @@ function ProfileCard<T extends FieldValues>({
         </Button>
       </div>
 
-      <div className="space-y-4 p-4">
-        <TranscodePresetPicker
-          width={width}
-          height={height}
-          bitrate={bitrate}
-          onApply={(preset) => {
-            setValue(widthPath, preset.width as never, { shouldDirty: true });
-            setValue(heightPath, preset.height as never, { shouldDirty: true });
-            setValue(bitratePath, preset.video_bitrate as never, { shouldDirty: true });
-            setValue(framerratePath, preset.framerate as never, { shouldDirty: true });
-          }}
-        />
+      {!collapsed && (
+        <div className="space-y-4 p-4">
+          <TranscodePresetPicker
+            width={width}
+            height={height}
+            bitrate={bitrate}
+            onApply={(preset) => {
+              setValue(widthPath, preset.width as never, { shouldDirty: true });
+              setValue(heightPath, preset.height as never, { shouldDirty: true });
+              setValue(bitratePath, preset.video_bitrate as never, { shouldDirty: true });
+              setValue(framerratePath, preset.framerate as never, { shouldDirty: true });
+            }}
+          />
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <FormField
-            control={control}
-            name={codecPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Codec</FormLabel>
-                <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <FormField
+              control={control}
+              name={codecPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Codec</FormLabel>
+                  <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                    <FormControl>
+                      <SelectTrigger className="data-[placeholder]:italic">
+                        <SelectValue placeholder="default" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {codecOptions
+                        .filter((c) => c !== 'copy')
+                        .map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {CODEC_LABELS[c] ?? c}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={bitratePath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bitrate (kbps)</FormLabel>
                   <FormControl>
-                    <SelectTrigger className="data-[placeholder]:italic">
-                      <SelectValue placeholder="default" />
-                    </SelectTrigger>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {codecOptions
-                      .filter((c) => c !== 'copy')
-                      .map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {CODEC_LABELS[c] ?? c}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={maxBitratePath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Max bitrate (kbps)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={widthPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Width (px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={heightPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Height (px)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={framerratePath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>FPS</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-4">
+            <FormField
+              control={control}
+              name={presetPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preset</FormLabel>
+                  <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                    <FormControl>
+                      <SelectTrigger className="data-[placeholder]:italic">
+                        <SelectValue placeholder="default" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PRESET_OPTIONS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={bitratePath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bitrate (kbps)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={maxBitratePath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Max bitrate (kbps)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={widthPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Width (px)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={heightPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Height (px)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={framerratePath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>FPS</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={profilePath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Profile (H.264/H.265)</FormLabel>
+                  <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                    <FormControl>
+                      <SelectTrigger className="data-[placeholder]:italic">
+                        <SelectValue placeholder="default" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {H264_PROFILE_OPTIONS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={levelPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Level</FormLabel>
+                  <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                    <FormControl>
+                      <SelectTrigger className="data-[placeholder]:italic">
+                        <SelectValue placeholder="default" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {H264_LEVEL_OPTIONS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={keyframePath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Keyframe interval (s)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div className="grid gap-4 sm:grid-cols-4">
-          <FormField
-            control={control}
-            name={presetPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Preset</FormLabel>
-                <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+          <div className="grid gap-4 sm:grid-cols-4">
+            <FormField
+              control={control}
+              name={bframesPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>B-frames</FormLabel>
                   <FormControl>
-                    <SelectTrigger className="data-[placeholder]:italic">
-                      <SelectValue placeholder="default" />
-                    </SelectTrigger>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {PRESET_OPTIONS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={profilePath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Profile (H.264/H.265)</FormLabel>
-                <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={refsPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reference frames</FormLabel>
                   <FormControl>
-                    <SelectTrigger className="data-[placeholder]:italic">
-                      <SelectValue placeholder="default" />
-                    </SelectTrigger>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ''}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {H264_PROFILE_OPTIONS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={levelPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Level</FormLabel>
-                <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={sarPath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>SAR (e.g. 1:1)</FormLabel>
                   <FormControl>
-                    <SelectTrigger className="data-[placeholder]:italic">
-                      <SelectValue placeholder="default" />
-                    </SelectTrigger>
+                    <Input
+                      placeholder="default"
+                      className="placeholder:italic"
+                      {...field}
+                      value={(field.value as string | undefined) ?? ''}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {H264_LEVEL_OPTIONS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={keyframePath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Keyframe interval (s)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={resizeModePath}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resize mode</FormLabel>
+                  <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
+                    <FormControl>
+                      <SelectTrigger className="data-[placeholder]:italic">
+                        <SelectValue placeholder="default" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {RESIZE_MODE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-4">
-          <FormField
-            control={control}
-            name={bframesPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>B-frames</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={refsPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Reference frames</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as number | string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={sarPath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>SAR (e.g. 1:1)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="default"
-                    className="placeholder:italic"
-                    {...field}
-                    value={(field.value as string | undefined) ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name={resizeModePath}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Resize mode</FormLabel>
-                <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
-                  <FormControl>
-                    <SelectTrigger className="data-[placeholder]:italic">
-                      <SelectValue placeholder="default" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {RESIZE_MODE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

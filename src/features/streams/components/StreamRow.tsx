@@ -24,11 +24,18 @@ export function StreamRow({ stream }: StreamRowProps) {
     stream.push?.filter((p) => p.enabled && p.status === 'active').length ?? 0;
   const totalPushCount = stream.push?.filter((p) => p.enabled).length ?? 0;
 
-  // Transcode summary
+  // Transcode summary. The Go server emits empty strings for unset enum fields
+  // (codec: "" instead of omitting), so treat both as "no codec set" and let the
+  // rendition count speak for itself.
   const tc = stream.transcoder;
-  const hasTranscoder = !!(tc?.video || tc?.audio);
-  const videoCodec = tc?.video?.copy ? 'copy' : tc?.video?.profiles?.[0]?.codec;
-  const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec;
+  const hasTranscoder = !!tc;
+  const videoProfileCount = tc?.video?.profiles?.length ?? 0;
+  const videoCodec = tc?.video?.copy
+    ? 'copy'
+    : videoProfileCount > 0
+      ? tc?.video?.profiles?.[0]?.codec || ''
+      : null;
+  const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec || null;
 
   return (
     <TableRow
@@ -59,10 +66,18 @@ export function StreamRow({ stream }: StreamRowProps) {
       <TableCell>
         {hasTranscoder ? (
           <div className="space-y-0.5">
-            {videoCodec && (
+            {(videoCodec !== null || videoProfileCount > 0) && (
               <p className="text-xs">
                 <span className="text-muted-foreground">Video:</span>{' '}
-                <span className="font-medium">{videoCodec}</span>
+                {videoCodec && <span className="font-medium">{videoCodec}</span>}
+                {videoCodec && videoProfileCount > 0 && (
+                  <span className="text-muted-foreground"> · </span>
+                )}
+                {videoProfileCount > 0 && (
+                  <span className="font-medium">
+                    {videoProfileCount} {videoProfileCount === 1 ? 'rendition' : 'renditions'}
+                  </span>
+                )}
               </p>
             )}
             {audioCodec && (
