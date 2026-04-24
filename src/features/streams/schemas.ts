@@ -21,6 +21,7 @@ export const inputNetSchema = z.object({
   reconnect_delay_sec: z.coerce.number().int().min(0).optional(),
   reconnect_max_delay_sec: z.coerce.number().int().min(0).optional(),
   max_reconnects: z.coerce.number().int().min(0).optional(),
+  insecure_tls: z.boolean().optional(),
 });
 
 export const httpKeyValueSchema = z.object({

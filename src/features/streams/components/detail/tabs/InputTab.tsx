@@ -43,6 +43,7 @@ function toFormValues(stream: Stream): InputsFormValues {
             reconnect_delay_sec: inp.net.reconnect_delay_sec,
             reconnect_max_delay_sec: inp.net.reconnect_max_delay_sec,
             max_reconnects: inp.net.max_reconnects,
+            insecure_tls: inp.net.insecure_tls,
           }
         : undefined,
       headers: recordToList(inp.headers),
@@ -361,6 +362,26 @@ function AdvancedToggle({
                   <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
                 </FormControl>
                 <FormLabel className="text-xs">Auto-reconnect on failure</FormLabel>
+              </FormItem>
+            )}
+          />
+
+          {/* Insecure TLS toggle */}
+          <FormField
+            control={form.control}
+            name={`inputs.${index}.net.insecure_tls`}
+            render={({ field }) => (
+              <FormItem className="flex items-start gap-2 space-y-0">
+                <FormControl>
+                  <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                </FormControl>
+                <div className="space-y-0.5">
+                  <FormLabel className="text-xs">Allow insecure TLS</FormLabel>
+                  <p className="text-xs text-muted-foreground">
+                    Skip certificate verification for HTTPS pulls. Leave off in production; only
+                    enable for trusted self-signed sources.
+                  </p>
+                </div>
               </FormItem>
             )}
           />

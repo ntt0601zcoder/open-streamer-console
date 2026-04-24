@@ -96,6 +96,7 @@ export interface InputNetConfig {
   reconnect_delay_sec?: number;
   reconnect_max_delay_sec?: number;
   max_reconnects?: number;
+  insecure_tls?: boolean;
 }
 
 export interface Input {
