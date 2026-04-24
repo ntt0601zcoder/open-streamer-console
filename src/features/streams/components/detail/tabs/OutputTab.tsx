@@ -328,7 +328,13 @@ function OutputUrlRow({ label, url, protocol }: OutputUrlRowProps) {
         {label}
       </Badge>
       <span className="flex-1 truncate font-mono text-xs text-muted-foreground">{url}</span>
-      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => void copy()}>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 shrink-0"
+        onClick={() => void copy()}
+      >
         <Copy className="h-3.5 w-3.5" />
       </Button>
     </div>

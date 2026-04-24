@@ -187,7 +187,13 @@ function UrlRow({ label, url, copied, onCopy }: UrlRowProps) {
       <span className="flex-1 truncate font-mono text-[10px] text-muted-foreground" title={url}>
         {url}
       </span>
-      <Button size="icon" variant="ghost" className="h-5 w-5 shrink-0" onClick={onCopy}>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="h-5 w-5 shrink-0"
+        onClick={onCopy}
+      >
         <Copy className={`h-3 w-3 ${copied ? 'text-emerald-500' : ''}`} />
       </Button>
     </div>

@@ -75,6 +75,7 @@ function UrlRow({
           {value}
         </code>
         <Button
+          type="button"
           size="icon"
           variant="ghost"
           className="h-8 w-8 shrink-0"
