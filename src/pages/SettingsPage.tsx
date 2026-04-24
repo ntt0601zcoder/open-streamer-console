@@ -114,7 +114,6 @@ type DashValues = z.infer<typeof dashSchema>;
 const transcoderSchema = z.object({
   ffmpeg_path: z.string().optional(),
   max_workers: z.coerce.number().int().min(0).optional(),
-  max_restarts: z.coerce.number().int().min(0).optional(),
 });
 type TranscoderValues = z.infer<typeof transcoderSchema>;
 
@@ -1125,7 +1124,6 @@ function TranscoderSection() {
     values: {
       ffmpeg_path: cfg?.ffmpeg_path ?? '',
       max_workers: cfg?.max_workers,
-      max_restarts: cfg?.max_restarts,
     },
   });
 
@@ -1149,7 +1147,7 @@ function TranscoderSection() {
           <CardHeader>
             <CardTitle className="text-base">FFmpeg Worker Pool</CardTitle>
             <CardDescription>
-              Controls the number of concurrent FFmpeg transcoding processes and restart behaviour.
+              Controls the number of concurrent FFmpeg transcoding processes.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1169,52 +1167,28 @@ function TranscoderSection() {
                 </FormItem>
               )}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="max_workers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Max workers</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="default"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Maximum concurrent FFmpeg processes. 0 = unlimited.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="max_restarts"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Max restarts</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="default"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Max consecutive crashes before marking failure. 0 = unlimited.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="max_workers"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Max workers</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="default"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Maximum concurrent FFmpeg processes. 0 = unlimited.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
         <SaveRow
