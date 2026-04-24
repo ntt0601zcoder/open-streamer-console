@@ -69,7 +69,6 @@ export interface ManagerConfig {
 
 export interface PublisherHLSConfig {
   dir?: string;
-  base_url?: string;
   live_segment_sec?: number;
   live_window?: number;
   live_history?: number;

@@ -95,7 +95,6 @@ type ListenersValues = z.infer<typeof listenersSchema>;
 
 const hlsSchema = z.object({
   dir: z.string().optional(),
-  base_url: z.string().optional(),
   live_segment_sec: z.coerce.number().int().min(1).optional(),
   live_window: z.coerce.number().int().min(1).optional(),
   live_history: z.coerce.number().int().min(0).optional(),
@@ -836,7 +835,6 @@ function HlsSection() {
     resolver: zodResolver(hlsSchema),
     values: {
       dir: cfg?.dir ?? '',
-      base_url: cfg?.base_url ?? '',
       live_segment_sec: cfg?.live_segment_sec,
       live_window: cfg?.live_window,
       live_history: cfg?.live_history,
@@ -848,7 +846,7 @@ function HlsSection() {
     update.mutate(
       {
         publisher: {
-          hls: { ...values, dir: values.dir || undefined, base_url: values.base_url || undefined },
+          hls: { ...values, dir: values.dir || undefined },
         },
       },
       {
@@ -882,22 +880,6 @@ function HlsSection() {
                     <FormControl>
                       <Input placeholder="/var/hls" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="base_url"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>Base URL (CDN)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://cdn.example.com" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Override URLs in manifests with a CDN endpoint.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
