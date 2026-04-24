@@ -56,13 +56,29 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
       mediaErrorCountRef.current = 0;
 
       const hls = new Hls({
-        // Live tuning — balanced latency vs stability
+        // Live sync — stay near the edge but leave enough slack for catch-up
+        // so we don't constantly force-seek on minor network jitter.
         liveSyncDurationCount: 3,
-        liveMaxLatencyDurationCount: 6,
-        maxBufferLength: 15,
-        liveBackBufferLength: 5,
+        liveMaxLatencyDurationCount: 10,
         liveDurationInfinity: true,
-        // Error recovery
+
+        // Forward buffer: larger than the previous 15s so a brief network or
+        // decode hiccup doesn't starve the media element and freeze playback.
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+        // Replaces deprecated liveBackBufferLength (removed in hls.js ≥ 1.4).
+        backBufferLength: 30,
+
+        // Stall recovery — nudge aggressively when the video reports `waiting`
+        // despite data being present (PTS holes, container splice points).
+        // Native HLS players (VLC, browser extensions) tolerate these by
+        // default; MSE is stricter, so we ask hls.js to try harder.
+        nudgeOffset: 0.1,
+        nudgeMaxRetry: 10,
+        maxBufferHole: 0.5,
+        highBufferWatchdogPeriod: 2,
+
+        // Network / manifest retry
         fragLoadingRetryDelay: 1000,
         manifestLoadingRetryDelay: 1000,
       });
@@ -136,6 +152,78 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
       hlsRef.current = null;
     };
   }, [hlsUrl, active, initHls]);
+
+  // Stall watchdog — hls.js's internal nudging occasionally gives up on small
+  // MSE hiccups. If the video is waiting for data but the buffer already has
+  // playable data past currentTime, nudge past the gap; if it's an actual
+  // live-edge underrun, seek to liveSyncPosition.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !active || state !== 'playing') return;
+
+    let waitingSince = 0;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    function bufferedAhead(): number {
+      if (!video) return 0;
+      for (let i = 0; i < video.buffered.length; i++) {
+        const start = video.buffered.start(i);
+        const end = video.buffered.end(i);
+        if (video.currentTime >= start - 0.1 && video.currentTime <= end) {
+          return end - video.currentTime;
+        }
+      }
+      return 0;
+    }
+
+    function unstick() {
+      if (!video) return;
+      const ahead = bufferedAhead();
+      if (ahead > 0.5) {
+        // Nudge past PTS gap; small step avoids an audible glitch.
+        video.currentTime = Math.min(video.currentTime + 0.2, video.currentTime + ahead);
+        return;
+      }
+      // No buffered data ahead — jump to the live edge to resume from fresh segments.
+      const livePos = hlsRef.current?.liveSyncPosition;
+      if (livePos != null && livePos > video.currentTime) {
+        video.currentTime = livePos;
+      }
+    }
+
+    function onWaiting() {
+      waitingSince = Date.now();
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        if (!video || video.readyState >= 3 /* HAVE_FUTURE_DATA */) {
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+          return;
+        }
+        // Give hls.js ~3s to recover on its own before forcing the issue.
+        if (Date.now() - waitingSince >= 3000) {
+          unstick();
+        }
+      }, 1000);
+    }
+
+    function onPlaying() {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    }
+
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('playing', onPlaying);
+    };
+  }, [active, state]);
 
   function manualRetry() {
     const video = videoRef.current;
