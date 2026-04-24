@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { absoluteUrl, vodApi, type VODFileEntry } from '@/api/vod';
+import { copyText } from '@/lib/clipboard';
 import { VodFilePlayer } from './VodFilePlayer';
 
 interface VodPlayerDialogProps {
@@ -15,11 +16,10 @@ export function VodPlayerDialog({ mountName, file, onClose }: VodPlayerDialogPro
   const playSrc = file.play_url ? absoluteUrl(file.play_url) : vodApi.rawUrl(mountName, file.path);
   const ingestUrl = file.ingest_url;
 
-  function copy(value: string, label: string) {
-    void navigator.clipboard.writeText(value).then(
-      () => toast.success(`${label} copied`),
-      () => toast.error('Copy failed'),
-    );
+  async function copy(value: string, label: string) {
+    const ok = await copyText(value);
+    if (ok) toast.success(`${label} copied`);
+    else toast.error('Copy failed — your browser blocked clipboard access');
   }
 
   return (
@@ -34,12 +34,16 @@ export function VodPlayerDialog({ mountName, file, onClose }: VodPlayerDialogPro
         <VodFilePlayer src={playSrc} />
 
         <div className="space-y-3 pt-2">
-          <UrlRow label="Play URL" value={playSrc} onCopy={() => copy(playSrc, 'Play URL')} />
+          <UrlRow
+            label="Play URL"
+            value={playSrc}
+            onCopy={() => void copy(playSrc, 'Play URL')}
+          />
           {ingestUrl && (
             <UrlRow
               label="Ingest URL"
               value={ingestUrl}
-              onCopy={() => copy(ingestUrl, 'Ingest URL')}
+              onCopy={() => void copy(ingestUrl, 'Ingest URL')}
               hint="Use as a stream input to re-broadcast this file"
             />
           )}

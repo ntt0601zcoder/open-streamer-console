@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Copy, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { copyText } from '@/lib/clipboard';
 import { dashUrl, hlsUrl, rtmpUrl } from '@/lib/streamUrls';
 import { StreamPlayer } from './StreamPlayer';
 
@@ -23,11 +25,14 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
   const isRunning = status === 'active' || status === 'degraded';
   const hlsEnabled = stream.protocols?.hls ?? false;
 
-  function copyToClipboard(text: string, key: string) {
-    void navigator.clipboard.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 2000);
-    });
+  async function copyToClipboard(text: string, key: string) {
+    const ok = await copyText(text);
+    if (!ok) {
+      toast.error('Copy failed — your browser blocked clipboard access');
+      return;
+    }
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
   }
 
   return (
@@ -117,7 +122,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
                   label="HLS"
                   url={hlsUrl_}
                   copied={copied === 'hls'}
-                  onCopy={() => copyToClipboard(hlsUrl_, 'hls')}
+                  onCopy={() => void copyToClipboard(hlsUrl_, 'hls')}
                 />
               )}
               {stream.protocols?.dash && (
@@ -125,7 +130,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
                   label="DASH"
                   url={dashUrl(stream.code)}
                   copied={copied === 'dash'}
-                  onCopy={() => copyToClipboard(dashUrl(stream.code), 'dash')}
+                  onCopy={() => void copyToClipboard(dashUrl(stream.code), 'dash')}
                 />
               )}
               {stream.protocols?.rtmp && rtmpUrl(stream.code, ports) && (
@@ -133,7 +138,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
                   label="RTMP"
                   url={rtmpUrl(stream.code, ports)!}
                   copied={copied === 'rtmp'}
-                  onCopy={() => copyToClipboard(rtmpUrl(stream.code, ports)!, 'rtmp')}
+                  onCopy={() => void copyToClipboard(rtmpUrl(stream.code, ports)!, 'rtmp')}
                 />
               )}
             </div>

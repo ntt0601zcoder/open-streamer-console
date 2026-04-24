@@ -25,6 +25,7 @@ import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErro
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
+import { copyText } from '@/lib/clipboard';
 import { formatDurationSince } from '@/lib/format';
 import { dashUrl, hlsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
 
@@ -315,8 +316,10 @@ function OutputUrlRow({ label, url, protocol }: OutputUrlRowProps) {
     );
   }
 
-  function copy() {
-    void navigator.clipboard.writeText(url!).then(() => toast.success('Copied'));
+  async function copy() {
+    const ok = await copyText(url!);
+    if (ok) toast.success('Copied');
+    else toast.error('Copy failed — your browser blocked clipboard access');
   }
 
   return (
@@ -325,7 +328,7 @@ function OutputUrlRow({ label, url, protocol }: OutputUrlRowProps) {
         {label}
       </Badge>
       <span className="flex-1 truncate font-mono text-xs text-muted-foreground">{url}</span>
-      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={copy}>
+      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => void copy()}>
         <Copy className="h-3.5 w-3.5" />
       </Button>
     </div>
