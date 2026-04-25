@@ -106,6 +106,7 @@ export interface AppServerConfig {
 export interface TranscoderConfig {
   ffmpeg_path?: string;
   max_workers?: number;
+  multi_output?: boolean;
 }
 
 export interface GlobalConfig {

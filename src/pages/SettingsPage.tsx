@@ -114,6 +114,7 @@ type DashValues = z.infer<typeof dashSchema>;
 const transcoderSchema = z.object({
   ffmpeg_path: z.string().optional(),
   max_workers: z.coerce.number().int().min(0).optional(),
+  multi_output: z.boolean().optional(),
 });
 type TranscoderValues = z.infer<typeof transcoderSchema>;
 
@@ -1124,6 +1125,7 @@ function TranscoderSection() {
     values: {
       ffmpeg_path: cfg?.ffmpeg_path ?? '',
       max_workers: cfg?.max_workers,
+      multi_output: cfg?.multi_output ?? false,
     },
   });
 
@@ -1186,6 +1188,22 @@ function TranscoderSection() {
                     Maximum concurrent FFmpeg processes. 0 = unlimited.
                   </FormDescription>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="multi_output"
+              render={({ field }) => (
+                <FormItem className="flex items-start gap-3 space-y-0 rounded-md border p-3">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <div className="space-y-1">
+                    <FormLabel>Multi-output mode</FormLabel>
+                    <FormDescription>One FFmpeg per stream, all profiles in one process.</FormDescription>
+                    <FormMessage />
+                  </div>
                 </FormItem>
               )}
             />
