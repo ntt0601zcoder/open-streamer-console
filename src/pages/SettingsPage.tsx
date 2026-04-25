@@ -113,7 +113,6 @@ type DashValues = z.infer<typeof dashSchema>;
 
 const transcoderSchema = z.object({
   ffmpeg_path: z.string().optional(),
-  max_workers: z.coerce.number().int().min(0).optional(),
   multi_output: z.boolean().optional(),
 });
 type TranscoderValues = z.infer<typeof transcoderSchema>;
@@ -1124,7 +1123,6 @@ function TranscoderSection() {
     resolver: zodResolver(transcoderSchema),
     values: {
       ffmpeg_path: cfg?.ffmpeg_path ?? '',
-      max_workers: cfg?.max_workers,
       multi_output: cfg?.multi_output ?? false,
     },
   });
@@ -1147,10 +1145,8 @@ function TranscoderSection() {
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">FFmpeg Worker Pool</CardTitle>
-            <CardDescription>
-              Controls the number of concurrent FFmpeg transcoding processes.
-            </CardDescription>
+            <CardTitle className="text-base">Transcoder</CardTitle>
+            <CardDescription>FFmpeg binary location and process layout.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -1164,28 +1160,6 @@ function TranscoderSection() {
                   </FormControl>
                   <FormDescription>
                     Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="max_workers"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max workers</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="default"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Maximum concurrent FFmpeg processes. 0 = unlimited.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
