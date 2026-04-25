@@ -269,6 +269,25 @@ export interface PublisherRuntimeStatus {
   pushes?: PushSnapshot[];
 }
 
+export const SwitchReason = {
+  error: 'error',
+  timeout: 'timeout',
+  manual: 'manual',
+  failback: 'failback',
+  recovery: 'recovery',
+  input_added: 'input_added',
+  input_removed: 'input_removed',
+} as const;
+export type SwitchReason = (typeof SwitchReason)[keyof typeof SwitchReason];
+
+export interface SwitchEvent {
+  at: string;
+  from?: number;
+  to?: number;
+  reason?: SwitchReason;
+  detail?: string;
+}
+
 export interface StreamRuntime {
   pipeline_active?: boolean;
   status?: StreamStatus;
@@ -278,6 +297,7 @@ export interface StreamRuntime {
   inputs?: InputHealthSnapshot[];
   transcoder?: TranscoderRuntimeStatus;
   publisher?: PublisherRuntimeStatus;
+  switches?: SwitchEvent[];
 }
 
 export interface Stream {

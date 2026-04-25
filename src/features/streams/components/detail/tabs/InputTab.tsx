@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { listToRecord, recordToList } from '@/lib/kvList';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStreams';
+import { InputSwitchHistory } from '@/features/streams/components/InputSwitchHistory';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
@@ -171,6 +172,10 @@ export function InputTab({ stream }: InputTabProps) {
             ))}
           </CardContent>
         </Card>
+
+        {stream.runtime?.switches && stream.runtime.switches.length > 0 && (
+          <InputSwitchHistory switches={stream.runtime.switches} />
+        )}
 
         <div className="flex justify-end gap-2">
           {form.formState.isDirty && (
