@@ -27,7 +27,11 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import type { GlobalConfig } from '@/api/config';
-import { useServerConfig, useUpdateGlobalConfig } from '@/features/config/hooks/useServerConfig';
+import {
+  useConfigDefaults,
+  useServerConfig,
+  useUpdateGlobalConfig,
+} from '@/features/config/hooks/useServerConfig';
 
 // ─── Zod schemas (snake_case to match Go JSON tags) ───────────────────────────
 
@@ -541,8 +545,14 @@ function IngestorSection() {
 
 function ListenersSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.listeners;
   const update = useUpdateGlobalConfig();
+  const dl = defaults?.listeners;
+  const rtmpPortPlaceholder = dl?.rtmp?.port != null ? String(dl.rtmp.port) : 'default';
+  const rtspPortPlaceholder = dl?.rtsp?.port != null ? String(dl.rtsp.port) : 'default';
+  const rtspTransportPlaceholder = dl?.rtsp?.transport ?? 'default';
+  const srtPortPlaceholder = dl?.srt?.port != null ? String(dl.srt.port) : 'default';
   const form = useForm<ListenersValues>({
     resolver: zodResolver(listenersSchema),
     values: {
@@ -638,7 +648,8 @@ function ListenersSection() {
                         type="number"
                         min={0}
                         max={65535}
-                        placeholder="1935"
+                        placeholder={rtmpPortPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                         disabled={!rtmpEnabled}
@@ -695,7 +706,8 @@ function ListenersSection() {
                         type="number"
                         min={0}
                         max={65535}
-                        placeholder="554"
+                        placeholder={rtspPortPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                         disabled={!rtspEnabled}
@@ -717,8 +729,8 @@ function ListenersSection() {
                       disabled={!rtspEnabled}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="default (tcp)" />
+                        <SelectTrigger className="data-[placeholder]:italic">
+                          <SelectValue placeholder={rtspTransportPlaceholder} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -780,7 +792,8 @@ function ListenersSection() {
                         type="number"
                         min={0}
                         max={65535}
-                        placeholder="9999"
+                        placeholder={srtPortPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                         disabled={!srtEnabled}
@@ -828,6 +841,7 @@ function ListenersSection() {
 
 function HlsSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.publisher?.hls;
   const update = useUpdateGlobalConfig();
   const form = useForm<HlsValues>({
@@ -840,6 +854,11 @@ function HlsSection() {
       live_ephemeral: cfg?.live_ephemeral ?? false,
     },
   });
+
+  const d = defaults?.publisher?.hls;
+  const segPlaceholder = d?.live_segment_sec != null ? String(d.live_segment_sec) : 'default';
+  const winPlaceholder = d?.live_window != null ? String(d.live_window) : 'default';
+  const histPlaceholder = d?.live_history != null ? String(d.live_history) : 'default';
 
   function onSubmit(values: HlsValues) {
     update.mutate(
@@ -893,7 +912,8 @@ function HlsSection() {
                       <Input
                         type="number"
                         min={1}
-                        placeholder="2"
+                        placeholder={segPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -912,7 +932,8 @@ function HlsSection() {
                       <Input
                         type="number"
                         min={1}
-                        placeholder="5"
+                        placeholder={winPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -931,7 +952,8 @@ function HlsSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="0"
+                        placeholder={histPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -977,6 +999,7 @@ function HlsSection() {
 
 function DashSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.publisher?.dash;
   const update = useUpdateGlobalConfig();
   const form = useForm<DashValues>({
@@ -989,6 +1012,11 @@ function DashSection() {
       live_ephemeral: cfg?.live_ephemeral ?? false,
     },
   });
+
+  const d = defaults?.publisher?.dash;
+  const segPlaceholder = d?.live_segment_sec != null ? String(d.live_segment_sec) : 'default';
+  const winPlaceholder = d?.live_window != null ? String(d.live_window) : 'default';
+  const histPlaceholder = d?.live_history != null ? String(d.live_history) : 'default';
 
   function onSubmit(values: DashValues) {
     update.mutate(
@@ -1036,7 +1064,8 @@ function DashSection() {
                       <Input
                         type="number"
                         min={1}
-                        placeholder="2"
+                        placeholder={segPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -1055,7 +1084,8 @@ function DashSection() {
                       <Input
                         type="number"
                         min={1}
-                        placeholder="5"
+                        placeholder={winPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -1074,7 +1104,8 @@ function DashSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="0"
+                        placeholder={histPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -1197,12 +1228,18 @@ function TranscoderSection() {
 
 function ManagerSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.manager;
   const update = useUpdateGlobalConfig();
   const form = useForm<ManagerValues>({
     resolver: zodResolver(managerSchema),
     values: { input_packet_timeout_sec: cfg?.input_packet_timeout_sec },
   });
+
+  const packetTimeoutPlaceholder =
+    defaults?.manager?.input_packet_timeout_sec != null
+      ? String(defaults.manager.input_packet_timeout_sec)
+      : 'default';
 
   function onSubmit(values: ManagerValues) {
     update.mutate(
@@ -1238,7 +1275,8 @@ function ManagerSection() {
                     <Input
                       type="number"
                       min={0}
-                      placeholder="default"
+                      placeholder={packetTimeoutPlaceholder}
+                      className="placeholder:italic"
                       {...field}
                       value={field.value ?? ''}
                     />
@@ -1357,12 +1395,16 @@ function HooksSection() {
 
 function BufferSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.buffer;
   const update = useUpdateGlobalConfig();
   const form = useForm<BufferValues>({
     resolver: zodResolver(bufferSchema),
     values: { capacity: cfg?.capacity },
   });
+
+  const capacityPlaceholder =
+    defaults?.buffer?.capacity != null ? String(defaults.buffer.capacity) : 'default';
 
   function onSubmit(values: BufferValues) {
     update.mutate(
@@ -1396,7 +1438,8 @@ function BufferSection() {
                     <Input
                       type="number"
                       min={0}
-                      placeholder="default"
+                      placeholder={capacityPlaceholder}
+                      className="placeholder:italic"
                       {...field}
                       value={field.value ?? ''}
                     />

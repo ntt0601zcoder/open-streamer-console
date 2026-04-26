@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/table';
 import type { Hook } from '@/api/types';
 import { EventType } from '@/api/types';
+import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import {
   useCreateHook,
   useDeleteHook,
@@ -292,7 +293,12 @@ function HookRow({
 function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void }) {
   const createHook = useCreateHook();
   const updateHook = useUpdateHook();
+  const { data: defaults } = useConfigDefaults();
   const isEdit = hook !== null;
+  const maxRetriesPlaceholder =
+    defaults?.hook?.max_retries != null ? String(defaults.hook.max_retries) : 'default';
+  const timeoutPlaceholder =
+    defaults?.hook?.timeout_sec != null ? String(defaults.hook.timeout_sec) : 'default';
 
   const form = useForm<HookFormValues>({
     resolver: zodResolver(hookFormSchema),
@@ -480,7 +486,8 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                       <Input
                         type="number"
                         min={0}
-                        placeholder="default (3)"
+                        placeholder={maxRetriesPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -499,7 +506,8 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                       <Input
                         type="number"
                         min={0}
-                        placeholder="default (10)"
+                        placeholder={timeoutPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />

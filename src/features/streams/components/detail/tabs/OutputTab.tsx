@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { ServerPorts } from '@/api/config';
 import type { PushSnapshot, Stream } from '@/api/types';
-import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { CollapsibleRow } from '@/features/streams/components/CollapsibleRow';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
@@ -354,6 +354,14 @@ function PushDestRow({ index, form, runtimePushes, onRemove }: PushDestRowProps)
   const errors = runtime?.errors ?? [];
   const uptime = runtime?.connected_at ? formatDurationSince(runtime.connected_at) : null;
 
+  const { data: defaults } = useConfigDefaults();
+  const timeoutPlaceholder =
+    defaults?.push?.timeout_sec != null ? String(defaults.push.timeout_sec) : 'default';
+  const retryPlaceholder =
+    defaults?.push?.retry_timeout_sec != null
+      ? String(defaults.push.retry_timeout_sec)
+      : 'default';
+
   return (
     <CollapsibleRow
       header={
@@ -450,7 +458,8 @@ function PushDestRow({ index, form, runtimePushes, onRemove }: PushDestRowProps)
                 <Input
                   type="number"
                   min={0}
-                  placeholder="default"
+                  placeholder={timeoutPlaceholder}
+                  className="placeholder:italic"
                   {...field}
                   value={field.value ?? ''}
                 />
@@ -469,7 +478,8 @@ function PushDestRow({ index, form, runtimePushes, onRemove }: PushDestRowProps)
                 <Input
                   type="number"
                   min={0}
-                  placeholder="default"
+                  placeholder={retryPlaceholder}
+                  className="placeholder:italic"
                   {...field}
                   value={field.value ?? ''}
                 />
