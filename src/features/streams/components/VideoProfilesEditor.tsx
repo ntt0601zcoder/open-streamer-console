@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { TranscodePresetPicker } from '@/features/streams/components/TranscodePresetPicker';
 
 const CODEC_LABELS: Record<string, string> = {
@@ -159,6 +160,11 @@ function ProfileCard<T extends FieldValues>({
 
   const [collapsed, setCollapsed] = useState(false);
 
+  const { data: defaults } = useConfigDefaults();
+  const videoDefaults = defaults?.transcoder?.video;
+  const bitratePlaceholder = videoDefaults?.bitrate_k != null ? String(videoDefaults.bitrate_k) : 'default';
+  const resizeModePlaceholder = videoDefaults?.resize_mode ?? 'default';
+
   return (
     <div className="rounded-lg border">
       <div className="flex items-stretch border-b bg-muted/40">
@@ -244,7 +250,7 @@ function ProfileCard<T extends FieldValues>({
                     <Input
                       type="number"
                       min={0}
-                      placeholder="default"
+                      placeholder={bitratePlaceholder}
                       className="placeholder:italic"
                       {...field}
                       value={(field.value as number | string | undefined) ?? ''}
@@ -499,7 +505,7 @@ function ProfileCard<T extends FieldValues>({
                   <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
                     <FormControl>
                       <SelectTrigger className="data-[placeholder]:italic">
-                        <SelectValue placeholder="default" />
+                        <SelectValue placeholder={resizeModePlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

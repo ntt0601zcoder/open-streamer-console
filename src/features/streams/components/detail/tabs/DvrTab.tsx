@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
+import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { dvrFormSchema, type DvrFormValues } from '@/features/streams/schemas';
@@ -36,6 +37,7 @@ function toFormValues(stream: Stream): DvrFormValues {
 
 export function DvrTab({ stream }: DvrTabProps) {
   const update = useSaveStream();
+  const { data: defaults } = useConfigDefaults();
 
   const form = useForm<DvrFormValues>({
     resolver: zodResolver(dvrFormSchema),
@@ -45,6 +47,11 @@ export function DvrTab({ stream }: DvrTabProps) {
   useFormConfigSync(form, toFormValues(stream));
 
   const enabled = useWatch({ control: form.control, name: 'enabled' });
+
+  const segmentDurationPlaceholder =
+    defaults?.dvr?.segment_duration != null ? String(defaults.dvr.segment_duration) : 'default';
+  const storagePathPlaceholder =
+    defaults?.dvr?.storage_path_template?.replace('{streamCode}', stream.code) ?? 'default';
 
   function onSubmit(values: DvrFormValues) {
     update.mutate(
@@ -122,7 +129,8 @@ export function DvrTab({ stream }: DvrTabProps) {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="0 = server default (4s)"
+                        placeholder={segmentDurationPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -166,7 +174,11 @@ export function DvrTab({ stream }: DvrTabProps) {
                   <FormItem>
                     <FormLabel>Storage path</FormLabel>
                     <FormControl>
-                      <Input placeholder="default: ./dvr/{code}" {...field} />
+                      <Input
+                        placeholder={storagePathPlaceholder}
+                        className="placeholder:italic"
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
                       Overrides the default DVR root directory for this stream

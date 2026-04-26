@@ -38,7 +38,7 @@ import type {
   TranscoderConfig,
   VideoCodec,
 } from '@/api/types';
-import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { CollapsibleRow } from '@/features/streams/components/CollapsibleRow';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
@@ -639,6 +639,14 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
   const videoCodecOptions = serverConfig?.video_codecs ?? [];
   const audioCodecOptions = serverConfig?.audio_codecs ?? [];
 
+  const { data: defaults } = useConfigDefaults();
+  const hwPlaceholder = defaults?.transcoder?.global?.hw ?? 'default';
+  const audioCodecPlaceholder = defaults?.transcoder?.audio?.codec ?? 'default';
+  const audioBitratePlaceholder =
+    defaults?.transcoder?.audio?.bitrate_k != null
+      ? String(defaults.transcoder.audio.bitrate_k)
+      : 'default';
+
   return (
     <div className="space-y-6">
       <Card>
@@ -686,7 +694,7 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
                     <Select onValueChange={field.onChange} value={field.value ?? ''}>
                       <FormControl>
                         <SelectTrigger className="data-[placeholder]:italic">
-                          <SelectValue placeholder="default" />
+                          <SelectValue placeholder={hwPlaceholder} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -839,7 +847,7 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
                       <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl>
                           <SelectTrigger className="data-[placeholder]:italic">
-                            <SelectValue placeholder="default" />
+                            <SelectValue placeholder={audioCodecPlaceholder} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -866,7 +874,7 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
                         <Input
                           type="number"
                           min={0}
-                          placeholder="default"
+                          placeholder={audioBitratePlaceholder}
                           className="placeholder:italic"
                           {...field}
                           value={field.value ?? ''}
@@ -953,6 +961,13 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
 
 function DvrSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
   const enabled = useWatch({ control: form.control, name: 'dvr.enabled' });
+  const code = useWatch({ control: form.control, name: 'code' });
+  const { data: defaults } = useConfigDefaults();
+  const segmentDurationPlaceholder =
+    defaults?.dvr?.segment_duration != null ? String(defaults.dvr.segment_duration) : 'default';
+  const storagePathPlaceholder =
+    defaults?.dvr?.storage_path_template?.replace('{streamCode}', code || '{streamCode}') ??
+    'default';
 
   return (
     <Card>
@@ -1010,7 +1025,7 @@ function DvrSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
                   <Input
                     type="number"
                     min={0}
-                    placeholder="default"
+                    placeholder={segmentDurationPlaceholder}
                     className="placeholder:italic"
                     {...field}
                     value={field.value ?? ''}
@@ -1048,7 +1063,11 @@ function DvrSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
               <FormItem>
                 <FormLabel>Storage path</FormLabel>
                 <FormControl>
-                  <Input placeholder="default" className="placeholder:italic" {...field} />
+                  <Input
+                    placeholder={storagePathPlaceholder}
+                    className="placeholder:italic"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

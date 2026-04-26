@@ -4,12 +4,29 @@ import { configApi, type GlobalConfig } from '@/api/config';
 export const configKeys = {
   all: ['config'] as const,
   yaml: ['config', 'yaml'] as const,
+  defaults: ['config', 'defaults'] as const,
 } as const;
 
 export function useServerConfig() {
   return useQuery({
     queryKey: configKeys.all,
     queryFn: () => configApi.get(),
+  });
+}
+
+/**
+ * Server-side static defaults — fetched once at app init and cached for the
+ * lifetime of the tab. Use as form placeholders so users see the real fallback
+ * values that the server will substitute for empty fields. The server has to
+ * be redeployed to change these, so a tab refresh is enough to pick up new
+ * defaults; no polling needed.
+ */
+export function useConfigDefaults() {
+  return useQuery({
+    queryKey: configKeys.defaults,
+    queryFn: () => configApi.getDefaults(),
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 }
 

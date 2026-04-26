@@ -2,6 +2,7 @@ import { api } from './client';
 import type {
   AudioCodec,
   HWAccel,
+  ResizeMode,
   StreamStatus,
   VideoCodec,
   WatermarkPosition,
@@ -150,10 +151,43 @@ export interface ConfigUpdateResponse {
   ports: ServerPorts;
 }
 
+// ─── /config/defaults ─────────────────────────────────────────────────────────
+// Static defaults the server fills in for unset configuration fields. Fetch
+// once at app init and use as form placeholders so operators see the real
+// fallback values instead of the literal word "default".
+
+export interface ConfigDefaults {
+  buffer?: { capacity?: number };
+  dvr?: {
+    segment_duration?: number;
+    /** Uses {streamCode} as the placeholder — substitute client-side. */
+    storage_path_template?: string;
+  };
+  hook?: { max_retries?: number; timeout_sec?: number };
+  ingestor?: { hls_playlist_timeout_sec?: number; hls_segment_timeout_sec?: number };
+  listeners?: {
+    rtmp?: { port?: number };
+    rtsp?: { port?: number; transport?: string };
+    srt?: { port?: number };
+  };
+  manager?: { input_packet_timeout_sec?: number };
+  publisher?: {
+    dash?: { live_history?: number; live_segment_sec?: number; live_window?: number };
+    hls?: { live_history?: number; live_segment_sec?: number; live_window?: number };
+  };
+  push?: { retry_timeout_sec?: number; timeout_sec?: number };
+  transcoder?: {
+    audio?: { bitrate_k?: number; codec?: AudioCodec };
+    global?: { hw?: HWAccel };
+    video?: { bitrate_k?: number; resize_mode?: ResizeMode };
+  };
+}
+
 // ─── API ───────────────────────────────────────────────────────────────────────
 
 export const configApi = {
   get: () => api.get('config').json<ServerConfig>(),
+  getDefaults: () => api.get('config/defaults').json<ConfigDefaults>(),
   updateGlobal: (body: GlobalConfig) =>
     api.post('config', { json: body }).json<ConfigUpdateResponse>(),
   getYaml: () => api.get('config/yaml', { headers: { Accept: 'application/yaml' } }).text(),

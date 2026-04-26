@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { InterlaceMode, ResizeMode, Stream, TranscoderConfig, VideoCodec } from '@/api/types';
-import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
@@ -171,6 +171,14 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
   const videoCodecOptions = serverConfig?.video_codecs ?? [];
   const audioCodecOptions = serverConfig?.audio_codecs ?? [];
 
+  const { data: defaults } = useConfigDefaults();
+  const hwPlaceholder = defaults?.transcoder?.global?.hw ?? 'default';
+  const audioCodecPlaceholder = defaults?.transcoder?.audio?.codec ?? 'default';
+  const audioBitratePlaceholder =
+    defaults?.transcoder?.audio?.bitrate_k != null
+      ? String(defaults.transcoder.audio.bitrate_k)
+      : 'default';
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
@@ -264,7 +272,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                       >
                         <FormControl>
                           <SelectTrigger className="data-[placeholder]:italic">
-                            <SelectValue placeholder="default" />
+                            <SelectValue placeholder={hwPlaceholder} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -419,7 +427,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                         <Select onValueChange={field.onChange} value={field.value ?? ''}>
                           <FormControl>
                             <SelectTrigger className="data-[placeholder]:italic">
-                              <SelectValue placeholder="default" />
+                              <SelectValue placeholder={audioCodecPlaceholder} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -446,7 +454,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                           <Input
                             type="number"
                             min={0}
-                            placeholder="default"
+                            placeholder={audioBitratePlaceholder}
                             className="placeholder:italic"
                             {...field}
                             value={field.value ?? ''}
