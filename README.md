@@ -56,12 +56,21 @@ any Open Streamer deployment and you're ready to go.
 
 ---
 
+## 📚 Documentation
+
+- [User guide](docs/user-guide.md) — step-by-step walkthroughs of common
+  operator tasks (creating streams, failover, push destinations, transcoding,
+  hooks, FFmpeg probe, YAML editor, troubleshooting).
+- [Features](docs/features.md) — reference of every screen and capability the
+  console exposes, with the matching API surface from the server.
+
 ## 🔗 Related
 
 - [Open Streamer](https://github.com/ntt0601zcoder/open-streamer) — the media server this
-  console manages.
+  console manages. All behaviour, validation, and supported values come from there.
 - [API documentation](https://github.com/ntt0601zcoder/open-streamer/tree/main/api/docs) — the
-  REST API the console speaks to.
+  authoritative REST API schema. Whenever the docs in this repo and the server's API
+  disagree, the API wins.
 
 ---
 
