@@ -118,7 +118,7 @@ export function FFmpegProbeDialog({ ffmpegPath }: FFmpegProbeDialogProps) {
               </div>
             )}
 
-            <EncoderTable encoders={result.encoders} />
+            <EncoderBuckets encoders={result.encoders} />
             <MuxerTable muxers={result.muxers} />
           </div>
         )}
@@ -133,44 +133,77 @@ export function FFmpegProbeDialog({ ffmpegPath }: FFmpegProbeDialogProps) {
   );
 }
 
-function EncoderTable({ encoders }: { encoders?: ProbeResult['encoders'] }) {
+function EncoderBuckets({ encoders }: { encoders?: ProbeResult['encoders'] }) {
   if (!encoders || Object.keys(encoders).length === 0) return null;
-  // Collect every hw column that appears in any codec row, preserve order seen.
-  const hwSet: string[] = [];
-  for (const row of Object.values(encoders)) {
-    for (const hw of Object.keys(row)) {
-      if (!hwSet.includes(hw)) hwSet.push(hw);
-    }
-  }
+  // Server splits encoders into two buckets:
+  //   required — server fails to start without these
+  //   optional — useful but not blocking (HW backends, extra audio codecs, …)
+  // An encoder belongs to exactly one bucket; a missing entry means the
+  // probe didn't report that encoder, NOT that it failed.
+  const required = encoders.required ?? {};
+  const optional = encoders.optional ?? {};
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Encoders</p>
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-xs">
-          <thead className="bg-muted/40">
-            <tr>
-              <th className="px-3 py-1.5 text-left font-medium">Codec</th>
-              {hwSet.map((hw) => (
-                <th key={hw} className="px-3 py-1.5 text-left font-medium font-mono">
-                  {hw}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {Object.entries(encoders).map(([codec, row]) => (
-              <tr key={codec}>
-                <td className="px-3 py-1.5 font-mono">{codec}</td>
-                {hwSet.map((hw) => (
-                  <td key={hw} className="px-3 py-1.5">
-                    <SupportIcon ok={row[hw]} />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {Object.keys(required).length > 0 && (
+        <EncoderBucket
+          label="Required"
+          hint="Server fails without these"
+          tone="emerald"
+          items={required}
+        />
+      )}
+      {Object.keys(optional).length > 0 && (
+        <EncoderBucket
+          label="Optional"
+          hint="Server still runs if missing"
+          tone="muted"
+          items={optional}
+        />
+      )}
+    </div>
+  );
+}
+
+function EncoderBucket({
+  label,
+  hint,
+  tone,
+  items,
+}: {
+  label: string;
+  hint: string;
+  tone: 'emerald' | 'muted';
+  items: Record<string, boolean>;
+}) {
+  return (
+    <div
+      className={cn(
+        'space-y-2 rounded-md border p-3',
+        tone === 'emerald' ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-border bg-muted/30',
+      )}
+    >
+      <div className="flex items-baseline gap-2">
+        <span className="text-xs font-semibold">{label}</span>
+        <span className="text-[11px] text-muted-foreground">{hint}</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {Object.entries(items).map(([name, ok]) => (
+          <Badge
+            key={name}
+            variant="outline"
+            className={cn(
+              'gap-1 font-mono text-[11px]',
+              ok
+                ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
+                : 'border-destructive/60 bg-destructive/10 text-destructive',
+            )}
+          >
+            <SupportIcon ok={ok} />
+            {name}
+          </Badge>
+        ))}
       </div>
     </div>
   );
