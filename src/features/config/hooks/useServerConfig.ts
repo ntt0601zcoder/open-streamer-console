@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { configApi, type GlobalConfig } from '@/api/config';
+import { configApi, type GlobalConfig, type ProbeRequest } from '@/api/config';
 
 export const configKeys = {
   all: ['config'] as const,
@@ -57,5 +57,15 @@ export function useUpdateYamlConfig() {
       void qc.invalidateQueries({ queryKey: configKeys.all });
       void qc.invalidateQueries({ queryKey: configKeys.yaml });
     },
+  });
+}
+
+/**
+ * Probe an FFmpeg binary for app compatibility. One-shot mutation — caller
+ * owns the result; nothing is cached or invalidated.
+ */
+export function useProbeTranscoder() {
+  return useMutation({
+    mutationFn: (body: ProbeRequest) => configApi.probeTranscoder(body),
   });
 }

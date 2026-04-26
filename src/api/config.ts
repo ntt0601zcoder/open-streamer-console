@@ -211,6 +211,32 @@ export interface ConfigDefaults {
   };
 }
 
+// ─── /config/transcoder/probe ─────────────────────────────────────────────────
+// Inspects the FFmpeg binary at `ffmpeg_path` (empty = $PATH) and reports
+// which required/optional encoders + muxers are available. Pure check; does
+// not mutate any state.
+
+export interface ProbeRequest {
+  /** Empty string = probe whatever ffmpeg is on $PATH. */
+  ffmpeg_path?: string;
+}
+
+export interface ProbeResult {
+  ok?: boolean;
+  /** Resolved binary path. */
+  path?: string;
+  /** First line of `ffmpeg -version`. */
+  version?: string;
+  /** Nested map: encoders[codec][hw] = available?  e.g. encoders.h264.nvenc */
+  encoders?: Record<string, Record<string, boolean>>;
+  /** muxers[name] = available?  e.g. muxers.hls, muxers.mpegts */
+  muxers?: Record<string, boolean>;
+  /** Fatal compatibility issues (block usage). */
+  errors?: string[];
+  /** Non-fatal notices. */
+  warnings?: string[];
+}
+
 // ─── API ───────────────────────────────────────────────────────────────────────
 
 export const configApi = {
@@ -226,4 +252,6 @@ export const configApi = {
         headers: { 'Content-Type': 'application/yaml' },
       })
       .json<Record<string, unknown>>(),
+  probeTranscoder: (body: ProbeRequest) =>
+    api.post('config/transcoder/probe', { json: body }).json<ProbeResult>(),
 };

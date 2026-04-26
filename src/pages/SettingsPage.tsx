@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import type { GlobalConfig } from '@/api/config';
+import { FFmpegProbeDialog } from '@/features/config/components/FFmpegProbeDialog';
 import {
   useConfigDefaults,
   useServerConfig,
@@ -1217,15 +1218,19 @@ function TranscoderSection() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>FFmpeg path</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={ffmpegPathPlaceholder}
-                      className="placeholder:italic"
-                      {...field}
-                    />
-                  </FormControl>
+                  <div className="flex items-start gap-2">
+                    <FormControl>
+                      <Input
+                        placeholder={ffmpegPathPlaceholder}
+                        className="placeholder:italic"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FFmpegProbeDialog ffmpegPath={field.value ?? ''} />
+                  </div>
                   <FormDescription>
                     Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.
+                    Use <strong>Probe</strong> to check encoder/muxer support.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
