@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Code2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -233,19 +234,29 @@ function SaveRow({
   isDirty,
   isPending,
   onDiscard,
+  disabledReason,
 }: {
   isDirty: boolean;
   isPending: boolean;
   onDiscard: () => void;
+  /** When set, Save is disabled and the reason is shown next to the button. */
+  disabledReason?: string;
 }) {
   return (
-    <div className="flex justify-end gap-2 pt-2">
+    <div className="flex items-center justify-end gap-3 pt-2">
+      {disabledReason && isDirty && (
+        <span className="text-xs text-amber-600 dark:text-amber-400">{disabledReason}</span>
+      )}
       {isDirty && (
         <Button type="button" variant="outline" onClick={onDiscard}>
           Discard
         </Button>
       )}
-      <Button type="submit" disabled={isPending || !isDirty}>
+      <Button
+        type="submit"
+        disabled={isPending || !isDirty || !!disabledReason}
+        title={disabledReason}
+      >
         {isPending ? 'Saving…' : 'Save changes'}
       </Button>
     </div>
@@ -1190,6 +1201,20 @@ function TranscoderSection() {
 
   const ffmpegPathPlaceholder = defaults?.transcoder?.ffmpeg_path ?? 'ffmpeg';
 
+  // Gate Save: a changed ffmpeg_path must be probed (and probe must pass)
+  // before saving, so an operator can't push a binary the server can't run.
+  // The YAML editor bypasses this rule — that's the escape hatch for power users.
+  const [lastProbe, setLastProbe] = useState<{ path: string; ok: boolean } | null>(null);
+  const watchedPath = useWatch({ control: form.control, name: 'ffmpeg_path' }) ?? '';
+  const originalPath = cfg?.ffmpeg_path ?? '';
+  const pathChanged = watchedPath !== originalPath;
+  const needsProbe = pathChanged && (lastProbe?.path !== watchedPath || !lastProbe.ok);
+  const probeBlockReason = needsProbe
+    ? lastProbe?.path === watchedPath && !lastProbe.ok
+      ? 'Probe reported issues — fix or revert'
+      : 'Probe FFmpeg before saving'
+    : undefined;
+
   function onSubmit(values: TranscoderValues) {
     update.mutate(
       { transcoder: { ...values, ffmpeg_path: values.ffmpeg_path || undefined } },
@@ -1226,7 +1251,10 @@ function TranscoderSection() {
                         {...field}
                       />
                     </FormControl>
-                    <FFmpegProbeDialog ffmpegPath={field.value ?? ''} />
+                    <FFmpegProbeDialog
+                      ffmpegPath={field.value ?? ''}
+                      onProbeComplete={(path, ok) => setLastProbe({ path, ok })}
+                    />
                   </div>
                   <FormDescription>
                     Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.
@@ -1258,6 +1286,7 @@ function TranscoderSection() {
           isDirty={form.formState.isDirty}
           isPending={update.isPending}
           onDiscard={() => form.reset()}
+          disabledReason={probeBlockReason}
         />
       </form>
     </Form>

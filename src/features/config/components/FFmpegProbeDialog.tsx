@@ -16,14 +16,25 @@ import { cn } from '@/lib/utils';
 interface FFmpegProbeDialogProps {
   /** Path to probe; empty string = use $PATH. */
   ffmpegPath: string;
+  /**
+   * Fired after each successful HTTP round-trip (regardless of probe.ok).
+   * Caller uses this to gate the Save button until the *current* path has
+   * been probed and the probe reports `ok: true`.
+   */
+  onProbeComplete?: (path: string, ok: boolean) => void;
 }
 
-export function FFmpegProbeDialog({ ffmpegPath }: FFmpegProbeDialogProps) {
+export function FFmpegProbeDialog({ ffmpegPath, onProbeComplete }: FFmpegProbeDialogProps) {
   const probe = useProbeTranscoder();
   const result = probe.data;
 
   function run() {
-    probe.mutate({ ffmpeg_path: ffmpegPath });
+    probe.mutate(
+      { ffmpeg_path: ffmpegPath },
+      {
+        onSuccess: (data) => onProbeComplete?.(ffmpegPath, Boolean(data.ok)),
+      },
+    );
   }
 
   return (
