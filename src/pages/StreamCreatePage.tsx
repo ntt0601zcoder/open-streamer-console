@@ -641,6 +641,10 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
 
   const { data: defaults } = useConfigDefaults();
   const hwPlaceholder = defaults?.transcoder?.global?.hw ?? 'default';
+  const deviceIdPlaceholder =
+    defaults?.transcoder?.global?.deviceid != null
+      ? String(defaults.transcoder.global.deviceid)
+      : 'default';
   const audioCodecPlaceholder = defaults?.transcoder?.audio?.codec ?? 'default';
   const audioBitratePlaceholder =
     defaults?.transcoder?.audio?.bitrate_k != null
@@ -719,7 +723,7 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
                       <Input
                         type="number"
                         min={0}
-                        placeholder="default"
+                        placeholder={deviceIdPlaceholder}
                         className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}

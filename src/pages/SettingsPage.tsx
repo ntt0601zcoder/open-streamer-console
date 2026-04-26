@@ -474,12 +474,18 @@ function ServerSection() {
 
 function IngestorSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.ingestor;
   const update = useUpdateGlobalConfig();
   const form = useForm<IngestorValues>({
     resolver: zodResolver(ingestorSchema),
     values: { hls_max_segment_buffer: cfg?.hls_max_segment_buffer },
   });
+
+  const maxBufferPlaceholder =
+    defaults?.ingestor?.hls_max_segment_buffer != null
+      ? String(defaults.ingestor.hls_max_segment_buffer)
+      : 'default';
 
   function onSubmit(values: IngestorValues) {
     update.mutate(
@@ -516,7 +522,8 @@ function IngestorSection() {
                     <Input
                       type="number"
                       min={0}
-                      placeholder="default"
+                      placeholder={maxBufferPlaceholder}
+                      className="placeholder:italic"
                       {...field}
                       value={field.value ?? ''}
                     />
@@ -550,9 +557,14 @@ function ListenersSection() {
   const update = useUpdateGlobalConfig();
   const dl = defaults?.listeners;
   const rtmpPortPlaceholder = dl?.rtmp?.port != null ? String(dl.rtmp.port) : 'default';
+  const rtmpHostPlaceholder = dl?.rtmp?.listen_host ?? 'default';
   const rtspPortPlaceholder = dl?.rtsp?.port != null ? String(dl.rtsp.port) : 'default';
+  const rtspHostPlaceholder = dl?.rtsp?.listen_host ?? 'default';
   const rtspTransportPlaceholder = dl?.rtsp?.transport ?? 'default';
   const srtPortPlaceholder = dl?.srt?.port != null ? String(dl.srt.port) : 'default';
+  const srtHostPlaceholder = dl?.srt?.listen_host ?? 'default';
+  const srtLatencyPlaceholder =
+    dl?.srt?.latency_ms != null ? String(dl.srt.latency_ms) : 'default';
   const form = useForm<ListenersValues>({
     resolver: zodResolver(listenersSchema),
     values: {
@@ -631,7 +643,12 @@ function ListenersSection() {
                   <FormItem>
                     <FormLabel>Bind host</FormLabel>
                     <FormControl>
-                      <Input placeholder="0.0.0.0" {...field} disabled={!rtmpEnabled} />
+                      <Input
+                        placeholder={rtmpHostPlaceholder}
+                        className="placeholder:italic"
+                        {...field}
+                        disabled={!rtmpEnabled}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -689,7 +706,12 @@ function ListenersSection() {
                   <FormItem>
                     <FormLabel>Bind host</FormLabel>
                     <FormControl>
-                      <Input placeholder="0.0.0.0" {...field} disabled={!rtspEnabled} />
+                      <Input
+                        placeholder={rtspHostPlaceholder}
+                        className="placeholder:italic"
+                        {...field}
+                        disabled={!rtspEnabled}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -775,7 +797,12 @@ function ListenersSection() {
                   <FormItem>
                     <FormLabel>Bind host</FormLabel>
                     <FormControl>
-                      <Input placeholder="0.0.0.0" {...field} disabled={!srtEnabled} />
+                      <Input
+                        placeholder={srtHostPlaceholder}
+                        className="placeholder:italic"
+                        {...field}
+                        disabled={!srtEnabled}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -813,7 +840,8 @@ function ListenersSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="120"
+                        placeholder={srtLatencyPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                         disabled={!srtEnabled}
@@ -1148,6 +1176,7 @@ function DashSection() {
 
 function TranscoderSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.transcoder;
   const update = useUpdateGlobalConfig();
   const form = useForm<TranscoderValues>({
@@ -1157,6 +1186,8 @@ function TranscoderSection() {
       multi_output: cfg?.multi_output ?? false,
     },
   });
+
+  const ffmpegPathPlaceholder = defaults?.transcoder?.ffmpeg_path ?? 'ffmpeg';
 
   function onSubmit(values: TranscoderValues) {
     update.mutate(
@@ -1187,7 +1218,11 @@ function TranscoderSection() {
                 <FormItem>
                   <FormLabel>FFmpeg path</FormLabel>
                   <FormControl>
-                    <Input placeholder="/usr/bin/ffmpeg" {...field} />
+                    <Input
+                      placeholder={ffmpegPathPlaceholder}
+                      className="placeholder:italic"
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>
                     Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.

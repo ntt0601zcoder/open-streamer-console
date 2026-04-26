@@ -164,22 +164,50 @@ export interface ConfigDefaults {
     storage_path_template?: string;
   };
   hook?: { max_retries?: number; timeout_sec?: number };
-  ingestor?: { hls_playlist_timeout_sec?: number; hls_segment_timeout_sec?: number };
+  ingestor?: {
+    hls_playlist_timeout_sec?: number;
+    hls_segment_timeout_sec?: number;
+    hls_max_segment_buffer?: number;
+    rtmp_connect_timeout_sec?: number;
+    rtsp_connect_timeout_sec?: number;
+  };
   listeners?: {
-    rtmp?: { port?: number };
-    rtsp?: { port?: number; transport?: string };
-    srt?: { port?: number };
+    rtmp?: { port?: number; listen_host?: string };
+    rtsp?: { port?: number; transport?: string; listen_host?: string };
+    srt?: { port?: number; listen_host?: string; latency_ms?: number };
   };
   manager?: { input_packet_timeout_sec?: number };
   publisher?: {
-    dash?: { live_history?: number; live_segment_sec?: number; live_window?: number };
-    hls?: { live_history?: number; live_segment_sec?: number; live_window?: number };
+    dash?: {
+      live_history?: number;
+      live_segment_sec?: number;
+      live_window?: number;
+      live_ephemeral?: boolean;
+    };
+    hls?: {
+      live_history?: number;
+      live_segment_sec?: number;
+      live_window?: number;
+      live_ephemeral?: boolean;
+    };
   };
   push?: { retry_timeout_sec?: number; timeout_sec?: number };
   transcoder?: {
+    ffmpeg_path?: string;
+    multi_output?: boolean;
     audio?: { bitrate_k?: number; codec?: AudioCodec };
-    global?: { hw?: HWAccel };
-    video?: { bitrate_k?: number; resize_mode?: ResizeMode };
+    global?: { hw?: HWAccel; deviceid?: number };
+    video?: {
+      bitrate_k?: number;
+      resize_mode?: ResizeMode;
+      codec?: VideoCodec;
+      /**
+       * Map of codec → hw → resolved FFmpeg encoder name. Useful to show users
+       * the effective encoder once they pick a codec/hw combo (e.g. h264+nvenc
+       * → h264_nvenc).
+       */
+      encoder_by_codec_hw?: Partial<Record<VideoCodec, Partial<Record<HWAccel, string>>>>;
+    };
   };
 }
 

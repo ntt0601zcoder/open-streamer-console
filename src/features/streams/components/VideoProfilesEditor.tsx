@@ -162,8 +162,10 @@ function ProfileCard<T extends FieldValues>({
 
   const { data: defaults } = useConfigDefaults();
   const videoDefaults = defaults?.transcoder?.video;
-  const bitratePlaceholder = videoDefaults?.bitrate_k != null ? String(videoDefaults.bitrate_k) : 'default';
+  const bitratePlaceholder =
+    videoDefaults?.bitrate_k != null ? String(videoDefaults.bitrate_k) : 'default';
   const resizeModePlaceholder = videoDefaults?.resize_mode ?? 'default';
+  const codecPlaceholder = videoDefaults?.codec ?? 'default';
 
   return (
     <div className="rounded-lg border">
@@ -223,7 +225,7 @@ function ProfileCard<T extends FieldValues>({
                   <Select onValueChange={field.onChange} value={(field.value as string) ?? ''}>
                     <FormControl>
                       <SelectTrigger className="data-[placeholder]:italic">
-                        <SelectValue placeholder="default" />
+                        <SelectValue placeholder={codecPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
