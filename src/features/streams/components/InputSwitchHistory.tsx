@@ -6,6 +6,7 @@ import {
   Clock,
   ListMinus,
   ListPlus,
+  Play,
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ interface ReasonStyle {
 }
 
 const REASON: Record<SwitchReason, ReasonStyle> = {
+  initial: { icon: Play, label: 'Initial', tone: 'text-muted-foreground' },
   error: { icon: AlertTriangle, label: 'Error', tone: 'text-red-500' },
   timeout: { icon: Clock, label: 'Timeout', tone: 'text-amber-500' },
   manual: { icon: UserRound, label: 'Manual', tone: 'text-blue-500' },

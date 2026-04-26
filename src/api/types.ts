@@ -277,6 +277,7 @@ export const SwitchReason = {
   recovery: 'recovery',
   input_added: 'input_added',
   input_removed: 'input_removed',
+  initial: 'initial',
 } as const;
 export type SwitchReason = (typeof SwitchReason)[keyof typeof SwitchReason];
 
