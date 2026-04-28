@@ -53,7 +53,7 @@ export function SessionsTab({ stream }: SessionsTabProps) {
             <div>
               <CardTitle className="text-base">Play sessions</CardTitle>
               <CardDescription>
-                Live and recently-closed players watching this stream. Polled every 5 s.
+                Live and recently-closed players watching this stream. Polled every 5s.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">

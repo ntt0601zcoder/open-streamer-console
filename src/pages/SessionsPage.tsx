@@ -54,7 +54,7 @@ export function SessionsPage() {
       <div>
         <h1 className="text-2xl font-semibold">Sessions</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Live and recently-closed players across every stream. Polled every 5 s.
+          Live and recently-closed players across every stream. Polled every 5s.
         </p>
       </div>
 
