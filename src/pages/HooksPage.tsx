@@ -302,6 +302,16 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
     defaults?.hook?.max_retries != null ? String(defaults.hook.max_retries) : 'default';
   const timeoutPlaceholder =
     defaults?.hook?.timeout_sec != null ? String(defaults.hook.timeout_sec) : 'default';
+  const batchMaxItemsPlaceholder =
+    defaults?.hook?.batch_max_items != null ? String(defaults.hook.batch_max_items) : 'default';
+  const batchFlushPlaceholder =
+    defaults?.hook?.batch_flush_interval_sec != null
+      ? String(defaults.hook.batch_flush_interval_sec)
+      : 'default';
+  const batchQueuePlaceholder =
+    defaults?.hook?.batch_max_queue_items != null
+      ? String(defaults.hook.batch_max_queue_items)
+      : 'default';
 
   const form = useForm<HookFormValues>({
     resolver: zodResolver(hookFormSchema),
@@ -556,7 +566,7 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                         <Input
                           type="number"
                           min={0}
-                          placeholder="default"
+                          placeholder={batchMaxItemsPlaceholder}
                           className="placeholder:italic"
                           disabled={hookType === 'file'}
                           {...field}
@@ -577,7 +587,7 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                         <Input
                           type="number"
                           min={0}
-                          placeholder="default"
+                          placeholder={batchFlushPlaceholder}
                           className="placeholder:italic"
                           {...field}
                           value={field.value ?? ''}
@@ -597,7 +607,7 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                         <Input
                           type="number"
                           min={0}
-                          placeholder="default"
+                          placeholder={batchQueuePlaceholder}
                           className="placeholder:italic"
                           {...field}
                           value={field.value ?? ''}

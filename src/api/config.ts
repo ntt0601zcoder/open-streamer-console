@@ -179,7 +179,14 @@ export interface ConfigDefaults {
     /** Uses {streamCode} as the placeholder — substitute client-side. */
     storage_path_template?: string;
   };
-  hook?: { max_retries?: number; timeout_sec?: number };
+  hook?: {
+    max_retries?: number;
+    timeout_sec?: number;
+    /** Default batch size for HTTP hooks. File hooks ignore this. */
+    batch_max_items?: number;
+    batch_flush_interval_sec?: number;
+    batch_max_queue_items?: number;
+  };
   ingestor?: {
     hls_playlist_timeout_sec?: number;
     hls_segment_timeout_sec?: number;
