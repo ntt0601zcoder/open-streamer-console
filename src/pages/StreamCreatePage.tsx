@@ -41,9 +41,14 @@ import type {
 import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { CollapsibleRow } from '@/features/streams/components/CollapsibleRow';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
+import { StringListEditor } from '@/features/streams/components/StringListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { streamKeys } from '@/features/streams/hooks/useStreams';
-import { createStreamSchema, type CreateStreamValues } from '@/features/streams/schemas';
+import {
+  cleanExtraArgs,
+  createStreamSchema,
+  type CreateStreamValues,
+} from '@/features/streams/schemas';
 import { listToRecord } from '@/lib/kvList';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -65,6 +70,7 @@ const DEFAULT_VALUES: CreateStreamValues = {
     },
     video: { copy: true, interlace: undefined, profiles: [] },
     global: { hw: undefined, deviceid: undefined, fps: undefined, gop: undefined },
+    extra_args: [],
   },
   dvr: {
     enabled: false,
@@ -205,6 +211,7 @@ function buildCreateBody(v: CreateStreamValues): StreamBody {
             : undefined,
       },
       global: v.transcoder.global as TranscoderConfig['global'],
+      extra_args: cleanExtraArgs(v.transcoder.extra_args),
     };
   }
 
@@ -954,6 +961,26 @@ function TranscoderSection({ form }: { form: UseFormReturn<CreateStreamValues> }
                 />
               </CardContent>
             )}
+          </Card>
+
+          {/* Extra FFmpeg args (advanced escape hatch) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Extra FFmpeg arguments</CardTitle>
+              <CardDescription>
+                Raw argv tokens appended after the generated FFmpeg command. One token per row.
+                Use sparingly — may conflict with the auto-generated arguments.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StringListEditor
+                control={form.control}
+                name="transcoder.extra_args"
+                placeholder="-x264-params"
+                emptyHint="No extra arguments configured."
+                addLabel="Add argument"
+              />
+            </CardContent>
           </Card>
         </>
       )}

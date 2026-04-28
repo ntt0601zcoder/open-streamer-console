@@ -24,10 +24,15 @@ import { Switch } from '@/components/ui/switch';
 import type { InterlaceMode, ResizeMode, Stream, TranscoderConfig, VideoCodec } from '@/api/types';
 import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
+import { StringListEditor } from '@/features/streams/components/StringListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
-import { transcoderFormSchema, type TranscoderFormValues } from '@/features/streams/schemas';
+import {
+  cleanExtraArgs,
+  transcoderFormSchema,
+  type TranscoderFormValues,
+} from '@/features/streams/schemas';
 
 interface TranscoderTabProps {
   stream: Stream;
@@ -71,6 +76,7 @@ function toFormValues(stream: Stream): TranscoderFormValues {
       fps: t?.global?.fps,
       gop: t?.global?.gop,
     },
+    extra_args: (t?.extra_args ?? []).map((value) => ({ value })),
   };
 }
 
@@ -164,6 +170,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             : undefined,
       },
       global: values.global as TranscoderConfig['global'],
+      extra_args: cleanExtraArgs(values.extra_args),
     };
   }
 
@@ -534,6 +541,28 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   />
                 </CardContent>
               )}
+            </Card>
+
+            {/* Extra FFmpeg args (advanced escape hatch) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Extra FFmpeg arguments</CardTitle>
+                <CardDescription>
+                  Raw argv tokens appended after the generated FFmpeg command. One token per row
+                  — e.g. <code>-x264-params</code> on one line and{' '}
+                  <code>keyint=60:scenecut=0</code> on the next. Use sparingly: may conflict with
+                  the auto-generated arguments.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StringListEditor
+                  control={form.control}
+                  name="extra_args"
+                  placeholder="-x264-params"
+                  emptyHint="No extra arguments configured."
+                  addLabel="Add argument"
+                />
+              </CardContent>
             </Card>
           </>
         )}

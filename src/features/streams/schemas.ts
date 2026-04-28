@@ -119,9 +119,24 @@ export const transcoderFormSchema = z.object({
     fps: z.coerce.number().int().min(0).optional(),
     gop: z.coerce.number().int().min(0).optional(),
   }),
+  /**
+   * Raw FFmpeg argv tokens appended after the generated command. Each entry
+   * is a single token (e.g. ["-x264-params", "keyint=60:scenecut=0"]). Stored
+   * as { value: string } so react-hook-form's useFieldArray can give each row
+   * a stable id; tokens with empty `value` are dropped on submit.
+   */
+  extra_args: z.array(z.object({ value: z.string() })).optional(),
 });
 
 export type TranscoderFormValues = z.infer<typeof transcoderFormSchema>;
+
+/** Form `[{value:'-x'}, {value:''}]` → API `['-x']`; empty → undefined. */
+export function cleanExtraArgs(
+  list: { value: string }[] | undefined,
+): string[] | undefined {
+  const cleaned = (list ?? []).map((a) => a.value.trim()).filter((s) => s.length > 0);
+  return cleaned.length > 0 ? cleaned : undefined;
+}
 
 // ─── DVR ──────────────────────────────────────────────────────────────────────
 
