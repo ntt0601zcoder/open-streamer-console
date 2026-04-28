@@ -1387,6 +1387,7 @@ function ManagerSection() {
 
 function HooksSection() {
   const { data: serverConfig } = useServerConfig();
+  const { data: defaults } = useConfigDefaults();
   const cfg = serverConfig?.global_config?.hooks;
   const update = useUpdateGlobalConfig();
   const form = useForm<HooksValues>({
@@ -1398,6 +1399,12 @@ function HooksSection() {
       batch_max_queue_items: cfg?.batch_max_queue_items,
     },
   });
+
+  const placeholder = (n: number | undefined) => (n != null ? String(n) : 'default');
+  const workerPlaceholder = placeholder(undefined); // server doesn't expose a default worker_count
+  const batchMaxItemsPlaceholder = placeholder(defaults?.hook?.batch_max_items);
+  const batchFlushPlaceholder = placeholder(defaults?.hook?.batch_flush_interval_sec);
+  const batchQueuePlaceholder = placeholder(defaults?.hook?.batch_max_queue_items);
 
   function onSubmit(values: HooksValues) {
     update.mutate(
@@ -1438,7 +1445,8 @@ function HooksSection() {
                     <Input
                       type="number"
                       min={1}
-                      placeholder="default"
+                      placeholder={workerPlaceholder}
+                      className="placeholder:italic"
                       {...field}
                       value={field.value ?? ''}
                     />
@@ -1462,7 +1470,8 @@ function HooksSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="default"
+                        placeholder={batchMaxItemsPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -1484,7 +1493,8 @@ function HooksSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="default"
+                        placeholder={batchFlushPlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
@@ -1506,7 +1516,8 @@ function HooksSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="default"
+                        placeholder={batchQueuePlaceholder}
+                        className="placeholder:italic"
                         {...field}
                         value={field.value ?? ''}
                       />
