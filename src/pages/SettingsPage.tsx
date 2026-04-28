@@ -145,6 +145,14 @@ const logSchema = z.object({
 });
 type LogValues = z.infer<typeof logSchema>;
 
+const sessionsSchema = z.object({
+  enabled: z.boolean().optional(),
+  geoip_db_path: z.string().optional(),
+  idle_timeout_sec: z.coerce.number().int().min(0).optional(),
+  max_lifetime_sec: z.coerce.number().int().min(0).optional(),
+});
+type SessionsValues = z.infer<typeof sessionsSchema>;
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function toLines(arr?: string[]): string {
@@ -189,6 +197,7 @@ export function SettingsPage() {
           <TabsTrigger value="transcoder">Transcoder</TabsTrigger>
           <TabsTrigger value="manager">Manager</TabsTrigger>
           <TabsTrigger value="hooks">Hooks</TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
           <TabsTrigger value="buffer">Buffer</TabsTrigger>
           <TabsTrigger value="log">Logging</TabsTrigger>
         </TabsList>
@@ -216,6 +225,9 @@ export function SettingsPage() {
         </TabsContent>
         <TabsContent value="hooks" className="mt-6">
           <HooksSection />
+        </TabsContent>
+        <TabsContent value="sessions" className="mt-6">
+          <SessionsSection />
         </TabsContent>
         <TabsContent value="buffer" className="mt-6">
           <BufferSection />
@@ -1443,6 +1455,150 @@ function HooksSection() {
                   </FormControl>
                   <FormDescription>
                     One broker per line. Leave empty to disable Kafka hook delivery.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
+      </form>
+    </Form>
+  );
+}
+
+// ─── Sessions section ─────────────────────────────────────────────────────────
+
+function SessionsSection() {
+  const { data: serverConfig } = useServerConfig();
+  const cfg = serverConfig?.global_config?.sessions;
+  const update = useUpdateGlobalConfig();
+  const form = useForm<SessionsValues>({
+    resolver: zodResolver(sessionsSchema),
+    values: {
+      enabled: cfg?.enabled ?? false,
+      geoip_db_path: cfg?.geoip_db_path ?? '',
+      idle_timeout_sec: cfg?.idle_timeout_sec,
+      max_lifetime_sec: cfg?.max_lifetime_sec,
+    },
+  });
+
+  function onSubmit(values: SessionsValues) {
+    update.mutate(
+      {
+        sessions: {
+          ...values,
+          geoip_db_path: values.geoip_db_path || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Sessions settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
+  }
+
+  const enabled = form.watch('enabled');
+
+  return (
+    <Form {...form}>
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Play sessions</CardTitle>
+            <CardDescription>
+              Tracks active players across HLS / DASH / RTMP / SRT / RTSP. Disable to skip the
+              tracker entirely (the API endpoints will return empty).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Enable session tracking</FormLabel>
+                </FormItem>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="idle_timeout_sec"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Idle timeout (s)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="30"
+                        className="placeholder:italic"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={!enabled}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Idle reaper closes sessions older than this. 0 = use server default (30s).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="max_lifetime_sec"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max lifetime (s)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0 = unlimited"
+                        className="placeholder:italic"
+                        {...field}
+                        value={field.value ?? ''}
+                        disabled={!enabled}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Hard-close any session older than this even if it's still active.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="geoip_db_path"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>GeoIP database path</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="(reserved — currently unused)"
+                      className="placeholder:italic"
+                      {...field}
+                      disabled={!enabled}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Reserved for future MaxMind/IP2Location integration. The default GeoIP
+                    resolver is a no-op (Country=&quot;&quot;).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

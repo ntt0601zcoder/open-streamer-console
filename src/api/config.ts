@@ -109,6 +109,16 @@ export interface TranscoderConfig {
   multi_output?: boolean;
 }
 
+export interface SessionsConfig {
+  enabled?: boolean;
+  /** Reserved for MaxMind/IP2Location integration (currently unused). */
+  geoip_db_path?: string;
+  /** How long a session may go without activity before the reaper closes it. Default 30s when ≤ 0. */
+  idle_timeout_sec?: number;
+  /** Hard-close any session older than this even if active. 0 disables the cap. */
+  max_lifetime_sec?: number;
+}
+
 export interface GlobalConfig {
   buffer?: BufferConfig;
   hooks?: HooksConfig;
@@ -119,6 +129,7 @@ export interface GlobalConfig {
   publisher?: PublisherConfig;
   server?: AppServerConfig;
   transcoder?: TranscoderConfig;
+  sessions?: SessionsConfig;
 }
 
 // ─── Version info ──────────────────────────────────────────────────────────────

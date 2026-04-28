@@ -7,6 +7,7 @@ import { DvrTab } from '@/features/streams/components/detail/tabs/DvrTab';
 import { GeneralTab } from '@/features/streams/components/detail/tabs/GeneralTab';
 import { InputTab } from '@/features/streams/components/detail/tabs/InputTab';
 import { OutputTab } from '@/features/streams/components/detail/tabs/OutputTab';
+import { SessionsTab } from '@/features/streams/components/detail/tabs/SessionsTab';
 import { TranscoderTab } from '@/features/streams/components/detail/tabs/TranscoderTab';
 import { useStream } from '@/features/streams/hooks/useStreams';
 
@@ -49,6 +50,7 @@ export function StreamDetailPage() {
           <TabsTrigger value="output">Output</TabsTrigger>
           <TabsTrigger value="transcoder">Transcoder</TabsTrigger>
           <TabsTrigger value="dvr">DVR</TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -69,6 +71,10 @@ export function StreamDetailPage() {
 
         <TabsContent value="dvr" className="mt-6">
           <DvrTab stream={stream} />
+        </TabsContent>
+
+        <TabsContent value="sessions" className="mt-6">
+          <SessionsTab stream={stream} />
         </TabsContent>
       </Tabs>
     </div>

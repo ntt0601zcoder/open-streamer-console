@@ -1,8 +1,8 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { ConfigEditorPage } from '@/pages/ConfigEditorPage';
-import { DashboardPage } from '@/pages/DashboardPage';
 import { HooksPage } from '@/pages/HooksPage';
+import { SessionsPage } from '@/pages/SessionsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { StreamCreatePage } from '@/pages/StreamCreatePage';
 import { StreamDetailPage } from '@/pages/StreamDetailPage';
@@ -15,13 +15,14 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: <DashboardPage /> },
+      { index: true, element: <Navigate to="/streams" replace /> },
       { path: 'streams', element: <StreamsPage /> },
       { path: 'streams/new', element: <StreamCreatePage /> },
       { path: 'streams/:code', element: <StreamDetailPage /> },
       { path: 'vod', element: <VodPage /> },
       { path: 'vod/:name', element: <VodMountPage /> },
       { path: 'hooks', element: <HooksPage /> },
+      { path: 'sessions', element: <SessionsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/editor', element: <ConfigEditorPage /> },
     ],

@@ -1,11 +1,11 @@
 import {
-  Activity,
   Film,
   PanelLeftClose,
   PanelLeftOpen,
   Radio,
   Settings,
   SlidersHorizontal,
+  Users,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,9 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: Activity, end: true },
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
   { to: '/vod', label: 'VOD', icon: Film, end: false },
+  { to: '/sessions', label: 'Sessions', icon: Users, end: false },
   { to: '/hooks', label: 'Hooks', icon: Settings, end: false },
   { to: '/settings', label: 'Settings', icon: SlidersHorizontal, end: false },
 ] as const;

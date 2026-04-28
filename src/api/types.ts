@@ -329,6 +329,69 @@ export interface Recording {
   stopped_at?: string;
 }
 
+// ─── Play sessions ────────────────────────────────────────────────────────────
+
+export const SessionProto = {
+  hls: 'hls',
+  dash: 'dash',
+  rtmp: 'rtmp',
+  srt: 'srt',
+  rtsp: 'rtsp',
+} as const;
+export type SessionProto = (typeof SessionProto)[keyof typeof SessionProto];
+
+export const SessionCloseReason = {
+  idle: 'idle',
+  client_gone: 'client_gone',
+  shutdown: 'shutdown',
+  kicked: 'kicked',
+} as const;
+export type SessionCloseReason =
+  (typeof SessionCloseReason)[keyof typeof SessionCloseReason];
+
+export const SessionNamedBy = {
+  token: 'token',
+  config: 'config',
+  fingerprint: 'fingerprint',
+} as const;
+export type SessionNamedBy = (typeof SessionNamedBy)[keyof typeof SessionNamedBy];
+
+export interface PlaySession {
+  id: string;
+  stream_code: string;
+  proto: SessionProto;
+  ip?: string;
+  country?: string;
+  user_agent?: string;
+  referer?: string;
+  query_string?: string;
+  token?: string;
+  user_name?: string;
+  named_by?: SessionNamedBy;
+  secure?: boolean;
+  dvr?: boolean;
+  bytes?: number;
+  opened_at?: string;
+  started_at?: string;
+  updated_at?: string;
+  closed_at?: string;
+  close_reason?: SessionCloseReason;
+}
+
+export interface SessionStats {
+  active?: number;
+  opened_total?: number;
+  closed_total?: number;
+  idle_closed_total?: number;
+  kicked_total?: number;
+}
+
+export interface SessionListResponse {
+  sessions: PlaySession[];
+  stats?: SessionStats;
+  total_count?: number;
+}
+
 export interface StreamCodeFilter {
   only?: string[];
   except?: string[];
