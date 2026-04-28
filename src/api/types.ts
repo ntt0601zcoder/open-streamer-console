@@ -25,7 +25,7 @@ export const RecordingStatus = {
 } as const;
 export type RecordingStatus = (typeof RecordingStatus)[keyof typeof RecordingStatus];
 
-export const HookType = { http: 'http', kafka: 'kafka' } as const;
+export const HookType = { http: 'http', file: 'file' } as const;
 export type HookType = (typeof HookType)[keyof typeof HookType];
 
 export const AudioCodec = {
@@ -430,6 +430,12 @@ export interface Hook {
   secret?: string;
   max_retries?: number;
   timeout_sec?: number;
+  /** Per-hook batch size override (HTTP only — File hooks ignore). 0 = server default. */
+  batch_max_items?: number;
+  /** Per-hook flush timer in seconds. 0 = server default. */
+  batch_flush_interval_sec?: number;
+  /** Per-hook in-memory queue cap. 0 = server default. */
+  batch_max_queue_items?: number;
 }
 
 // ─── API request bodies ───────────────────────────────────────────────────────

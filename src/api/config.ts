@@ -23,8 +23,13 @@ export interface BufferConfig {
 }
 
 export interface HooksConfig {
-  kafka_brokers?: string[];
   worker_count?: number;
+  /** Global default batch size for HTTP hooks. Per-hook overrides win. 0 = code default. */
+  batch_max_items?: number;
+  /** Global default flush timer (seconds). Per-hook overrides win. 0 = code default. */
+  batch_flush_interval_sec?: number;
+  /** Global default queue cap. Per-hook overrides win. 0 = code default. */
+  batch_max_queue_items?: number;
 }
 
 export interface IngestorConfig {

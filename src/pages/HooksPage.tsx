@@ -55,7 +55,7 @@ import {
 
 const hookFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  type: z.enum(['http', 'kafka']),
+  type: z.enum(['http', 'file']),
   target: z.string().min(1, 'Target is required'),
   enabled: z.boolean(),
   event_types: z.array(z.string()),
@@ -65,6 +65,9 @@ const hookFormSchema = z.object({
   secret: z.string(),
   max_retries: z.coerce.number().int().min(0).optional(),
   timeout_sec: z.coerce.number().int().min(0).optional(),
+  batch_max_items: z.coerce.number().int().min(0).optional(),
+  batch_flush_interval_sec: z.coerce.number().int().min(0).optional(),
+  batch_max_queue_items: z.coerce.number().int().min(0).optional(),
 });
 
 type HookFormValues = z.infer<typeof hookFormSchema>;
@@ -318,6 +321,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
       secret: hook?.secret ?? '',
       max_retries: hook?.max_retries,
       timeout_sec: hook?.timeout_sec,
+      batch_max_items: hook?.batch_max_items,
+      batch_flush_interval_sec: hook?.batch_flush_interval_sec,
+      batch_max_queue_items: hook?.batch_max_queue_items,
     },
   });
 
@@ -363,6 +369,9 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
       secret: values.secret || undefined,
       max_retries: values.max_retries || undefined,
       timeout_sec: values.timeout_sec || undefined,
+      batch_max_items: values.batch_max_items || undefined,
+      batch_flush_interval_sec: values.batch_flush_interval_sec || undefined,
+      batch_max_queue_items: values.batch_max_queue_items || undefined,
     };
 
     if (isEdit) {
@@ -426,7 +435,7 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="http">HTTP</SelectItem>
-                      <SelectItem value="kafka">Kafka</SelectItem>
+                      <SelectItem value="file">File</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -440,15 +449,22 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
               name="target"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{hookType === 'kafka' ? 'Kafka topic' : 'URL'}</FormLabel>
+                  <FormLabel>{hookType === 'file' ? 'File path' : 'URL'}</FormLabel>
                   <FormControl>
                     <Input
                       placeholder={
-                        hookType === 'kafka' ? 'my-topic' : 'https://example.com/webhook'
+                        hookType === 'file'
+                          ? '/var/log/open-streamer/events.log'
+                          : 'https://example.com/webhook'
                       }
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    {hookType === 'file'
+                      ? 'Absolute path to a file that events will be appended to as JSONL.'
+                      : 'HTTP(S) endpoint that receives the event payload as POST body.'}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -516,6 +532,81 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Batching overrides */}
+            <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">Batching overrides</p>
+                <p className="text-xs text-muted-foreground">
+                  Per-hook overrides of the global batch defaults. Leave empty to inherit.
+                  {hookType === 'file' &&
+                    ' File hooks ignore "Batch max items" — they always write one event per line.'}
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="batch_max_items"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Batch max items</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="default"
+                          className="placeholder:italic"
+                          disabled={hookType === 'file'}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="batch_flush_interval_sec"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Flush interval (s)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="default"
+                          className="placeholder:italic"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="batch_max_queue_items"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Queue cap</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="default"
+                          className="placeholder:italic"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             {/* Event filter */}

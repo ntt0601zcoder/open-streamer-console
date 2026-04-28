@@ -130,7 +130,9 @@ type ManagerValues = z.infer<typeof managerSchema>;
 
 const hooksSchema = z.object({
   worker_count: z.coerce.number().int().min(1).optional(),
-  kafka_brokers: z.string().optional(), // newline-separated in UI
+  batch_max_items: z.coerce.number().int().min(0).optional(),
+  batch_flush_interval_sec: z.coerce.number().int().min(0).optional(),
+  batch_max_queue_items: z.coerce.number().int().min(0).optional(),
 });
 type HooksValues = z.infer<typeof hooksSchema>;
 
@@ -1389,7 +1391,12 @@ function HooksSection() {
   const update = useUpdateGlobalConfig();
   const form = useForm<HooksValues>({
     resolver: zodResolver(hooksSchema),
-    values: { worker_count: cfg?.worker_count, kafka_brokers: toLines(cfg?.kafka_brokers) },
+    values: {
+      worker_count: cfg?.worker_count,
+      batch_max_items: cfg?.batch_max_items,
+      batch_flush_interval_sec: cfg?.batch_flush_interval_sec,
+      batch_max_queue_items: cfg?.batch_max_queue_items,
+    },
   });
 
   function onSubmit(values: HooksValues) {
@@ -1397,7 +1404,9 @@ function HooksSection() {
       {
         hooks: {
           worker_count: values.worker_count,
-          kafka_brokers: fromLines(values.kafka_brokers),
+          batch_max_items: values.batch_max_items,
+          batch_flush_interval_sec: values.batch_flush_interval_sec,
+          batch_max_queue_items: values.batch_max_queue_items,
         },
       },
       {
@@ -1429,37 +1438,88 @@ function HooksSection() {
                     <Input
                       type="number"
                       min={1}
-                      placeholder="default"
-                      {...field}
-                      value={field.value ?? ''}
-                    />
-                  </FormControl>
-                  <FormDescription>Number of concurrent hook delivery goroutines.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="kafka_brokers"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kafka brokers</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      rows={3}
-                      placeholder="localhost:9092&#10;broker2:9092"
+                      placeholder="default (4)"
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
                   <FormDescription>
-                    One broker per line. Leave empty to disable Kafka hook delivery.
+                    Event-bus workers fanning events to subscribers. 1–4 covers most
+                    workloads since HTTP delivery is batched. 0 = use 4.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="batch_max_items"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Batch max items</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="server default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Default events bundled per HTTP POST. 0 = code default.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="batch_flush_interval_sec"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Batch flush interval (s)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="server default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Max age before a partial batch flushes. 0 = code default.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="batch_max_queue_items"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Queue cap</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="server default"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Per-hook in-memory queue cap. Oldest events dropped when exceeded.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
         <SaveRow
