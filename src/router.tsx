@@ -57,6 +57,13 @@ export const router = createBrowserRouter([
         },
       },
       {
+        path: 'watermarks',
+        lazy: async () => {
+          const { WatermarksPage } = await import('@/pages/WatermarksPage');
+          return { Component: WatermarksPage };
+        },
+      },
+      {
         path: 'settings',
         lazy: async () => {
           const { SettingsPage } = await import('@/pages/SettingsPage');

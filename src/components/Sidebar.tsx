@@ -1,5 +1,6 @@
 import {
   Film,
+  ImageIcon,
   PanelLeftClose,
   PanelLeftOpen,
   Radio,
@@ -18,6 +19,7 @@ const navItems = [
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
   { to: '/vod', label: 'VOD', icon: Film, end: false },
   { to: '/sessions', label: 'Sessions', icon: Users, end: false },
+  { to: '/watermarks', label: 'Watermarks', icon: ImageIcon, end: false },
   { to: '/hooks', label: 'Hooks', icon: Settings, end: false },
   { to: '/settings', label: 'Settings', icon: SlidersHorizontal, end: false },
 ] as const;

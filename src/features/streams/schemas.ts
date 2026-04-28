@@ -138,6 +138,27 @@ export function cleanExtraArgs(
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
+// ─── Watermark ────────────────────────────────────────────────────────────────
+
+export const watermarkFormSchema = z.object({
+  enabled: z.boolean(),
+  type: z.enum(['text', 'image']),
+  text: z.string(),
+  asset_id: z.string(),
+  image_path: z.string(),
+  position: z.enum(['top_left', 'top_right', 'bottom_left', 'bottom_right', 'center', 'custom']),
+  opacity: z.coerce.number().min(0).max(1).optional(),
+  font_size: z.coerce.number().int().min(0).optional(),
+  font_file: z.string(),
+  font_color: z.string(),
+  offset_x: z.coerce.number().int().optional(),
+  offset_y: z.coerce.number().int().optional(),
+  x: z.string(),
+  y: z.string(),
+});
+
+export type WatermarkFormValues = z.infer<typeof watermarkFormSchema>;
+
 // ─── DVR ──────────────────────────────────────────────────────────────────────
 
 export const dvrFormSchema = z.object({

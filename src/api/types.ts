@@ -55,6 +55,7 @@ export const WatermarkPosition = {
   bottom_left: 'bottom_left',
   bottom_right: 'bottom_right',
   center: 'center',
+  custom: 'custom',
 } as const;
 export type WatermarkPosition = (typeof WatermarkPosition)[keyof typeof WatermarkPosition];
 
@@ -214,6 +215,9 @@ export interface WatermarkConfig {
   enabled?: boolean;
   type?: WatermarkType;
   text?: string;
+  /** Reference to a WatermarkAsset uploaded via /watermarks. Wins over image_path. */
+  asset_id?: string;
+  /** Absolute path to an image pre-staged on the host. Mutually exclusive with asset_id. */
   image_path?: string;
   position?: WatermarkPosition;
   opacity?: number;
@@ -222,6 +226,23 @@ export interface WatermarkConfig {
   font_color?: string;
   offset_x?: number;
   offset_y?: number;
+  /** Raw FFmpeg coordinate expression — used only when position === 'custom'. */
+  x?: string;
+  y?: string;
+}
+
+export interface WatermarkAsset {
+  id: string;
+  name: string;
+  file_name: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+}
+
+export interface WatermarkAssetListResponse {
+  data: WatermarkAsset[];
+  total: number;
 }
 
 export interface ErrorEntry {
