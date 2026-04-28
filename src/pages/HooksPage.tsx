@@ -539,9 +539,10 @@ function HookDialog({ hook, onClose }: { hook: Hook | null; onClose: () => void 
               <div className="space-y-0.5">
                 <p className="text-sm font-medium">Batching overrides</p>
                 <p className="text-xs text-muted-foreground">
-                  Per-hook overrides of the global batch defaults. Leave empty to inherit.
+                  Override the global batch settings just for this hook. Leave any field empty
+                  to inherit.
                   {hookType === 'file' &&
-                    ' File hooks ignore "Batch max items" — they always write one event per line.'}
+                    ' File hooks always write one event per line, so "Batch max items" has no effect.'}
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3">

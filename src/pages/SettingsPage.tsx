@@ -1444,8 +1444,8 @@ function HooksSection() {
                     />
                   </FormControl>
                   <FormDescription>
-                    Event-bus workers fanning events to subscribers. 1–4 covers most
-                    workloads since HTTP delivery is batched. 0 = use 4.
+                    How many threads deliver events. 4 is plenty for almost any workload.
+                    Leave empty (or 0) to use the default.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1469,7 +1469,8 @@ function HooksSection() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Default events bundled per HTTP POST. 0 = code default.
+                      Events bundled into one HTTP request. Bigger batches = fewer requests,
+                      but events wait longer before being delivered.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1491,7 +1492,8 @@ function HooksSection() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Max age before a partial batch flushes. 0 = code default.
+                      How long to wait before sending a partial batch. Lower = faster
+                      delivery, more HTTP traffic.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1513,7 +1515,8 @@ function HooksSection() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Per-hook in-memory queue cap. Oldest events dropped when exceeded.
+                      Max events kept in memory per hook. If the receiver is down too long,
+                      the oldest events are dropped first.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
