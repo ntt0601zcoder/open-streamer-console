@@ -20,12 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  SessionProto,
-  type PlaySession,
-  type SessionStats,
-  type Stream,
-} from '@/api/types';
+import { SessionProto, type PlaySession, type Stream } from '@/api/types';
 import { useKickSession, useStreamSessions } from '@/features/streams/hooks/useSessions';
 import { formatBytes, formatDurationSince, formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -49,12 +44,9 @@ export function SessionsTab({ stream }: SessionsTabProps) {
   });
 
   const sessions = data?.sessions ?? [];
-  const stats = data?.stats;
 
   return (
     <div className="space-y-6">
-      <StatsBar stats={stats} />
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
@@ -125,29 +117,6 @@ export function SessionsTab({ stream }: SessionsTabProps) {
           {sessions.length > 0 && <SessionTable sessions={sessions} />}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function StatsBar({ stats }: { stats?: SessionStats }) {
-  if (!stats) return null;
-  const items = [
-    { label: 'Active', value: stats.active ?? 0, accent: 'text-emerald-600 dark:text-emerald-400' },
-    { label: 'Opened total', value: stats.opened_total ?? 0 },
-    { label: 'Closed total', value: stats.closed_total ?? 0 },
-    { label: 'Idle-closed', value: stats.idle_closed_total ?? 0 },
-    { label: 'Kicked', value: stats.kicked_total ?? 0 },
-  ];
-  return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-      {items.map((it) => (
-        <Card key={it.label}>
-          <CardContent className="p-3">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{it.label}</p>
-            <p className={cn('text-xl font-semibold', it.accent)}>{it.value}</p>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
 }
