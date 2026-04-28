@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ImageIcon, Type as TypeIcon } from 'lucide-react';
+import { AlertTriangle, ImageIcon, Type as TypeIcon } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -144,6 +144,14 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            Saving any change here <strong>restarts the transcoder</strong>. Live viewers will
+            see a brief drop until encoding resumes.
+          </p>
+        </div>
+
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
