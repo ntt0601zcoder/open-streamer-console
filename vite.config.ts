@@ -10,4 +10,28 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('@codemirror') || id.includes('@uiw/react-codemirror') || id.includes('@lezer')) {
+            return 'codemirror';
+          }
+          if (id.includes('hls.js')) return 'hls';
+          if (id.includes('@radix-ui')) return 'radix';
+          if (id.includes('react-router')) return 'router';
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('scheduler')
+          ) {
+            return 'react';
+          }
+          if (id.includes('@tanstack')) return 'tanstack';
+          return undefined;
+        },
+      },
+    },
+  },
 });
