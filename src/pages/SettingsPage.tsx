@@ -1438,14 +1438,13 @@ function HooksSection() {
                     <Input
                       type="number"
                       min={1}
-                      placeholder="default (4)"
+                      placeholder="default"
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
                   <FormDescription>
-                    How many threads deliver events. 4 is plenty for almost any workload.
-                    Leave empty (or 0) to use the default.
+                    Threads delivering events. 4 is enough for most setups.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1463,14 +1462,13 @@ function HooksSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="server default"
+                        placeholder="default"
                         {...field}
                         value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormDescription>
-                      Events bundled into one HTTP request. Bigger batches = fewer requests,
-                      but events wait longer before being delivered.
+                      Events per HTTP request. Bigger = fewer requests, more delay.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1486,14 +1484,13 @@ function HooksSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="server default"
+                        placeholder="default"
                         {...field}
                         value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormDescription>
-                      How long to wait before sending a partial batch. Lower = faster
-                      delivery, more HTTP traffic.
+                      Wait at most this long before flushing a partial batch.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1509,14 +1506,13 @@ function HooksSection() {
                       <Input
                         type="number"
                         min={0}
-                        placeholder="server default"
+                        placeholder="default"
                         {...field}
                         value={field.value ?? ''}
                       />
                     </FormControl>
                     <FormDescription>
-                      Max events kept in memory per hook. If the receiver is down too long,
-                      the oldest events are dropped first.
+                      Cap on queued events per hook. Oldest are dropped first.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
