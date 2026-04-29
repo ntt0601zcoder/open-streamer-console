@@ -48,7 +48,9 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
       {/* Right column: media summary + throughput chart */}
       <div className="flex flex-col gap-3 lg:col-span-2">
         <MediaSummaryCard media={stream.runtime?.media} />
-        <InputBytesChart streamCode={stream.code} />
+        <div className="min-h-0 flex-1">
+          <InputBytesChart streamCode={stream.code} />
+        </div>
       </div>
     </div>
   );

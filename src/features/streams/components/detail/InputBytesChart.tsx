@@ -88,7 +88,7 @@ export function InputBytesChart({ streamCode }: InputBytesChartProps) {
   const latest = points.at(-1);
 
   return (
-    <Card className="h-full">
+    <Card className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-1.5 text-xs font-medium">
@@ -121,7 +121,7 @@ export function InputBytesChart({ streamCode }: InputBytesChartProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-3">
+      <CardContent className="flex min-h-[200px] flex-1 flex-col p-2 pt-0">
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
             {error.message}
@@ -129,15 +129,15 @@ export function InputBytesChart({ streamCode }: InputBytesChartProps) {
         )}
 
         {!error && points.length < 2 && (
-          <div className="flex h-[260px] items-center justify-center text-xs text-muted-foreground">
+          <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
             Collecting samples…
           </div>
         )}
 
         {points.length >= 2 && (
-          <div className="h-[260px] w-full">
+          <div className="min-h-0 w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis
                   dataKey="t"
@@ -169,7 +169,9 @@ export function InputBytesChart({ streamCode }: InputBytesChartProps) {
                     [formatRate(Number(value)), String(name)] as [string, string]
                   }
                 />
-                <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
+                {protocols.length > 1 && (
+                  <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
+                )}
                 {protocols.length > 1 && (
                   <Line
                     type="monotone"

@@ -548,10 +548,8 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
               <CardHeader>
                 <CardTitle className="text-base">Extra FFmpeg arguments</CardTitle>
                 <CardDescription>
-                  Raw argv tokens appended after the generated FFmpeg command. One token per row
-                  — e.g. <code>-x264-params</code> on one line and{' '}
-                  <code>keyint=60:scenecut=0</code> on the next. Use sparingly: may conflict with
-                  the auto-generated arguments.
+                  One token per row, appended after the generated command. Use sparingly — may
+                  conflict with auto-generated args.
                 </CardDescription>
               </CardHeader>
               <CardContent>
