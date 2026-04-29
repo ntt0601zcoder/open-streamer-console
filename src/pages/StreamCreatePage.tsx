@@ -60,6 +60,7 @@ const DEFAULT_VALUES: CreateStreamValues = {
   push: [],
   transcoder: {
     enabled: false,
+    mode: '',
     audio: {
       copy: true,
       codec: undefined,
