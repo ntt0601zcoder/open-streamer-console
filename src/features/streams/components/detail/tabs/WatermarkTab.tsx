@@ -37,6 +37,7 @@ import {
   type WatermarkConfig,
 } from '@/api/types';
 import { watermarksApi } from '@/api/watermarks';
+import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import {
@@ -117,6 +118,11 @@ function toApiBody(v: WatermarkFormValues): WatermarkConfig {
 export function WatermarkTab({ stream }: WatermarkTabProps) {
   const update = useSaveStream();
   const { data: assets } = useWatermarkAssets();
+  const { data: defaults } = useConfigDefaults();
+  const resizeRatioPlaceholder =
+    defaults?.watermark?.resize_ratio != null
+      ? String(defaults.watermark.resize_ratio)
+      : 'server default';
 
   const form = useForm<WatermarkFormValues>({
     resolver: zodResolver(watermarkFormSchema),
@@ -560,7 +566,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                           min={0}
                           max={1}
                           step={0.01}
-                          placeholder="server default"
+                          placeholder={resizeRatioPlaceholder}
                           className="placeholder:italic"
                           {...field}
                           value={field.value ?? ''}

@@ -187,6 +187,10 @@ export interface ConfigDefaults {
     batch_flush_interval_sec?: number;
     batch_max_queue_items?: number;
   };
+  watermark?: {
+    /** Per-server default for WatermarkConfig.resize_ratio (0,1]. */
+    resize_ratio?: number;
+  };
   ingestor?: {
     hls_playlist_timeout_sec?: number;
     hls_segment_timeout_sec?: number;
