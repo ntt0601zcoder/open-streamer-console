@@ -15,12 +15,7 @@ export type GeneralFormValues = z.infer<typeof generalSchema>;
 // ─── Inputs ───────────────────────────────────────────────────────────────────
 
 export const inputNetSchema = z.object({
-  connect_timeout_sec: z.coerce.number().int().min(0).optional(),
-  read_timeout_sec: z.coerce.number().int().min(0).optional(),
-  reconnect: z.boolean().optional(),
-  reconnect_delay_sec: z.coerce.number().int().min(0).optional(),
-  reconnect_max_delay_sec: z.coerce.number().int().min(0).optional(),
-  max_reconnects: z.coerce.number().int().min(0).optional(),
+  timeout_sec: z.coerce.number().int().min(0).optional(),
   insecure_tls: z.boolean().optional(),
 });
 
@@ -100,6 +95,8 @@ export type VideoProfileFormValues = z.infer<typeof videoProfileSchema>;
 
 export const transcoderFormSchema = z.object({
   enabled: z.boolean(),
+  /** '' = inherit per-server default. */
+  mode: z.enum(['', 'multi', 'per_profile']),
   audio: z.object({
     copy: z.boolean(),
     codec: z.string().optional(),
@@ -156,7 +153,6 @@ export const watermarkFormSchema = z.object({
   x: z.string(),
   y: z.string(),
   resize: z.boolean(),
-  resize_ratio: z.coerce.number().min(0).max(1).optional(),
 });
 
 export type WatermarkFormValues = z.infer<typeof watermarkFormSchema>;

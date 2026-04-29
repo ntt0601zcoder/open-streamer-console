@@ -42,6 +42,7 @@ function toFormValues(stream: Stream): TranscoderFormValues {
   const t = stream.transcoder;
   return {
     enabled: t !== undefined && t !== null,
+    mode: (t?.mode ?? '') as TranscoderFormValues['mode'],
     audio: {
       copy: t?.audio?.copy ?? true,
       codec: t?.audio?.codec,
@@ -79,6 +80,9 @@ function toFormValues(stream: Stream): TranscoderFormValues {
     extra_args: (t?.extra_args ?? []).map((value) => ({ value })),
   };
 }
+
+/** Sentinel for the "inherit server default" Select option — Radix forbids "". */
+const MODE_DEFAULT = '__default__';
 
 const HW_LABELS: Record<string, string> = {
   none: 'None (CPU)',
@@ -171,6 +175,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
       },
       global: values.global as TranscoderConfig['global'],
       extra_args: cleanExtraArgs(values.extra_args),
+      mode: values.mode === '' ? undefined : values.mode,
     };
   }
 
@@ -179,6 +184,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
   const audioCodecOptions = serverConfig?.audio_codecs ?? [];
 
   const { data: defaults } = useConfigDefaults();
+  const modePlaceholder = defaults?.transcoder?.mode ?? 'multi';
   const hwPlaceholder = defaults?.transcoder?.global?.hw ?? 'default';
   const deviceIdPlaceholder =
     defaults?.transcoder?.global?.deviceid != null
@@ -261,6 +267,51 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
 
         {enabled && (
           <>
+            {/* Process topology */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Process topology</CardTitle>
+                <CardDescription>
+                  Multi runs one FFmpeg per stream emitting every profile (single decode,
+                  multi encode) — saves RAM and decode work. Per-profile spawns one FFmpeg
+                  per profile, isolating glitches per rendition.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="mode"
+                  render={({ field }) => (
+                    <FormItem className="max-w-sm">
+                      <FormLabel>Mode</FormLabel>
+                      <Select
+                        onValueChange={(v) => field.onChange(v === MODE_DEFAULT ? '' : v)}
+                        value={field.value === '' ? MODE_DEFAULT : field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={MODE_DEFAULT}>
+                            <span className="italic text-muted-foreground">
+                              Server default ({modePlaceholder})
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="multi">Multi — one process, all profiles</SelectItem>
+                          <SelectItem value="per_profile">
+                            Per-profile — one process per profile
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
             {/* Hardware */}
             <Card>
               <CardHeader>

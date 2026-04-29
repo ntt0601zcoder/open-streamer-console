@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, ChevronDown, ChevronUp, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import type { InputHealthSnapshot, Stream } from '@/api/types';
 import { StreamStatus } from '@/api/types';
 import { cn } from '@/lib/utils';
 import { listToRecord, recordToList } from '@/lib/kvList';
+import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStreams';
 import { InputSwitchHistory } from '@/features/streams/components/InputSwitchHistory';
@@ -38,12 +39,7 @@ function toFormValues(stream: Stream): InputsFormValues {
       priority: inp.priority ?? 0,
       net: inp.net
         ? {
-            connect_timeout_sec: inp.net.connect_timeout_sec,
-            read_timeout_sec: inp.net.read_timeout_sec,
-            reconnect: inp.net.reconnect,
-            reconnect_delay_sec: inp.net.reconnect_delay_sec,
-            reconnect_max_delay_sec: inp.net.reconnect_max_delay_sec,
-            max_reconnects: inp.net.max_reconnects,
+            timeout_sec: inp.net.timeout_sec,
             insecure_tls: inp.net.insecure_tls,
           }
         : undefined,
@@ -210,6 +206,63 @@ interface InputRowProps {
   onSwitch: () => void;
 }
 
+function pickTimeoutPlaceholder(
+  url: string | undefined,
+  ingestor:
+    | {
+        hls_playlist_timeout_sec?: number;
+        rtmp_timeout_sec?: number;
+        rtsp_timeout_sec?: number;
+      }
+    | undefined,
+): string {
+  if (!ingestor) return 'default';
+  const scheme = (url ?? '').toLowerCase().split(':')[0];
+  let v: number | undefined;
+  if (scheme === 'http' || scheme === 'https') v = ingestor.hls_playlist_timeout_sec;
+  else if (scheme === 'rtmp' || scheme === 'rtmps') v = ingestor.rtmp_timeout_sec;
+  else if (scheme === 'rtsp' || scheme === 'rtsps') v = ingestor.rtsp_timeout_sec;
+  return v != null ? String(v) : 'default';
+}
+
+function NetworkTimeoutField({
+  form,
+  index,
+}: {
+  form: ReturnType<typeof useForm<InputsFormValues>>;
+  index: number;
+}) {
+  const url = useWatch({ control: form.control, name: `inputs.${index}.url` });
+  const { data: defaults } = useConfigDefaults();
+  const placeholder = pickTimeoutPlaceholder(url, defaults?.ingestor);
+  return (
+    <FormField
+      control={form.control}
+      name={`inputs.${index}.net.timeout_sec`}
+      render={({ field }) => (
+        <FormItem className="max-w-xs">
+          <FormLabel className="text-xs">Timeout (s)</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              min={0}
+              placeholder={placeholder}
+              className="placeholder:italic"
+              {...field}
+              value={field.value ?? ''}
+            />
+          </FormControl>
+          <p className="text-[11px] text-muted-foreground">
+            HLS: HTTP request timeout · RTMP/RTSP: dial · SRT: handshake. 0 = use server
+            default for the URL scheme.
+          </p>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
 function InputRow({
   index,
   total,
@@ -357,20 +410,6 @@ function AdvancedToggle({
 
       {open && (
         <div className="mt-4 space-y-4 border-t pt-4">
-          {/* Reconnect toggle */}
-          <FormField
-            control={form.control}
-            name={`inputs.${index}.net.reconnect`}
-            render={({ field }) => (
-              <FormItem className="flex items-center gap-2 space-y-0">
-                <FormControl>
-                  <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormLabel className="text-xs">Auto-reconnect on failure</FormLabel>
-              </FormItem>
-            )}
-          />
-
           {/* Insecure TLS toggle */}
           <FormField
             control={form.control}
@@ -391,41 +430,7 @@ function AdvancedToggle({
             )}
           />
 
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Network timeouts
-          </p>
-          <div className="grid gap-3 sm:grid-cols-4">
-            {(
-              [
-                ['connect_timeout_sec', 'Connect timeout (s)'],
-                ['read_timeout_sec', 'Read timeout (s)'],
-                ['reconnect_delay_sec', 'Reconnect delay (s)'],
-                ['reconnect_max_delay_sec', 'Max delay (s)'],
-                ['max_reconnects', 'Max reconnects'],
-              ] as const
-            ).map(([name, label]) => (
-              <FormField
-                key={name}
-                control={form.control}
-                name={`inputs.${index}.net.${name}`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">{label}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="default"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ))}
-          </div>
+          <NetworkTimeoutField form={form} index={index} />
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">

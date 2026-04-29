@@ -119,7 +119,6 @@ type DashValues = z.infer<typeof dashSchema>;
 
 const transcoderSchema = z.object({
   ffmpeg_path: z.string().optional(),
-  multi_output: z.boolean().optional(),
 });
 type TranscoderValues = z.infer<typeof transcoderSchema>;
 
@@ -1209,7 +1208,6 @@ function TranscoderSection() {
     resolver: zodResolver(transcoderSchema),
     values: {
       ffmpeg_path: cfg?.ffmpeg_path ?? '',
-      multi_output: cfg?.multi_output ?? false,
     },
   });
 
@@ -1248,7 +1246,7 @@ function TranscoderSection() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Transcoder</CardTitle>
-            <CardDescription>FFmpeg binary location and process layout.</CardDescription>
+            <CardDescription>FFmpeg binary location used by the transcoder.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -1275,22 +1273,6 @@ function TranscoderSection() {
                     Use <strong>Probe</strong> to check encoder/muxer support.
                   </FormDescription>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="multi_output"
-              render={({ field }) => (
-                <FormItem className="flex items-start gap-3 space-y-0 rounded-md border p-3">
-                  <FormControl>
-                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div className="space-y-1">
-                    <FormLabel>Multi-output mode</FormLabel>
-                    <FormDescription>One FFmpeg per stream, all profiles in one process.</FormDescription>
-                    <FormMessage />
-                  </div>
                 </FormItem>
               )}
             />

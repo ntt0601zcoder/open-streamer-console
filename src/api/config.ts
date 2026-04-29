@@ -4,6 +4,7 @@ import type {
   HWAccel,
   ResizeMode,
   StreamStatus,
+  TranscoderMode,
   VideoCodec,
   WatermarkPosition,
   WatermarkType,
@@ -111,7 +112,6 @@ export interface AppServerConfig {
 
 export interface TranscoderConfig {
   ffmpeg_path?: string;
-  multi_output?: boolean;
 }
 
 export interface SessionsConfig {
@@ -187,16 +187,13 @@ export interface ConfigDefaults {
     batch_flush_interval_sec?: number;
     batch_max_queue_items?: number;
   };
-  watermark?: {
-    /** Per-server default for WatermarkConfig.resize_ratio (0,1]. */
-    resize_ratio?: number;
-  };
   ingestor?: {
     hls_playlist_timeout_sec?: number;
     hls_segment_timeout_sec?: number;
     hls_max_segment_buffer?: number;
-    rtmp_connect_timeout_sec?: number;
-    rtsp_connect_timeout_sec?: number;
+    /** Per-protocol pull timeouts the server fills when input.net.timeout_sec is 0. */
+    rtmp_timeout_sec?: number;
+    rtsp_timeout_sec?: number;
   };
   listeners?: {
     rtmp?: { port?: number; listen_host?: string };
@@ -221,7 +218,8 @@ export interface ConfigDefaults {
   push?: { retry_timeout_sec?: number; timeout_sec?: number };
   transcoder?: {
     ffmpeg_path?: string;
-    multi_output?: boolean;
+    /** Default FFmpeg topology used when Stream.transcoder.mode is empty. */
+    mode?: TranscoderMode;
     audio?: { bitrate_k?: number; codec?: AudioCodec };
     global?: { hw?: HWAccel; deviceid?: number };
     video?: {

@@ -91,12 +91,16 @@ export type EventType = (typeof EventType)[keyof typeof EventType];
 // ─── Domain types ─────────────────────────────────────────────────────────────
 
 export interface InputNetConfig {
-  connect_timeout_sec?: number;
-  read_timeout_sec?: number;
-  reconnect?: boolean;
-  reconnect_delay_sec?: number;
-  reconnect_max_delay_sec?: number;
-  max_reconnects?: number;
+  /**
+   * Per-protocol operation budget the reader applies when the input is opened.
+   * - HLS: HTTP request timeout for playlist GET; segment GETs derive from this.
+   * - RTMP: TCP dial / handshake budget.
+   * - RTSP: dial + initial read until first packet.
+   * - SRT: connection / handshake timeout.
+   * Zero = use the server's per-protocol default.
+   */
+  timeout_sec?: number;
+  /** Skip TLS cert verification on HTTPS pulls. */
   insecure_tls?: boolean;
 }
 
@@ -203,12 +207,21 @@ export interface TranscoderGlobalConfig {
   gop?: number;
 }
 
+export const TranscoderMode = { multi: 'multi', per_profile: 'per_profile' } as const;
+export type TranscoderMode = (typeof TranscoderMode)[keyof typeof TranscoderMode];
+
 export interface TranscoderConfig {
   decoder?: DecoderConfig;
   video?: VideoTranscodeConfig;
   audio?: AudioTranscodeConfig;
   global?: TranscoderGlobalConfig;
   extra_args?: string[];
+  /**
+   * FFmpeg process topology. `multi` runs one process per stream emitting
+   * every profile (single decode, multi encode); `legacy` spawns one process
+   * per profile. Empty = inherit per-server default ("multi").
+   */
+  mode?: TranscoderMode;
 }
 
 export interface WatermarkConfig {
@@ -230,17 +243,14 @@ export interface WatermarkConfig {
   x?: string;
   y?: string;
   /**
-   * Scale the watermark proportionally to each output rendition's frame so a
-   * single asset looks visually consistent across an ABR ladder. When false,
-   * the watermark uses its native pixel size.
+   * When true, the watermark renders at a consistent on-screen ratio across
+   * every ABR rendition: the largest profile uses the asset's native pixel
+   * size and smaller profiles shrink it (and the FontSize / Offset* fields)
+   * by the ratio of their width to the largest profile's width.
+   * When false (default), every rendition uses native pixels — the overlay
+   * looks larger on lower-resolution profiles.
    */
   resize?: boolean;
-  /**
-   * Watermark size as a fraction of the frame's reference dimension when
-   * resize=true (image: frame width, text: frame height). Range (0, 1];
-   * 0 = inherit per-server default. Ignored when resize=false.
-   */
-  resize_ratio?: number;
 }
 
 export interface WatermarkAsset {
