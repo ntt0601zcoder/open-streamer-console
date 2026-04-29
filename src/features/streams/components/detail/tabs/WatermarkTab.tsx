@@ -77,6 +77,8 @@ function toFormValues(stream: Stream): WatermarkFormValues {
     offset_y: w?.offset_y,
     x: w?.x ?? '',
     y: w?.y ?? '',
+    resize: w?.resize ?? false,
+    resize_ratio: w?.resize_ratio,
   };
 }
 
@@ -106,6 +108,9 @@ function toApiBody(v: WatermarkFormValues): WatermarkConfig {
     if (v.offset_y != null) out.offset_y = v.offset_y;
   }
 
+  out.resize = v.resize;
+  if (v.resize && v.resize_ratio != null) out.resize_ratio = v.resize_ratio;
+
   return out;
 }
 
@@ -124,6 +129,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
   const type = useWatch({ control: form.control, name: 'type' });
   const position = useWatch({ control: form.control, name: 'position' });
   const assetId = useWatch({ control: form.control, name: 'asset_id' });
+  const resize = useWatch({ control: form.control, name: 'resize' });
 
   const selectedAsset = assets?.find((a) => a.id === assetId);
 
@@ -509,6 +515,68 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                 </>
               ) : null}
             </CardContent>
+          </Card>
+        )}
+
+        {enabled && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Scaling</CardTitle>
+                  <CardDescription>
+                    Make a single asset render at a consistent visual ratio across every
+                    output rendition (e.g. a logo that looks the same on 720p and 480p).
+                  </CardDescription>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="resize"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormLabel className="text-sm text-muted-foreground">
+                        Scale to frame
+                      </FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardHeader>
+
+            {resize && (
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="resize_ratio"
+                  render={({ field }) => (
+                    <FormItem className="max-w-sm">
+                      <FormLabel>Resize ratio (0.0 – 1.0)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          placeholder="server default"
+                          className="placeholder:italic"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Fraction of the frame's reference dimension. Image uses frame
+                        width, text uses frame height. Typical: ~0.05 for a station logo,
+                        ~0.20 for a sponsor banner. Empty = inherit per-server default.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            )}
           </Card>
         )}
 

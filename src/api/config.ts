@@ -254,6 +254,8 @@ export interface ProbeResult {
   encoders?: Record<string, Record<string, boolean>>;
   /** muxers[name] = available?  e.g. muxers.hls, muxers.mpegts */
   muxers?: Record<string, boolean>;
+  /** filters[name] = available?  e.g. filters.scale2ref, filters.drawtext, filters.overlay */
+  filters?: Record<string, boolean>;
   /** Fatal compatibility issues (block usage). */
   errors?: string[];
   /** Non-fatal notices. */

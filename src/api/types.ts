@@ -229,6 +229,18 @@ export interface WatermarkConfig {
   /** Raw FFmpeg coordinate expression — used only when position === 'custom'. */
   x?: string;
   y?: string;
+  /**
+   * Scale the watermark proportionally to each output rendition's frame so a
+   * single asset looks visually consistent across an ABR ladder. When false,
+   * the watermark uses its native pixel size.
+   */
+  resize?: boolean;
+  /**
+   * Watermark size as a fraction of the frame's reference dimension when
+   * resize=true (image: frame width, text: frame height). Range (0, 1];
+   * 0 = inherit per-server default. Ignored when resize=false.
+   */
+  resize_ratio?: number;
 }
 
 export interface WatermarkAsset {

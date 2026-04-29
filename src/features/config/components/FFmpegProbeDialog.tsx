@@ -62,7 +62,7 @@ export function FFmpegProbeDialog({ ffmpegPath, onProbeComplete }: FFmpegProbeDi
           </DialogTitle>
           <DialogDescription>
             Inspects the binary at <code className="font-mono">{ffmpegPath || '$PATH'}</code> and
-            reports which encoders &amp; muxers are available. Read-only check; nothing is changed.
+            reports which encoders, muxers &amp; filters are available. Read-only check; nothing is changed.
           </DialogDescription>
         </DialogHeader>
 
@@ -131,6 +131,7 @@ export function FFmpegProbeDialog({ ffmpegPath, onProbeComplete }: FFmpegProbeDi
 
             <EncoderBuckets encoders={result.encoders} />
             <MuxerTable muxers={result.muxers} />
+            <FilterTable filters={result.filters} />
           </div>
         )}
 
@@ -227,6 +228,32 @@ function MuxerTable({ muxers }: { muxers?: ProbeResult['muxers'] }) {
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Muxers</p>
       <div className="flex flex-wrap gap-1.5">
         {Object.entries(muxers).map(([name, ok]) => (
+          <Badge
+            key={name}
+            variant="outline"
+            className={cn(
+              'gap-1 font-mono',
+              ok
+                ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
+                : 'border-destructive/40 text-destructive',
+            )}
+          >
+            <SupportIcon ok={ok} />
+            {name}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FilterTable({ filters }: { filters?: ProbeResult['filters'] }) {
+  if (!filters || Object.keys(filters).length === 0) return null;
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Filters</p>
+      <div className="flex flex-wrap gap-1.5">
+        {Object.entries(filters).map(([name, ok]) => (
           <Badge
             key={name}
             variant="outline"

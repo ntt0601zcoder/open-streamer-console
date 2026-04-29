@@ -155,6 +155,8 @@ export const watermarkFormSchema = z.object({
   offset_y: z.coerce.number().int().optional(),
   x: z.string(),
   y: z.string(),
+  resize: z.boolean(),
+  resize_ratio: z.coerce.number().min(0).max(1).optional(),
 });
 
 export type WatermarkFormValues = z.infer<typeof watermarkFormSchema>;
