@@ -250,6 +250,27 @@ export interface ErrorEntry {
   at: string;
 }
 
+export const MediaTrackKind = { video: 'video', audio: 'audio' } as const;
+export type MediaTrackKind = (typeof MediaTrackKind)[keyof typeof MediaTrackKind];
+
+export interface MediaTrackInfo {
+  kind?: MediaTrackKind;
+  /** Codec name from PMT/probe — "h264", "h265", "aac", … */
+  codec?: string;
+  bitrate_kbps?: number;
+  /** Video only. */
+  width?: number;
+  /** Video only. */
+  height?: number;
+}
+
+export interface MediaSummary {
+  input_bitrate_kbps?: number;
+  output_bitrate_kbps?: number;
+  inputs?: MediaTrackInfo[];
+  outputs?: MediaTrackInfo[];
+}
+
 export interface InputHealthSnapshot {
   bitrate_kbps?: number;
   packet_loss?: number;
@@ -257,6 +278,8 @@ export interface InputHealthSnapshot {
   last_packet_at?: string;
   errors?: ErrorEntry[];
   input_priority?: number;
+  /** Per-input tracks parsed from the source (PMT for MPEG-TS, probe for HLS). */
+  tracks?: MediaTrackInfo[];
 }
 
 export interface TranscoderProfileSnapshot {
@@ -320,6 +343,8 @@ export interface StreamRuntime {
   transcoder?: TranscoderRuntimeStatus;
   publisher?: PublisherRuntimeStatus;
   switches?: SwitchEvent[];
+  /** UI-friendly summary of input → output track shape for the dashboard. */
+  media?: MediaSummary;
 }
 
 export interface Stream {
