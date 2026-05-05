@@ -61,6 +61,7 @@ export const outputFormSchema = z.object({
     rtmp: z.boolean(),
     rtsp: z.boolean(),
     srt: z.boolean(),
+    mpegts: z.boolean(),
   }),
   push: z.array(pushDestSchema),
 });

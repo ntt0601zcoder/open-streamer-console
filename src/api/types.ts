@@ -138,6 +138,15 @@ export interface OutputProtocols {
   rtmp?: boolean;
   rtsp?: boolean;
   srt?: boolean;
+  /**
+   * MPEGTS exposes raw MPEG-TS over chunked HTTP at /<code>/mpegts — the
+   * lowest-latency relay path between Open-Streamer instances and any HTTP
+   * client that can consume chunked TS (ffmpeg / VLC). Latency bound is
+   * network RTT + one buffer-hub chunk (50–200 ms vs 4–10 s for HLS / DASH).
+   * No goroutine per-stream — endpoint subscribes to the playback buffer on
+   * demand. Disabling returns 404 for that stream.
+   */
+  mpegts?: boolean;
 }
 
 export interface PushDestination {

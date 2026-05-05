@@ -11,6 +11,10 @@ export function dashUrl(code: string) {
   return `${BASE_URL}/${code}/index.mpd`;
 }
 
+export function mpegtsUrl(code: string) {
+  return `${BASE_URL}/${code}/mpegts`;
+}
+
 export function rtmpUrl(code: string, ports: ServerPorts | undefined): string | null {
   const port = ports?.rtmp_port;
   if (!port) return null;

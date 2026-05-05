@@ -57,7 +57,7 @@ const DEFAULT_VALUES: CreateStreamValues = {
   code: '',
   general: { name: '', description: '', stream_key: '', disabled: false, tags: '' },
   inputs: [{ url: '', priority: 0 }],
-  protocols: { hls: true, dash: false, rtmp: false, rtsp: false, srt: false },
+  protocols: { hls: true, dash: false, rtmp: false, rtsp: false, srt: false, mpegts: false },
   push: [],
   transcoder: {
     enabled: false,
@@ -447,6 +447,7 @@ function InputsSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
 const PROTOCOL_LABELS: Record<string, string> = {
   hls: 'HLS — HTTP Live Streaming',
   dash: 'DASH — Dynamic Adaptive Streaming',
+  mpegts: 'MPEGTS — Raw MPEG-TS over chunked HTTP (sub-second relay)',
   rtmp: 'RTMP — Real-Time Messaging Protocol',
   rtsp: 'RTSP — Real-Time Streaming Protocol',
   srt: 'SRT — Secure Reliable Transport',
@@ -473,7 +474,7 @@ function OutputSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="divide-y">
-          {(['hls', 'dash', 'rtmp', 'rtsp', 'srt'] as const).map((key) => {
+          {(['hls', 'dash', 'mpegts', 'rtmp', 'rtsp', 'srt'] as const).map((key) => {
             const portMissing =
               (key === 'rtmp' && !ports?.rtmp_port) ||
               (key === 'rtsp' && !ports?.rtsp_port) ||

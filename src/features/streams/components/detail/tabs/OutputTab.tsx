@@ -27,13 +27,13 @@ import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
 import { copyText } from '@/lib/clipboard';
 import { formatDurationSince } from '@/lib/format';
-import { dashUrl, hlsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
+import { dashUrl, hlsUrl, mpegtsUrl, rtmpUrl, rtspUrl, srtUrl } from '@/lib/streamUrls';
 
 function protocolDisabledReason(
-  key: 'hls' | 'dash' | 'rtmp' | 'rtsp' | 'srt',
+  key: 'hls' | 'dash' | 'rtmp' | 'rtsp' | 'srt' | 'mpegts',
   ports: ServerPorts | undefined,
 ): string | null {
-  if (key === 'hls' || key === 'dash') return null;
+  if (key === 'hls' || key === 'dash' || key === 'mpegts') return null;
   const portField = key === 'rtmp' ? 'rtmp_port' : key === 'rtsp' ? 'rtsp_port' : 'srt_port';
   if (!ports?.[portField]) {
     return `Server publisher.${key}.port is not configured.`;
@@ -66,6 +66,10 @@ const PROTOCOL_LABELS: Record<string, { label: string; description: string }> = 
     label: 'SRT',
     description: 'Secure Reliable Transport',
   },
+  mpegts: {
+    label: 'MPEGTS',
+    description: 'Raw MPEG-TS over chunked HTTP — sub-second relay (ffmpeg/VLC)',
+  },
 };
 
 function toFormValues(stream: Stream): OutputFormValues {
@@ -76,6 +80,7 @@ function toFormValues(stream: Stream): OutputFormValues {
       rtmp: stream.protocols?.rtmp ?? false,
       rtsp: stream.protocols?.rtsp ?? false,
       srt: stream.protocols?.srt ?? false,
+      mpegts: stream.protocols?.mpegts ?? false,
     },
     push: (stream.push ?? []).map((p) => ({
       url: p.url,
@@ -152,6 +157,7 @@ export function OutputTab({ stream }: OutputTabProps) {
               [
                 ['protocols.hls', 'hls'],
                 ['protocols.dash', 'dash'],
+                ['protocols.mpegts', 'mpegts'],
                 ['protocols.rtmp', 'rtmp'],
                 ['protocols.rtsp', 'rtsp'],
                 ['protocols.srt', 'srt'],
@@ -215,6 +221,9 @@ export function OutputTab({ stream }: OutputTabProps) {
             <CardContent className="space-y-2">
               {protocols.hls && <OutputUrlRow label="HLS" url={hlsUrl(stream.code)} />}
               {protocols.dash && <OutputUrlRow label="DASH" url={dashUrl(stream.code)} />}
+              {protocols.mpegts && (
+                <OutputUrlRow label="MPEGTS" url={mpegtsUrl(stream.code)} />
+              )}
               {protocols.rtmp && (
                 <OutputUrlRow label="RTMP" url={rtmpUrl(stream.code, ports)} protocol="rtmp" />
               )}
