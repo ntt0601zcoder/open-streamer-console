@@ -47,6 +47,7 @@ import { streamKeys } from '@/features/streams/hooks/useStreams';
 import {
   cleanExtraArgs,
   createStreamSchema,
+  parsePids,
   type CreateStreamValues,
 } from '@/features/streams/schemas';
 import { listToRecord } from '@/lib/kvList';
@@ -227,6 +228,7 @@ function buildCreateBody(v: CreateStreamValues): StreamBody {
       priority: i,
       headers: listToRecord(inp.headers),
       params: listToRecord(inp.params),
+      pids: parsePids(inp.pids),
     })),
     protocols: v.protocols,
     push: v.push.length ? v.push : undefined,

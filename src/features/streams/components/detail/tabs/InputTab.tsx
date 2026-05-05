@@ -26,7 +26,7 @@ import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStrea
 import { InputSwitchHistory } from '@/features/streams/components/InputSwitchHistory';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
-import { inputsFormSchema, type InputsFormValues } from '@/features/streams/schemas';
+import { inputsFormSchema, parsePids, type InputsFormValues } from '@/features/streams/schemas';
 
 interface InputTabProps {
   stream: Stream;
@@ -51,16 +51,6 @@ function toFormValues(stream: Stream): InputsFormValues {
   };
 }
 
-function parsePids(input: string | undefined): number[] | undefined {
-  if (!input) return undefined;
-  const parsed = input
-    .split(/[\s,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => Number(s))
-    .filter((n) => Number.isInteger(n) && n >= 0);
-  return parsed.length > 0 ? parsed : undefined;
-}
 
 export function InputTab({ stream }: InputTabProps) {
   const update = useSaveStream();

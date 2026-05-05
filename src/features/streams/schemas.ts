@@ -138,6 +138,18 @@ export function cleanExtraArgs(
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
+/** Form `"0, 256, 257"` → API `[0, 256, 257]`; empty/no-valid → undefined. */
+export function parsePids(input: string | undefined): number[] | undefined {
+  if (!input) return undefined;
+  const parsed = input
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => Number(s))
+    .filter((n) => Number.isInteger(n) && n >= 0);
+  return parsed.length > 0 ? parsed : undefined;
+}
+
 // ─── Watermark ────────────────────────────────────────────────────────────────
 
 export const watermarkFormSchema = z.object({
