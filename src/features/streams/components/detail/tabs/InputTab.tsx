@@ -46,8 +46,20 @@ function toFormValues(stream: Stream): InputsFormValues {
       headers: recordToList(inp.headers),
       params: recordToList(inp.params),
       program: inp.program,
+      pids: inp.pids?.length ? inp.pids.join(', ') : '',
     })),
   };
+}
+
+function parsePids(input: string | undefined): number[] | undefined {
+  if (!input) return undefined;
+  const parsed = input
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => Number(s))
+    .filter((n) => Number.isInteger(n) && n >= 0);
+  return parsed.length > 0 ? parsed : undefined;
 }
 
 export function InputTab({ stream }: InputTabProps) {
@@ -85,6 +97,7 @@ export function InputTab({ stream }: InputTabProps) {
       priority: i,
       headers: listToRecord(inp.headers),
       params: listToRecord(inp.params),
+      pids: parsePids(inp.pids),
     }));
     update.mutate(
       { code: stream.code, body: { inputs } },
@@ -224,6 +237,70 @@ function pickTimeoutPlaceholder(
   else if (scheme === 'rtmp' || scheme === 'rtmps') v = ingestor.rtmp_timeout_sec;
   else if (scheme === 'rtsp' || scheme === 'rtsps') v = ingestor.rtsp_timeout_sec;
   return v != null ? String(v) : 'default';
+}
+
+function UdpFilterFields({
+  form,
+  index,
+}: {
+  form: ReturnType<typeof useForm<InputsFormValues>>;
+  index: number;
+}) {
+  const url = useWatch({ control: form.control, name: `inputs.${index}.url` });
+  const scheme = (url ?? '').toLowerCase().split(':')[0];
+  if (scheme !== 'udp') return null;
+  return (
+    <>
+      <FormField
+        control={form.control}
+        name={`inputs.${index}.program`}
+        render={({ field }) => (
+          <FormItem className="max-w-xs">
+            <FormLabel className="text-xs">MPEG-TS program</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                min={0}
+                placeholder="0"
+                className="placeholder:italic"
+                {...field}
+                value={field.value ?? ''}
+              />
+            </FormControl>
+            <p className="text-[11px] text-muted-foreground">
+              Pick a single program when the UDP source is a multi-program transport stream
+              (MPTS). 0 = forward all programs.
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name={`inputs.${index}.pids`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs">PID allowlist</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="0, 256, 257"
+                className="font-mono text-sm placeholder:italic"
+                {...field}
+                value={field.value ?? ''}
+              />
+            </FormControl>
+            <p className="text-[11px] text-muted-foreground">
+              Comma- or space-separated TS PIDs to keep — every other PID is dropped. Include
+              PID 0 (PAT), the PMT PID, and every desired ES PID. Empty = no filter. Combines
+              with Program (program runs first, then this restricts further).
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  );
 }
 
 function NetworkTimeoutField({
@@ -433,30 +510,7 @@ function AdvancedToggle({
 
           <NetworkTimeoutField form={form} index={index} />
 
-          <FormField
-            control={form.control}
-            name={`inputs.${index}.program`}
-            render={({ field }) => (
-              <FormItem className="max-w-xs">
-                <FormLabel className="text-xs">MPEG-TS program</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    className="placeholder:italic"
-                    {...field}
-                    value={field.value ?? ''}
-                  />
-                </FormControl>
-                <p className="text-[11px] text-muted-foreground">
-                  Pick a single program when the source is a multi-program transport stream
-                  (UDP MPTS feeds). 0 = forward all programs. Ignored for HLS/SRT/RTMP/RTSP.
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <UdpFilterFields form={form} index={index} />
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">

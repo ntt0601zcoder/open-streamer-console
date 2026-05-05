@@ -31,6 +31,8 @@ export const inputSchema = z.object({
   headers: z.array(httpKeyValueSchema).optional(),
   params: z.array(httpKeyValueSchema).optional(),
   program: z.coerce.number().int().min(0).optional(),
+  /** Comma/space separated PID list, e.g. "0, 256, 257". Parsed to number[] on submit. */
+  pids: z.string().optional(),
 });
 
 export type HttpKeyValue = z.infer<typeof httpKeyValueSchema>;

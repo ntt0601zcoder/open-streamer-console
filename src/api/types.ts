@@ -119,6 +119,17 @@ export interface Input {
    * protocol, HLS/SRT/File are SPTS by convention.
    */
   program?: number;
+  /**
+   * Explicit allowlist of TS PIDs to keep — every other PID is dropped at ingest.
+   * Use when source PSI is unreliable or to cherry-pick a subset (drop teletext,
+   * keep one of N audio languages, …). Pure PID-level filter — operators must
+   * include PID 0 (PAT), the PMT PID, and every desired ES PID.
+   *
+   * Layers with `program` when both are set: `program` runs first (auto-detect
+   * ES PIDs + rewrite PAT to single-program), then `pids` restricts further.
+   * Empty (default) disables the filter. UDP only.
+   */
+  pids?: number[];
 }
 
 export interface OutputProtocols {
