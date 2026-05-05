@@ -27,7 +27,6 @@ const CODEC_LABELS: Record<string, string> = {
   h265: 'H.265 (HEVC)',
   mp2v: 'MPEG-2 (DVB legacy)',
   av1: 'AV1',
-  vp9: 'VP9',
 };
 
 const PRESET_OPTIONS = [

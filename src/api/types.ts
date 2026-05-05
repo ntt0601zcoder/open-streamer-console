@@ -32,7 +32,6 @@ export const AudioCodec = {
   aac: 'aac',
   mp3: 'mp3',
   mp2a: 'mp2a',
-  opus: 'opus',
   ac3: 'ac3',
   eac3: 'eac3',
   copy: 'copy',
@@ -44,7 +43,6 @@ export const VideoCodec = {
   h265: 'h265',
   mp2v: 'mp2v',
   av1: 'av1',
-  vp9: 'vp9',
   copy: 'copy',
 } as const;
 export type VideoCodec = (typeof VideoCodec)[keyof typeof VideoCodec];
