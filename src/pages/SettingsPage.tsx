@@ -141,7 +141,7 @@ const bufferSchema = z.object({
 type BufferValues = z.infer<typeof bufferSchema>;
 
 const logSchema = z.object({
-  level: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+  level: z.enum(['trace', 'debug', 'info', 'warn', 'error']).optional(),
   format: z.enum(['text', 'json']).optional(),
 });
 type LogValues = z.infer<typeof logSchema>;
@@ -1787,6 +1787,7 @@ function LogSection() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="trace">trace</SelectItem>
                       <SelectItem value="debug">debug</SelectItem>
                       <SelectItem value="info">info</SelectItem>
                       <SelectItem value="warn">warn</SelectItem>
