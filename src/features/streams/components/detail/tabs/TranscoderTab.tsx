@@ -95,13 +95,16 @@ const HW_LABELS: Record<string, string> = {
 const CODEC_LABELS: Record<string, string> = {
   h264: 'H.264 (AVC)',
   h265: 'H.265 (HEVC)',
+  mp2v: 'MPEG-2 (DVB legacy)',
   av1: 'AV1',
   vp9: 'VP9',
   copy: 'Copy (passthrough)',
   aac: 'AAC',
   mp3: 'MP3',
+  mp2a: 'MP2 (DVB contribution)',
   opus: 'Opus',
   ac3: 'AC3 (Dolby)',
+  eac3: 'E-AC3 (Dolby Digital Plus)',
 };
 
 const CHANNEL_LABELS: Record<number, string> = {

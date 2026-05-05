@@ -25,6 +25,7 @@ import { TranscodePresetPicker } from '@/features/streams/components/TranscodePr
 const CODEC_LABELS: Record<string, string> = {
   h264: 'H.264 (AVC)',
   h265: 'H.265 (HEVC)',
+  mp2v: 'MPEG-2 (DVB legacy)',
   av1: 'AV1',
   vp9: 'VP9',
 };
