@@ -111,6 +111,13 @@ const EVENT_GROUPS: { label: string; events: { value: string; label: string }[] 
       { value: EventType.transcoder_error, label: 'Transcoder error' },
     ],
   },
+  {
+    label: 'Session',
+    events: [
+      { value: EventType.session_opened, label: 'Session opened' },
+      { value: EventType.session_closed, label: 'Session closed' },
+    ],
+  },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

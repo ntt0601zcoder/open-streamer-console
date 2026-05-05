@@ -30,6 +30,7 @@ export const inputSchema = z.object({
   net: inputNetSchema.optional(),
   headers: z.array(httpKeyValueSchema).optional(),
   params: z.array(httpKeyValueSchema).optional(),
+  program: z.coerce.number().int().min(0).optional(),
 });
 
 export type HttpKeyValue = z.infer<typeof httpKeyValueSchema>;

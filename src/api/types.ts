@@ -69,6 +69,8 @@ export const HWAccel = {
 export type HWAccel = (typeof HWAccel)[keyof typeof HWAccel];
 
 export const EventType = {
+  session_opened: 'session.opened',
+  session_closed: 'session.closed',
   stream_created: 'stream.created',
   stream_started: 'stream.started',
   stream_stopped: 'stream.stopped',
@@ -110,6 +112,13 @@ export interface Input {
   headers?: Record<string, string>;
   params?: Record<string, string>;
   net?: InputNetConfig;
+  /**
+   * MPEG-TS program selector. When > 0 the ingest pipeline filters a multi-program
+   * transport stream (DVB headend / multicast carrying many channels) down to a
+   * single program. 0 disables filtering. UDP only — RTSP/RTMP are SPTS by
+   * protocol, HLS/SRT/File are SPTS by convention.
+   */
+  program?: number;
 }
 
 export interface OutputProtocols {

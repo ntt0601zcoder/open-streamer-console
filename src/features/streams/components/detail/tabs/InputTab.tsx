@@ -45,6 +45,7 @@ function toFormValues(stream: Stream): InputsFormValues {
         : undefined,
       headers: recordToList(inp.headers),
       params: recordToList(inp.params),
+      program: inp.program,
     })),
   };
 }
@@ -431,6 +432,31 @@ function AdvancedToggle({
           />
 
           <NetworkTimeoutField form={form} index={index} />
+
+          <FormField
+            control={form.control}
+            name={`inputs.${index}.program`}
+            render={({ field }) => (
+              <FormItem className="max-w-xs">
+                <FormLabel className="text-xs">MPEG-TS program</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    className="placeholder:italic"
+                    {...field}
+                    value={field.value ?? ''}
+                  />
+                </FormControl>
+                <p className="text-[11px] text-muted-foreground">
+                  Pick a single program when the source is a multi-program transport stream
+                  (UDP MPTS feeds). 0 = forward all programs. Ignored for HLS/SRT/RTMP/RTSP.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
