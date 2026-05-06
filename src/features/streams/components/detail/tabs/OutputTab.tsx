@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle, Copy, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Copy, ExternalLink, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -337,6 +337,18 @@ function OutputUrlRow({ label, url, protocol }: OutputUrlRowProps) {
         {label}
       </Badge>
       <span className="flex-1 truncate font-mono text-xs text-muted-foreground">{url}</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button asChild type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0">
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <p className="text-xs">Open in new tab</p>
+        </TooltipContent>
+      </Tooltip>
       <Button
         type="button"
         size="icon"
