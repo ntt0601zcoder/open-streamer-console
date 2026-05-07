@@ -432,6 +432,7 @@ export interface Recording {
 export const SessionProto = {
   hls: 'hls',
   dash: 'dash',
+  mpegts: 'mpegts',
   rtmp: 'rtmp',
   srt: 'srt',
   rtsp: 'rtsp',

@@ -2,6 +2,8 @@ import { ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
 import { hlsUrl } from '@/lib/streamUrls';
+import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
+import { useRecordingInfo } from '@/features/streams/hooks/useRecordingInfo';
 import { InputBytesChart } from './InputBytesChart';
 import { MediaSummaryCard } from './MediaSummaryCard';
 import { StreamPlayer } from './StreamPlayer';
@@ -15,6 +17,15 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
   const status = stream.runtime?.status;
   const isRunning = status === 'active' || status === 'degraded';
   const hlsEnabled = stream.protocols?.hls ?? false;
+  const dvrEnabled = stream.dvr?.enabled ?? false;
+  const { data: recordingInfo } = useRecordingInfo(stream.code, dvrEnabled && hlsEnabled);
+  const { data: defaults } = useConfigDefaults();
+  // Per-stream segment_duration overrides global; fall back to 4s (HLS default)
+  // so the green "data on disk" range renders before /config/defaults loads.
+  const segmentDurationSec =
+    (stream.dvr?.segment_duration && stream.dvr.segment_duration > 0
+      ? stream.dvr.segment_duration
+      : defaults?.dvr?.segment_duration) ?? 4;
 
   return (
     <div className="grid gap-4 lg:grid-cols-5">
@@ -38,7 +49,13 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
         </CardHeader>
         <CardContent>
           {hlsEnabled ? (
-            <StreamPlayer hlsUrl={hlsUrl_} active={isRunning} />
+            <StreamPlayer
+              hlsUrl={hlsUrl_}
+              active={isRunning}
+              streamCode={stream.code}
+              recordingInfo={recordingInfo}
+              segmentDurationSec={segmentDurationSec}
+            />
           ) : (
             <NoHlsPlaceholder isRunning={isRunning} />
           )}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Hls, { type Level } from 'hls.js';
 import { Loader2, RefreshCw, Settings, VideoOff, Volume2, VolumeOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { recordingsApi, type RecordingInfo } from '@/api/recordings';
+import { cn } from '@/lib/utils';
+import { TimelineSlider, type MsRange } from './TimelineSlider';
 
 type PlayerState = 'loading' | 'playing' | 'retrying' | 'error' | 'unsupported';
 
@@ -28,9 +31,25 @@ function formatLevel(level: Level): string {
 interface StreamPlayerProps {
   hlsUrl: string;
   active: boolean;
+  /** Stream code — used to build the timeshift URL when DVR is enabled. */
+  streamCode: string;
+  /** Polled DVR range — null/undefined disables timeshift controls. */
+  recordingInfo?: RecordingInfo | null;
+  /**
+   * DVR segment duration in seconds (per-stream override or global default).
+   * Combined with `segment_count` to estimate where actual on-disk data lives
+   * within the broader [started_at, last_segment_at] window.
+   */
+  segmentDurationSec?: number;
 }
 
-export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
+export function StreamPlayer({
+  hlsUrl,
+  active,
+  streamCode,
+  recordingInfo,
+  segmentDurationSec,
+}: StreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,6 +59,62 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
   const [levels, setLevels] = useState<Level[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number>(AUTO_LEVEL);
   const [autoLevel, setAutoLevel] = useState<number>(AUTO_LEVEL);
+
+  // Timeshift state — null = follow live edge.
+  const [timeshiftMs, setTimeshiftMs] = useState<number | null>(null);
+
+  // Full slider window: recording boot → live edge. Server reports both as
+  // wall-clock RFC3339 with timezone; Date.parse normalises to UTC ms.
+  const dvrRange = useMemo(() => {
+    if (!recordingInfo) return null;
+    const startMs = Date.parse(recordingInfo.dvr_range.started_at);
+    const lastMs = recordingInfo.dvr_range.last_segment_at
+      ? Date.parse(recordingInfo.dvr_range.last_segment_at)
+      : Date.now();
+    if (!Number.isFinite(startMs) || !Number.isFinite(lastMs)) return null;
+    if (lastMs <= startMs) return null;
+    return { startMs, endMs: lastMs };
+  }, [recordingInfo]);
+
+  // Where the on-disk data actually lives: assume contiguous from `last_segment_at`
+  // backwards by `segment_count × segment_duration`. Anything earlier (within the
+  // boot→last span) is rendered grey — recording was off or pruned.
+  const availableRanges = useMemo<MsRange[]>(() => {
+    if (!dvrRange || !recordingInfo) return [];
+    if (!segmentDurationSec || segmentDurationSec <= 0) return [];
+    if (recordingInfo.segment_count <= 0) return [];
+    const dataSpanMs = recordingInfo.segment_count * segmentDurationSec * 1000;
+    const start = Math.max(dvrRange.startMs, dvrRange.endMs - dataSpanMs);
+    return [{ start, end: dvrRange.endMs }];
+  }, [dvrRange, recordingInfo, segmentDurationSec]);
+
+  const gapRanges = useMemo<MsRange[]>(() => {
+    if (!recordingInfo?.gaps) return [];
+    return recordingInfo.gaps
+      .map((g) => ({ start: Date.parse(g.start), end: Date.parse(g.end) }))
+      .filter((g) => Number.isFinite(g.start) && Number.isFinite(g.end) && g.end > g.start);
+  }, [recordingInfo]);
+
+  // When the live edge advances and we're not in timeshift mode, do nothing —
+  // `endMs` is recomputed from props, so the slider follows.
+
+  // Source URL — live or timeshift VOD slice.
+  // `from` uses second-level RFC3339 (the server parses with `time.RFC3339`,
+  // not `RFC3339Nano`). We also nudge the requested time +1s so the server's
+  // segment overlap test (segEnd > startTime) doesn't reject borderline picks.
+  const sourceUrl = useMemo(() => {
+    if (timeshiftMs == null) return hlsUrl;
+    const safeMs = timeshiftMs + 1000;
+    const fromIso = new Date(safeMs).toISOString().replace(/\.\d+Z$/, 'Z');
+    return recordingsApi.timeshiftUrl(streamCode, { from: fromIso });
+  }, [hlsUrl, streamCode, timeshiftMs]);
+
+  // Track timeshift state in a ref so the HLS error handler (created once per
+  // sourceUrl change) can read it without stale-closure issues.
+  const timeshiftRef = useRef(timeshiftMs);
+  useEffect(() => {
+    timeshiftRef.current = timeshiftMs;
+  }, [timeshiftMs]);
 
   function clearRetryTimer() {
     if (retryTimerRef.current) {
@@ -87,7 +162,7 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
       setLevels([]);
       setSelectedLevel(AUTO_LEVEL);
       setAutoLevel(AUTO_LEVEL);
-      hls.loadSource(hlsUrl);
+      hls.loadSource(sourceUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
@@ -104,6 +179,18 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal) return;
+
+        // Timeshift slice returned 404 — the requested window has no segments
+        // (recording too fresh, retention pruned, or clock skew). Snap back
+        // to live so the player doesn't sit stuck on the missing manifest.
+        if (
+          timeshiftRef.current != null &&
+          data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+          data.response?.code === 404
+        ) {
+          setTimeshiftMs(null);
+          return;
+        }
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           hls.startLoad();
@@ -123,7 +210,7 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
         }
       });
     },
-    [hlsUrl],
+    [sourceUrl],
   );
 
   useEffect(() => {
@@ -135,7 +222,7 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
     // Safari / iOS — native HLS
     if (!Hls.isSupported()) {
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = hlsUrl;
+        video.src = sourceUrl;
         video.addEventListener('canplay', () => setState('playing'), { once: true });
         video.addEventListener('error', () => setState('error'), { once: true });
       } else {
@@ -151,7 +238,7 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [hlsUrl, active, initHls]);
+  }, [sourceUrl, active, initHls]);
 
   // Stall watchdog — hls.js's internal nudging occasionally gives up on small
   // MSE hiccups. If the video is waiting for data but the buffer already has
@@ -260,12 +347,31 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
 
       {/* Live controls overlay — visible on hover */}
       {state === 'playing' && (
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="flex items-center gap-1.5 text-xs font-medium text-white">
-            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            LIVE
-          </span>
-          <div className="flex items-center gap-1">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-3 pb-2 pt-3 bg-gradient-to-t from-black/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+          {dvrRange && (
+            <TimelineSlider
+              startMs={dvrRange.startMs}
+              endMs={dvrRange.endMs}
+              valueMs={timeshiftMs}
+              onChange={setTimeshiftMs}
+              availableRanges={availableRanges}
+              gaps={gapRanges}
+            />
+          )}
+          <div className="flex items-center justify-between">
+            {!dvrRange && (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+                <span
+                  className={cn(
+                    'h-2 w-2 rounded-full',
+                    timeshiftMs == null ? 'bg-red-500 animate-pulse' : 'bg-white/40',
+                  )}
+                />
+                {timeshiftMs == null ? 'LIVE' : 'TIMESHIFT'}
+              </span>
+            )}
+            {dvrRange && <span className="flex-1" />}
+            <div className="flex items-center gap-1">
             {levels.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -307,6 +413,7 @@ export function StreamPlayer({ hlsUrl, active }: StreamPlayerProps) {
             >
               {muted ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </Button>
+          </div>
           </div>
         </div>
       )}

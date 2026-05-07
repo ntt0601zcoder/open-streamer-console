@@ -27,8 +27,8 @@ interface Snapshot {
 interface Options {
   /** How often to scrape /metrics. Default 4 s. */
   intervalMs?: number;
-  /** Max points kept in the chart buffer. Default 60. */
-  maxPoints?: number;
+  /** Sliding-window length kept in the chart buffer. Default 5 min. */
+  windowMs?: number;
   /** Mark the series stale when no successful sample within this window. Default 3× intervalMs. */
   staleAfterMs?: number;
 }
@@ -47,7 +47,7 @@ interface Options {
  */
 export function useInputBytesRate(streamCode: string, opts: Options = {}) {
   const intervalMs = opts.intervalMs ?? 4000;
-  const maxPoints = opts.maxPoints ?? 60;
+  const windowMs = opts.windowMs ?? 5 * 60 * 1000;
   const staleAfterMs = opts.staleAfterMs ?? intervalMs * 3;
 
   const [points, setPoints] = useState<RatePoint[]>([]);
@@ -107,8 +107,12 @@ export function useInputBytesRate(streamCode: string, opts: Options = {}) {
         }
         const total = Object.values(protoRates).reduce((a, b) => a + b, 0);
         setPoints((cur) => {
+          const cutoff = t - windowMs;
           const next = [...cur, { t, total, byProtocol: protoRates }];
-          return next.length > maxPoints ? next.slice(-maxPoints) : next;
+          // Drop everything older than the sliding window. Keep one extra
+          // point straddling the cutoff so the line draws to the left edge.
+          const firstInside = next.findIndex((p) => p.t >= cutoff);
+          return firstInside <= 0 ? next : next.slice(firstInside - 1);
         });
       } catch (e) {
         if (cancelled) return;
@@ -125,7 +129,7 @@ export function useInputBytesRate(streamCode: string, opts: Options = {}) {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [streamCode, intervalMs, maxPoints]);
+  }, [streamCode, intervalMs, windowMs]);
 
   const stale = lastSampleAt.current > 0 && now - lastSampleAt.current > staleAfterMs;
 

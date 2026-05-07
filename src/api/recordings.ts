@@ -1,5 +1,5 @@
 import { api, BASE_URL } from './client';
-import type { DataResponse, Recording } from './types';
+import type { DataResponse, Recording, RecordingStatus } from './types';
 
 export interface TimeshiftOptions {
   /** Absolute start time (RFC3339). */
@@ -8,6 +8,27 @@ export interface TimeshiftOptions {
   offsetSec?: number;
   /** Window duration in seconds (default: all remaining). */
   duration?: number;
+}
+
+export interface DvrRange {
+  /** Earliest segment timestamp (RFC3339). */
+  started_at: string;
+  /** Most recent segment timestamp (RFC3339). Advances while recording. */
+  last_segment_at?: string;
+}
+
+export interface DvrGap {
+  start: string;
+  end: string;
+}
+
+export interface RecordingInfo {
+  stream_code: string;
+  status: RecordingStatus;
+  dvr_range: DvrRange;
+  gaps?: DvrGap[];
+  segment_count: number;
+  total_size_bytes: number;
 }
 
 function appendQuery(base: string, opts: TimeshiftOptions): string {
@@ -22,16 +43,17 @@ function appendQuery(base: string, opts: TimeshiftOptions): string {
 export const recordingsApi = {
   get: (rid: string) => api.get(`recordings/${rid}`).json<DataResponse<Recording>>(),
 
-  /** Free-form recording metadata (segment count, duration, sizes, …). */
-  info: (rid: string) => api.get(`recordings/${rid}/info`).json<Record<string, unknown>>(),
-
-  delete: (rid: string) => api.delete(`recordings/${rid}`),
+  /** DVR range, gaps, segment count, total bytes. */
+  info: (rid: string) => api.get(`recordings/${rid}/info`).json<DataResponse<RecordingInfo>>(),
 
   playlistUrl: (rid: string) => `${BASE_URL}/recordings/${rid}/playlist.m3u8`,
 
-  /** Build a timeshift VOD playlist URL. Pass `from` OR `offsetSec` plus optional `duration`. */
+  /**
+   * Build a timeshift VOD playlist URL. Same `playlist.m3u8` endpoint —
+   * server dispatches dynamic slice when `from`/`offset_sec` is present.
+   */
   timeshiftUrl: (rid: string, opts: TimeshiftOptions = {}) =>
-    appendQuery(`${BASE_URL}/recordings/${rid}/timeshift.m3u8`, opts),
+    appendQuery(`${BASE_URL}/recordings/${rid}/playlist.m3u8`, opts),
 
   /** Direct URL to a segment or other file inside a recording (e.g. `000000.ts`). */
   fileUrl: (rid: string, file: string) =>

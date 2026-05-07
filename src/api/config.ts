@@ -108,6 +108,12 @@ export interface CORSConfig {
 export interface AppServerConfig {
   http_addr?: string;
   cors?: CORSConfig;
+  /**
+   * Optional pprof + runtime introspection listener (e.g. "127.0.0.1:6060").
+   * Empty disables. Loopback-only is recommended — pprof exposes goroutine
+   * stacks and heap layouts that should never be reachable publicly.
+   */
+  pprof_addr?: string;
 }
 
 export interface TranscoderConfig {
