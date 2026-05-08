@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ExternalLink, Loader2 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import type { Stream } from '@/api/types';
 import { dashUrl, hlsUrl } from '@/lib/streamUrls';
@@ -39,6 +39,13 @@ export function StreamQuickView({ stream, children }: StreamQuickViewProps) {
     ? proto
     : (availableProtos[0] ?? null);
 
+  const externalUrl =
+    effectiveProto === 'hls'
+      ? hlsUrl(stream.code)
+      : effectiveProto === 'dash'
+        ? dashUrl(stream.code)
+        : null;
+
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={250} closeDelay={150}>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
@@ -57,13 +64,27 @@ export function StreamQuickView({ stream, children }: StreamQuickViewProps) {
               <span className="ml-1.5 font-normal text-muted-foreground">· {stream.name}</span>
             )}
           </p>
-          {availableProtos.length > 1 && effectiveProto != null && (
-            <ProtocolSwitcher
-              protocols={availableProtos}
-              value={effectiveProto}
-              onChange={setProto}
-            />
-          )}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {availableProtos.length > 1 && effectiveProto != null && (
+              <ProtocolSwitcher
+                protocols={availableProtos}
+                value={effectiveProto}
+                onChange={setProto}
+              />
+            )}
+            {externalUrl && (
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title="Open in new tab"
+                className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
         </div>
 
         {effectiveProto == null ? (
