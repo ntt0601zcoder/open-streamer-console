@@ -72,7 +72,7 @@ export function DashPlayer({ dashUrl, active }: DashPlayerProps) {
     video.addEventListener('canplay', onPlaying);
     video.addEventListener('canplay', onCanplay);
     video.addEventListener('error', onVideoError);
-    const events = MediaPlayer.events as Record<string, string>;
+    const events = MediaPlayer.events as unknown as Record<string, string>;
     if (events.ERROR) player.on(events.ERROR, onDashError);
 
     // dashjs v5 prefers the explicit attachView + attachSource pattern over
