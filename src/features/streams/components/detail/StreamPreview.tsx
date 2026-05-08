@@ -1,15 +1,23 @@
-import { useMemo, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { ExternalLink, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
 import { dashUrl, hlsUrl } from '@/lib/streamUrls';
 import { cn } from '@/lib/utils';
 import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useRecordingInfo } from '@/features/streams/hooks/useRecordingInfo';
-import { DashPlayer } from './DashPlayer';
 import { InputBytesChart } from './InputBytesChart';
 import { MediaSummaryCard } from './MediaSummaryCard';
-import { StreamPlayer } from './StreamPlayer';
+
+// Lazy-load each player so the heavy media library (hls.js / dashjs) is only
+// fetched when the operator selects that protocol — keeps the main stream-detail
+// bundle slim.
+const StreamPlayer = lazy(() =>
+  import('./StreamPlayer').then((m) => ({ default: m.StreamPlayer })),
+);
+const DashPlayer = lazy(() =>
+  import('./DashPlayer').then((m) => ({ default: m.DashPlayer })),
+);
 
 interface StreamPreviewProps {
   stream: Stream;
@@ -77,16 +85,20 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
         <CardContent className="space-y-3">
           {effectiveProto == null ? (
             <NoProtocolPlaceholder />
-          ) : effectiveProto === 'hls' ? (
-            <StreamPlayer
-              hlsUrl={hlsUrl(stream.code)}
-              active={isRunning}
-              streamCode={stream.code}
-              recordingInfo={recordingInfo}
-              segmentDurationSec={segmentDurationSec}
-            />
           ) : (
-            <DashPlayer dashUrl={dashUrl(stream.code)} active={isRunning} />
+            <Suspense fallback={<PlayerFallback />}>
+              {effectiveProto === 'hls' ? (
+                <StreamPlayer
+                  hlsUrl={hlsUrl(stream.code)}
+                  active={isRunning}
+                  streamCode={stream.code}
+                  recordingInfo={recordingInfo}
+                  segmentDurationSec={segmentDurationSec}
+                />
+              ) : (
+                <DashPlayer dashUrl={dashUrl(stream.code)} active={isRunning} />
+              )}
+            </Suspense>
           )}
 
           {availableProtos.length > 1 && (
@@ -138,6 +150,14 @@ function ProtocolSwitcher({
           {p}
         </button>
       ))}
+    </div>
+  );
+}
+
+function PlayerFallback() {
+  return (
+    <div className="flex aspect-video w-full items-center justify-center rounded-md bg-black">
+      <Loader2 className="h-8 w-8 animate-spin text-white/40" />
     </div>
   );
 }

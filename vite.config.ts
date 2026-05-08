@@ -20,6 +20,7 @@ export default defineConfig({
             return 'codemirror';
           }
           if (id.includes('hls.js')) return 'hls';
+          if (id.includes('dashjs')) return 'dash';
           if (id.includes('recharts') || id.includes('victory-vendor')) return 'recharts';
           if (id.includes('@radix-ui')) return 'radix';
           if (id.includes('react-router')) return 'router';
