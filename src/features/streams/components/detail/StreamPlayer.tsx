@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Hls, { type Level } from 'hls.js';
-import { Loader2, RefreshCw, Settings, VideoOff, Volume2, VolumeOff, WifiOff } from 'lucide-react';
+import { Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,7 +13,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { recordingsApi, type RecordingInfo } from '@/api/recordings';
 import { cn } from '@/lib/utils';
+import { usePlayerVolume } from '@/features/streams/hooks/usePlayerVolume';
 import { TimelineSlider, type MsRange } from './TimelineSlider';
+import { VolumeControl } from './VolumeControl';
 
 type PlayerState = 'loading' | 'playing' | 'retrying' | 'error' | 'unsupported';
 
@@ -55,7 +57,10 @@ export function StreamPlayer({
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaErrorCountRef = useRef(0);
   const [state, setState] = useState<PlayerState>('loading');
-  const [muted, setMuted] = useState(true);
+  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume();
+  useEffect(() => {
+    applyVolume(videoRef);
+  }, [applyVolume]);
   const [levels, setLevels] = useState<Level[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number>(AUTO_LEVEL);
   const [autoLevel, setAutoLevel] = useState<number>(AUTO_LEVEL);
@@ -170,7 +175,13 @@ export function StreamPlayer({
         mediaErrorCountRef.current = 0;
         setLevels(data.levels ?? []);
         setSelectedLevel(hls.currentLevel < 0 ? AUTO_LEVEL : hls.currentLevel);
-        void video.play().catch(() => {});
+        // Browsers block unmuted autoplay until the user has interacted with
+        // the page; fall back to muted so the operator at least sees video.
+        void video.play().catch(() => {
+          video.muted = true;
+          setMuted(true);
+          void video.play().catch(() => {});
+        });
       });
 
       hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
@@ -320,12 +331,6 @@ export function StreamPlayer({
     initHls(video);
   }
 
-  function toggleMute() {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
-  }
 
   function selectQuality(value: string) {
     const level = Number(value);
@@ -340,7 +345,6 @@ export function StreamPlayer({
       <video
         ref={videoRef}
         className="h-full w-full"
-        muted
         playsInline
         style={{ display: state === 'playing' ? 'block' : 'none' }}
       />
@@ -405,14 +409,12 @@ export function StreamPlayer({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/20"
-              onClick={toggleMute}
-            >
-              {muted ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </Button>
+            <VolumeControl
+              volume={volume}
+              muted={muted}
+              onToggleMute={toggleMute}
+              onVolumeChange={setVolume}
+            />
           </div>
           </div>
         </div>
