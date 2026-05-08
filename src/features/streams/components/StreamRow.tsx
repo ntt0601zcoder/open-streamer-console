@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { Stream } from '@/api/types';
 import { StreamInputSummary } from './StreamInputSummary';
+import { StreamQuickView } from './StreamQuickView';
 import { StreamStatusBadge } from './StreamStatusBadge';
 
 interface StreamRowProps {
@@ -44,17 +45,19 @@ export function StreamRow({ stream }: StreamRowProps) {
     >
       {/* Stream */}
       <TableCell>
-        <div className="space-y-0.5">
-          <Link
-            to={detailPath}
-            className="font-medium hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {stream.code}
-          </Link>
-          <p className="text-xs text-muted-foreground truncate max-w-[180px]">{stream.name}</p>
-          <StreamStatusBadge stream={stream} />
-        </div>
+        <StreamQuickView stream={stream}>
+          <div className="space-y-0.5">
+            <Link
+              to={detailPath}
+              className="font-medium hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {stream.code}
+            </Link>
+            <p className="text-xs text-muted-foreground truncate max-w-[180px]">{stream.name}</p>
+            <StreamStatusBadge stream={stream} />
+          </div>
+        </StreamQuickView>
       </TableCell>
 
       {/* Input */}
