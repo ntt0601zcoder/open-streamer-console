@@ -74,12 +74,63 @@ export function DashPlayer({ dashUrl, active }: DashPlayerProps) {
     video.addEventListener('error', onVideoError);
     const events = MediaPlayer.events as unknown as Record<string, string>;
     if (events.ERROR) player.on(events.ERROR, onDashError);
+    // Belt-and-suspenders: dashjs's own PLAYBACK_PLAYING fires even in
+    // edge cases where the <video> element doesn't surface a 'playing'
+    // event (e.g. seek-on-attach into an already-buffered range). Without
+    // this, the spinner could remain on screen despite playback running.
+    if (events.PLAYBACK_PLAYING) player.on(events.PLAYBACK_PLAYING, onPlaying);
+    // Autoplay rejection in v5 is reported via PLAYBACK_NOT_ALLOWED rather
+    // than the <video> 'play()' rejection — handle it identically (mute,
+    // retry) so the user sees video instead of a stuck loading state.
+    if (events.PLAYBACK_NOT_ALLOWED) {
+      player.on(events.PLAYBACK_NOT_ALLOWED, () => {
+        const v = videoRef.current;
+        if (!v) return;
+        v.muted = true;
+        setMuted(true);
+        void v.play().catch(() => {});
+      });
+    }
 
     // dashjs v5 prefers the explicit attachView + attachSource pattern over
     // the legacy three-arg initialize() — the latter occasionally races with
     // the manifest fetch in StrictMode (double-mount in dev), leaving the
     // <video> element unwired.
     player.initialize();
+    // Open-Streamer's DASH packager emits MPDs whose segment timeline
+    // can drift ahead of wallclock when input bursts push frames in
+    // batches — dashjs computes target playback time as
+    //   (now − AST) − liveDelay
+    // so a too-large liveDelay lands BEFORE the earliest available
+    // segment in the manifest (gap_first can be as small as ~−3 s
+    // empirically) and dashjs hangs at "manifest-loaded, waiting for
+    // liveDelay-aligned segment". Default settings produce a 16 s
+    // liveDelay (4 fragments × ~4 s) and the manifest's PT12S SPD
+    // doesn't help either — both sit before our content window.
+    //   - useSuggestedPresentationDelay=false: ignore the manifest's PT12S.
+    //   - liveDelay=2: tight target so we always land inside the
+    //     emitted content window. Don't use liveDelayFragmentCount —
+    //     its default × segDur is far too aggressive for our timeline.
+    //   - initialBufferLevel=0: don't wait for a 30 s buffer before
+    //     starting playback; the live window only spans ~24 s total.
+    //   - jumpGaps / jumpLargeGaps: recover from the short discontinuity-
+    //     driven micro-segments the server's PTS rebaser produces during
+    //     upstream resyncs without stalling on a sub-second segment hole.
+    player.updateSettings({
+      streaming: {
+        delay: {
+          useSuggestedPresentationDelay: false,
+          liveDelay: 2,
+        },
+        buffer: {
+          initialBufferLevel: 0,
+        },
+        gaps: {
+          jumpGaps: true,
+          jumpLargeGaps: true,
+        },
+      },
+    });
     player.setAutoPlay(true);
     player.attachView(video);
     player.attachSource(dashUrl);
