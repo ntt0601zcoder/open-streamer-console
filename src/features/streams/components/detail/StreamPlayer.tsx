@@ -43,6 +43,9 @@ interface StreamPlayerProps {
    * within the broader [started_at, last_segment_at] window.
    */
   segmentDurationSec?: number;
+  /** Start muted (default false). Used by the grid view to prevent N tiles
+      blasting audio simultaneously. */
+  defaultMuted?: boolean;
 }
 
 export function StreamPlayer({
@@ -51,13 +54,16 @@ export function StreamPlayer({
   streamCode,
   recordingInfo,
   segmentDurationSec,
+  defaultMuted,
 }: StreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaErrorCountRef = useRef(0);
   const [state, setState] = useState<PlayerState>('loading');
-  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume();
+  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
+    defaultMuted,
+  });
   useEffect(() => {
     applyVolume(videoRef);
   }, [applyVolume]);

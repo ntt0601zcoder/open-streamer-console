@@ -10,14 +10,19 @@ type PlayerState = 'loading' | 'playing' | 'retrying' | 'error';
 interface DashPlayerProps {
   dashUrl: string;
   active: boolean;
+  /** Start muted (default false). Used by the grid view to prevent N tiles
+      blasting audio simultaneously. */
+  defaultMuted?: boolean;
 }
 
-export function DashPlayer({ dashUrl, active }: DashPlayerProps) {
+export function DashPlayer({ dashUrl, active, defaultMuted }: DashPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<MediaPlayerClass | null>(null);
   const [state, setState] = useState<PlayerState>('loading');
   const [errorMsg, setErrorMsg] = useState<string>('');
-  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume();
+  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
+    defaultMuted,
+  });
 
   // Reflect volume/muted onto the <video> as state changes.
   useEffect(() => {

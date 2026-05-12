@@ -2,6 +2,11 @@ import { useCallback, useState, type RefObject } from 'react';
 
 const DEFAULT_VOLUME = 0.5;
 
+interface Options {
+  /** Start the player muted (e.g. grid view with many concurrent players). */
+  defaultMuted?: boolean;
+}
+
 /**
  * Volume / muted state for a `<video>` element.
  *
@@ -14,9 +19,9 @@ const DEFAULT_VOLUME = 0.5;
  * autoplay; the caller's autoplay logic should already attempt muted-fallback
  * when `play()` rejects.
  */
-export function usePlayerVolume() {
+export function usePlayerVolume(opts: Options = {}) {
   const [volume, setVolumeState] = useState<number>(DEFAULT_VOLUME);
-  const [muted, setMutedState] = useState<boolean>(false);
+  const [muted, setMutedState] = useState<boolean>(opts.defaultMuted ?? false);
 
   const setVolume = useCallback((v: number) => {
     const clamped = Math.max(0, Math.min(1, v));

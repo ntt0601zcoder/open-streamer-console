@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, RefreshCw, Search } from 'lucide-react';
+import { LayoutGrid, List, Plus, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BASE_URL } from '@/api/client';
+import { StreamGrid, type GridProto } from '@/features/streams/components/StreamGrid';
 import { StreamList } from '@/features/streams/components/StreamList';
 import { useStreams } from '@/features/streams/hooks/useStreams';
+import { cn } from '@/lib/utils';
+
+type ViewMode = 'table' | 'grid';
 
 export function StreamsPage() {
   const [filter, setFilter] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [gridProto, setGridProto] = useState<GridProto>('hls');
   const { data: streams, isLoading, isRefetching, error, refetch } = useStreams();
 
   const counts = {
@@ -61,15 +67,35 @@ export function StreamsPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, code or tag…"
-          className="pl-9"
-          value={filter}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilter(e.target.value)}
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, code or tag…"
+            className="pl-9"
+            value={filter}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilter(e.target.value)}
+          />
+        </div>
+        <SegmentedToggle
+          value={viewMode}
+          onChange={setViewMode}
+          options={[
+            { value: 'table', label: 'List', icon: <List className="h-3.5 w-3.5" /> },
+            { value: 'grid', label: 'Players', icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+          ]}
         />
+        {viewMode === 'grid' && (
+          <SegmentedToggle
+            value={gridProto}
+            onChange={setGridProto}
+            options={[
+              { value: 'hls', label: 'HLS' },
+              { value: 'dash', label: 'DASH' },
+            ]}
+          />
+        )}
       </div>
 
       {/* Content */}
@@ -82,11 +108,50 @@ export function StreamsPage() {
         <div className="rounded-md border">
           <StreamListSkeleton />
         </div>
-      ) : (
+      ) : viewMode === 'table' ? (
         <div className="rounded-md border">
           <StreamList streams={streams ?? []} filter={filter} />
         </div>
+      ) : (
+        <StreamGrid streams={streams ?? []} filter={filter} proto={gridProto} />
       )}
+    </div>
+  );
+}
+
+interface SegmentedToggleOption<T extends string> {
+  value: T;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+function SegmentedToggle<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: SegmentedToggleOption<T>[];
+}) {
+  return (
+    <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            'inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium transition-colors',
+            value === opt.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {opt.icon}
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }
