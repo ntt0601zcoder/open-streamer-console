@@ -46,6 +46,8 @@ interface StreamPlayerProps {
   /** Start muted (default false). Used by the grid view to prevent N tiles
       blasting audio simultaneously. */
   defaultMuted?: boolean;
+  /** Parent-controlled mute override (e.g. hover-to-unmute in the grid). */
+  controlledMuted?: boolean;
 }
 
 export function StreamPlayer({
@@ -55,6 +57,7 @@ export function StreamPlayer({
   recordingInfo,
   segmentDurationSec,
   defaultMuted,
+  controlledMuted,
 }: StreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -63,6 +66,7 @@ export function StreamPlayer({
   const [state, setState] = useState<PlayerState>('loading');
   const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
     defaultMuted,
+    controlledMuted,
   });
   useEffect(() => {
     applyVolume(videoRef);

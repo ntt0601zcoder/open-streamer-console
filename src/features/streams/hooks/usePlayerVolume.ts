@@ -5,6 +5,13 @@ const DEFAULT_VOLUME = 0.5;
 interface Options {
   /** Start the player muted (e.g. grid view with many concurrent players). */
   defaultMuted?: boolean;
+  /**
+   * When set, the muted flag is driven by the parent (e.g. grid view's hover
+   * behaviour). Internal toggle/setMuted calls still update local state but
+   * the returned `muted` and the value applied to `<video>` always reflect
+   * this prop until it's removed.
+   */
+  controlledMuted?: boolean;
 }
 
 /**
@@ -21,7 +28,8 @@ interface Options {
  */
 export function usePlayerVolume(opts: Options = {}) {
   const [volume, setVolumeState] = useState<number>(DEFAULT_VOLUME);
-  const [muted, setMutedState] = useState<boolean>(opts.defaultMuted ?? false);
+  const [internalMuted, setMutedState] = useState<boolean>(opts.defaultMuted ?? false);
+  const muted = opts.controlledMuted ?? internalMuted;
 
   const setVolume = useCallback((v: number) => {
     const clamped = Math.max(0, Math.min(1, v));

@@ -13,15 +13,18 @@ interface DashPlayerProps {
   /** Start muted (default false). Used by the grid view to prevent N tiles
       blasting audio simultaneously. */
   defaultMuted?: boolean;
+  /** Parent-controlled mute override (e.g. hover-to-unmute in the grid). */
+  controlledMuted?: boolean;
 }
 
-export function DashPlayer({ dashUrl, active, defaultMuted }: DashPlayerProps) {
+export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: DashPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<MediaPlayerClass | null>(null);
   const [state, setState] = useState<PlayerState>('loading');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
     defaultMuted,
+    controlledMuted,
   });
 
   // Reflect volume/muted onto the <video> as state changes.

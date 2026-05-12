@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, ExternalLink, Loader2, Radio } from 'lucide-react';
 import type { Stream } from '@/api/types';
@@ -79,9 +79,17 @@ function StreamGridTile({ stream, proto }: { stream: Stream; proto: GridProto })
   const status = stream.runtime?.status;
   const isRunning = status === 'active' || status === 'degraded';
   const externalUrl = proto === 'hls' ? hlsUrl(stream.code) : dashUrl(stream.code);
+  // Hover-to-unmute: a grid of N tiles defaults to silent, the one under the
+  // cursor speaks. Mouse leave restores the mute so the operator can pan to
+  // another tile without audio overlap.
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <div
+      className="overflow-hidden rounded-md border bg-card"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <Suspense fallback={<PlayerFallback />}>
         {proto === 'hls' ? (
           <StreamPlayer
@@ -89,9 +97,15 @@ function StreamGridTile({ stream, proto }: { stream: Stream; proto: GridProto })
             active={isRunning}
             streamCode={stream.code}
             defaultMuted
+            controlledMuted={!hovered}
           />
         ) : (
-          <DashPlayer dashUrl={dashUrl(stream.code)} active={isRunning} defaultMuted />
+          <DashPlayer
+            dashUrl={dashUrl(stream.code)}
+            active={isRunning}
+            defaultMuted
+            controlledMuted={!hovered}
+          />
         )}
       </Suspense>
       <div className="flex items-center justify-between gap-2 px-3 py-2">
