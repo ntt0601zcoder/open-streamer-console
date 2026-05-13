@@ -113,12 +113,11 @@ function StreamGridTile({ stream, proto }: { stream: Stream; proto: GridProto })
           <Link
             to={`/streams/${stream.code}`}
             className="block truncate text-sm font-medium hover:underline"
+            title={stream.name || stream.code}
           >
-            {stream.code}
+            {stream.name || stream.code}
           </Link>
-          {stream.name && (
-            <p className="truncate text-[11px] text-muted-foreground">{stream.name}</p>
-          )}
+          <p className="truncate font-mono text-[11px] text-muted-foreground">{stream.code}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <StreamStatusBadge stream={stream} />

@@ -49,12 +49,15 @@ export function StreamRow({ stream }: StreamRowProps) {
           <div className="space-y-0.5">
             <Link
               to={detailPath}
-              className="font-medium hover:underline"
+              className="block max-w-[180px] truncate font-medium hover:underline"
               onClick={(e) => e.stopPropagation()}
+              title={stream.name || stream.code}
             >
-              {stream.code}
+              {stream.name || stream.code}
             </Link>
-            <p className="text-xs text-muted-foreground truncate max-w-[180px]">{stream.name}</p>
+            <p className="font-mono text-xs text-muted-foreground truncate max-w-[180px]">
+              {stream.code}
+            </p>
             <StreamStatusBadge stream={stream} />
           </div>
         </StreamQuickView>
