@@ -1,8 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { yaml as yamlLang } from '@codemirror/lang-yaml';
 import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
-import { AlertCircle, Download, RotateCcw, Save, Sparkles, Upload } from 'lucide-react';
+import {
+  AlertCircle,
+  Diff as DiffIcon,
+  Download,
+  Pencil,
+  RotateCcw,
+  Save,
+  Sparkles,
+  Upload,
+} from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -10,6 +19,13 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { APIError } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { useUpdateYamlConfig, useYamlConfig } from '@/features/config/hooks/useServerConfig';
+import { cn } from '@/lib/utils';
+
+// Lazy-load the diff viewer — it pulls in syntax highlighters that we only
+// need when the operator toggles into diff mode.
+const ReactDiffViewer = lazy(() => import('react-diff-viewer-continued'));
+
+type ViewMode = 'edit' | 'diff';
 
 interface ApiErrorView {
   title: string;
@@ -26,12 +42,19 @@ export function ConfigEditorPage() {
   const [text, setText] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<ApiErrorView | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
 
   useEffect(() => {
     if (data !== undefined) setText(data);
   }, [data]);
 
   const isDirty = data !== undefined && text !== data;
+
+  // If there's nothing to diff anymore (saved or reverted), jump back to edit
+  // so the operator isn't staring at an empty diff panel.
+  useEffect(() => {
+    if (!isDirty && viewMode === 'diff') setViewMode('edit');
+  }, [isDirty, viewMode]);
 
   const extensions = useMemo(() => [yamlLang()], []);
   const editorTheme = resolvedTheme === 'dark' ? oneDark : 'light';
@@ -75,7 +98,13 @@ export function ConfigEditorPage() {
   async function handleReload() {
     setParseError(null);
     setSaveError(null);
-    await refetch();
+    const result = await refetch();
+    // Force the editor back to the server snapshot — `data` may be the
+    // same string reference (server config unchanged) so the useEffect
+    // doesn't fire and the operator's pending edits would stick around.
+    if (result.data !== undefined) {
+      setText(result.data);
+    }
     toast.success('Reloaded from server');
   }
 
@@ -156,6 +185,21 @@ export function ConfigEditorPage() {
         </Button>
         <Button
           size="sm"
+          variant={viewMode === 'diff' ? 'default' : 'outline'}
+          onClick={() => setViewMode((m) => (m === 'diff' ? 'edit' : 'diff'))}
+          disabled={!isDirty}
+          className="gap-1.5"
+          title={isDirty ? 'Compare against saved version' : 'No unsaved changes'}
+        >
+          {viewMode === 'diff' ? (
+            <Pencil className="h-3.5 w-3.5" />
+          ) : (
+            <DiffIcon className="h-3.5 w-3.5" />
+          )}
+          {viewMode === 'diff' ? 'Edit' : 'Diff'}
+        </Button>
+        <Button
+          size="sm"
           variant="outline"
           onClick={handleDownload}
           disabled={!text}
@@ -209,12 +253,39 @@ export function ConfigEditorPage() {
       {parseError && <ApiErrorBanner error={{ title: 'YAML parse error', message: parseError }} />}
       {saveError && <ApiErrorBanner error={saveError} />}
 
-      {/* Editor */}
-      <div className="flex-1 min-h-0 border rounded-md overflow-hidden">
+      {/* Editor / diff */}
+      <div
+        className={cn(
+          'flex-1 min-h-0 border rounded-md overflow-hidden',
+          viewMode === 'diff' && 'overflow-auto bg-background',
+        )}
+      >
         {isLoading ? (
           <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
             Loading configuration…
           </div>
+        ) : viewMode === 'diff' ? (
+          <Suspense
+            fallback={
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                Loading diff viewer…
+              </div>
+            }
+          >
+            <ReactDiffViewer
+              oldValue={data ?? ''}
+              newValue={text}
+              splitView
+              useDarkTheme={resolvedTheme === 'dark'}
+              compareMethod={'diffWordsWithSpace' as never}
+              leftTitle="Saved"
+              rightTitle="Pending"
+              styles={{
+                contentText: { fontFamily: 'ui-monospace, monospace', fontSize: 12 },
+                gutter: { padding: '0 8px', minWidth: 36 },
+              }}
+            />
+          </Suspense>
         ) : (
           <CodeMirror
             value={text}
