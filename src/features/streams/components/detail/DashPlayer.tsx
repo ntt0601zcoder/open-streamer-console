@@ -112,26 +112,40 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     // so a too-large liveDelay lands BEFORE the earliest available
     // segment in the manifest (gap_first can be as small as ~−3 s
     // empirically) and dashjs hangs at "manifest-loaded, waiting for
-    // liveDelay-aligned segment". Default settings produce a 16 s
-    // liveDelay (4 fragments × ~4 s) and the manifest's PT12S SPD
-    // doesn't help either — both sit before our content window.
-    //   - useSuggestedPresentationDelay=false: ignore the manifest's PT12S.
-    //   - liveDelay=2: tight target so we always land inside the
-    //     emitted content window. Don't use liveDelayFragmentCount —
-    //     its default × segDur is far too aggressive for our timeline.
-    //   - initialBufferLevel=0: don't wait for a 30 s buffer before
-    //     starting playback; the live window only spans ~24 s total.
-    //   - jumpGaps / jumpLargeGaps: recover from the short discontinuity-
-    //     driven micro-segments the server's PTS rebaser produces during
-    //     upstream resyncs without stalling on a sub-second segment hole.
+    // liveDelay-aligned segment". The manifest's PT12S SPD overshoots
+    // for the same reason, so we ignore it and pick liveDelay by hand.
+    //
+    // Going too tight (liveDelay ≤ 3 s, less than one segment of
+    // headroom) on the other hand causes frequent stalls — any
+    // segment-arrival jitter or PTS discontinuity from the upstream
+    // pull starves the playback head and dashjs visibly freezes then
+    // skips a segment via the gap jumper. ~1.5 segments of headroom
+    // (6 s on a 4 s-segment ladder) keeps the buffer non-empty without
+    // overshooting the available window.
+    //
+    //   - useSuggestedPresentationDelay=false: SPD=12s lands before our
+    //     content window for this server's packager.
+    //   - liveDelay=6: 1.5 segments behind live — enough headroom for
+    //     normal jitter without landing before the available window.
+    //   - liveCatchup: smooth speed-up / slow-down (±5 %) so drift
+    //     correction happens gradually instead of via hard seeks.
+    //   - initialBufferLevel=2: wait for ~half a segment of buffer
+    //     before playing so we don't immediately stall on a fast start.
+    //   - jumpGaps / jumpLargeGaps: still recover from real holes the
+    //     PTS rebaser produces during upstream resyncs, but with the
+    //     larger headroom they fire much less often.
     player.updateSettings({
       streaming: {
         delay: {
           useSuggestedPresentationDelay: false,
-          liveDelay: 2,
+          liveDelay: 6,
+        },
+        liveCatchup: {
+          enabled: true,
+          playbackRate: { min: -0.05, max: 0.05 },
         },
         buffer: {
-          initialBufferLevel: 0,
+          initialBufferLevel: 2,
         },
         gaps: {
           jumpGaps: true,
