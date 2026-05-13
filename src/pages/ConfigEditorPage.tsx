@@ -4,6 +4,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
 import {
   AlertCircle,
+  Check,
   Diff as DiffIcon,
   Download,
   Pencil,
@@ -11,6 +12,7 @@ import {
   Save,
   Sparkles,
   Upload,
+  X,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router-dom';
@@ -43,6 +45,9 @@ export function ConfigEditorPage() {
   const [parseError, setParseError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<ApiErrorView | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
+  // Two-step save: clicking Save once flips into diff + pending-confirm so the
+  // operator can eyeball the change before it hits the running server.
+  const [pendingConfirm, setPendingConfirm] = useState(false);
 
   useEffect(() => {
     if (data !== undefined) setText(data);
@@ -54,7 +59,8 @@ export function ConfigEditorPage() {
   // so the operator isn't staring at an empty diff panel.
   useEffect(() => {
     if (!isDirty && viewMode === 'diff') setViewMode('edit');
-  }, [isDirty, viewMode]);
+    if (!isDirty && pendingConfirm) setPendingConfirm(false);
+  }, [isDirty, viewMode, pendingConfirm]);
 
   const extensions = useMemo(() => [yamlLang()], []);
   const editorTheme = resolvedTheme === 'dark' ? oneDark : 'light';
@@ -116,13 +122,27 @@ export function ConfigEditorPage() {
       return;
     }
     setSaveError(null);
+    // Flip into diff + pending state; the operator confirms from there.
+    setViewMode('diff');
+    setPendingConfirm(true);
+  }
+
+  function handleConfirmSave() {
     update.mutate(text, {
-      onSuccess: () => toast.success('Configuration applied'),
+      onSuccess: () => {
+        toast.success('Configuration applied');
+        setPendingConfirm(false);
+      },
       onError: (err) => {
         setSaveError(parseApiError(err, 'Server rejected configuration'));
         toast.error('Save failed');
       },
     });
+  }
+
+  function handleCancelConfirm() {
+    setPendingConfirm(false);
+    setViewMode('edit');
   }
 
   function handleDownload() {
@@ -167,7 +187,7 @@ export function ConfigEditorPage() {
           size="sm"
           variant="outline"
           onClick={handleFormat}
-          disabled={!text || isLoading}
+          disabled={!text || isLoading || pendingConfirm}
           className="gap-1.5"
         >
           <Sparkles className="h-3.5 w-3.5" />
@@ -177,7 +197,7 @@ export function ConfigEditorPage() {
           size="sm"
           variant="outline"
           onClick={handleReload}
-          disabled={isLoading}
+          disabled={isLoading || pendingConfirm}
           className="gap-1.5"
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -186,8 +206,13 @@ export function ConfigEditorPage() {
         <Button
           size="sm"
           variant={viewMode === 'diff' ? 'default' : 'outline'}
-          onClick={() => setViewMode((m) => (m === 'diff' ? 'edit' : 'diff'))}
-          disabled={!isDirty}
+          onClick={() => {
+            setViewMode((m) => (m === 'diff' ? 'edit' : 'diff'));
+            // Switching back to edit aborts a pending confirm — the operator
+            // is about to make more changes, so confirmation is stale.
+            if (viewMode === 'diff') setPendingConfirm(false);
+          }}
+          disabled={!isDirty || pendingConfirm}
           className="gap-1.5"
           title={isDirty ? 'Compare against saved version' : 'No unsaved changes'}
         >
@@ -219,7 +244,13 @@ export function ConfigEditorPage() {
               e.target.value = '';
             }}
           />
-          <Button size="sm" variant="outline" asChild className="gap-1.5 cursor-pointer">
+          <Button
+            size="sm"
+            variant="outline"
+            asChild
+            className="gap-1.5 cursor-pointer"
+            disabled={pendingConfirm}
+          >
             <span>
               <Upload className="h-3.5 w-3.5" />
               Upload
@@ -228,21 +259,55 @@ export function ConfigEditorPage() {
         </label>
 
         <div className="ml-auto flex items-center gap-2">
-          {isDirty && <span className="text-xs text-muted-foreground">Unsaved changes</span>}
-          {isDirty && (
-            <Button size="sm" variant="ghost" onClick={handleDiscard} disabled={update.isPending}>
-              Discard
-            </Button>
+          {pendingConfirm ? (
+            <>
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                Review diff, then confirm
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleCancelConfirm}
+                disabled={update.isPending}
+                className="gap-1.5"
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmSave}
+                disabled={update.isPending}
+                className="gap-1.5"
+              >
+                <Check className="h-3.5 w-3.5" />
+                {update.isPending ? 'Applying…' : 'Confirm save'}
+              </Button>
+            </>
+          ) : (
+            <>
+              {isDirty && <span className="text-xs text-muted-foreground">Unsaved changes</span>}
+              {isDirty && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDiscard}
+                  disabled={update.isPending}
+                >
+                  Discard
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!isDirty || update.isPending || !!parseError}
+                className="gap-1.5"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Save
+              </Button>
+            </>
           )}
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={!isDirty || update.isPending || !!parseError}
-            className="gap-1.5"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {update.isPending ? 'Saving…' : 'Save'}
-          </Button>
         </div>
       </div>
 
