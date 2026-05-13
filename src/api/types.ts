@@ -334,11 +334,19 @@ export interface InputHealthSnapshot {
   tracks?: MediaTrackInfo[];
 }
 
+export const ProfileStatus = {
+  healthy: 'healthy',
+  unhealthy: 'unhealthy',
+} as const;
+export type ProfileStatus = (typeof ProfileStatus)[keyof typeof ProfileStatus];
+
 export interface TranscoderProfileSnapshot {
   index?: number;
   track?: string;
   restart_count?: number;
   errors?: ErrorEntry[];
+  /** Current health (not history) — server's authoritative read. */
+  status?: ProfileStatus;
 }
 
 export interface TranscoderRuntimeStatus {

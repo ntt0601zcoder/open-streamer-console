@@ -243,7 +243,11 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                     const errors = p.errors ?? [];
                     const restarts = p.restart_count ?? 0;
                     const label = p.track || `track_${(p.index ?? i) + 1}`;
-                    const status = errors.length > 0 ? 'degraded' : 'active';
+                    // Prefer the server-reported current health over inferring
+                    // from `errors.length`, which would flag stale failures.
+                    const unhealthy =
+                      p.status === 'unhealthy' || (!p.status && errors.length > 0);
+                    const status = unhealthy ? 'degraded' : 'active';
                     return (
                       <div key={p.index ?? i} className="flex items-center gap-2 text-sm">
                         <RuntimeErrorIndicator

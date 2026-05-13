@@ -40,16 +40,17 @@ export function StreamRow({ stream }: StreamRowProps) {
   const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec || null;
 
   // Aggregate transcoder runtime status so the row gets the same dot + tooltip
-  // as the detail page's per-profile indicators.
+  // as the detail page's per-profile indicators. The server now reports a
+  // per-profile `status` ('healthy' | 'unhealthy') — use it instead of
+  // re-deriving from `errors.length`, which over-counts stale failures.
   const profiles = stream.runtime?.transcoder?.profiles ?? [];
   const transcoderActive = hasTranscoder && (stream.runtime?.pipeline_active ?? false);
   const allTranscoderErrors: ErrorEntry[] = profiles.flatMap((p) => p.errors ?? []);
   const totalRestarts = profiles.reduce((sum, p) => sum + (p.restart_count ?? 0), 0);
-  const transcoderStatus = !transcoderActive
-    ? undefined
-    : allTranscoderErrors.length > 0
-      ? 'degraded'
-      : 'active';
+  const anyUnhealthy = profiles.some(
+    (p) => p.status === 'unhealthy' || (!p.status && (p.errors ?? []).length > 0),
+  );
+  const transcoderStatus = !transcoderActive ? undefined : anyUnhealthy ? 'degraded' : 'active';
 
   return (
     <TableRow
@@ -101,12 +102,13 @@ export function StreamRow({ stream }: StreamRowProps) {
                     const errs = p.errors ?? [];
                     const restarts = p.restart_count ?? 0;
                     const label = p.track || `track_${(p.index ?? i) + 1}`;
-                    const status = errs.length > 0 ? 'degraded' : 'active';
+                    const profileUnhealthy =
+                      p.status === 'unhealthy' || (!p.status && errs.length > 0);
                     return (
                       <RuntimeErrorIndicator
                         key={p.index ?? i}
                         size="sm"
-                        status={status}
+                        status={profileUnhealthy ? 'degraded' : 'active'}
                         errors={errs}
                         label={label}
                         meta={restarts > 0 ? `Restarts: ${restarts}` : undefined}
