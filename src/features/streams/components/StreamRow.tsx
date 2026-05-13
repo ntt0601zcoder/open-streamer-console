@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import type { Stream } from '@/api/types';
+import type { ErrorEntry, Stream } from '@/api/types';
+import { RuntimeErrorIndicator } from './RuntimeErrorIndicator';
 import { StreamInputSummary } from './StreamInputSummary';
 import { StreamQuickView } from './StreamQuickView';
 import { StreamStatusBadge } from './StreamStatusBadge';
@@ -38,6 +39,18 @@ export function StreamRow({ stream }: StreamRowProps) {
       : null;
   const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec || null;
 
+  // Aggregate transcoder runtime status so the row gets the same dot + tooltip
+  // as the detail page's per-profile indicators.
+  const profiles = stream.runtime?.transcoder?.profiles ?? [];
+  const transcoderActive = hasTranscoder && (stream.runtime?.pipeline_active ?? false);
+  const allTranscoderErrors: ErrorEntry[] = profiles.flatMap((p) => p.errors ?? []);
+  const totalRestarts = profiles.reduce((sum, p) => sum + (p.restart_count ?? 0), 0);
+  const transcoderStatus = !transcoderActive
+    ? undefined
+    : allTranscoderErrors.length > 0
+      ? 'degraded'
+      : 'active';
+
   return (
     <TableRow
       className="cursor-pointer hover:bg-muted/50"
@@ -71,7 +84,38 @@ export function StreamRow({ stream }: StreamRowProps) {
       {/* Transcode */}
       <TableCell>
         {hasTranscoder ? (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
+            {transcoderStatus && (
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={
+                    transcoderStatus === 'degraded'
+                      ? 'text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400'
+                      : 'text-[10px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400'
+                  }
+                >
+                  {transcoderStatus}
+                </span>
+                <div className="flex items-center gap-1">
+                  {profiles.map((p, i) => {
+                    const errs = p.errors ?? [];
+                    const restarts = p.restart_count ?? 0;
+                    const label = p.track || `track_${(p.index ?? i) + 1}`;
+                    const status = errs.length > 0 ? 'degraded' : 'active';
+                    return (
+                      <RuntimeErrorIndicator
+                        key={p.index ?? i}
+                        size="sm"
+                        status={status}
+                        errors={errs}
+                        label={label}
+                        meta={restarts > 0 ? `Restarts: ${restarts}` : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {(videoCodec !== null || videoProfileCount > 0) && (
               <p className="text-xs">
                 <span className="text-muted-foreground">Video:</span>{' '}
