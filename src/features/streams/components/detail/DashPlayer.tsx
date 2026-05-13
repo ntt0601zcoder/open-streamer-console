@@ -134,22 +134,47 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     //   - jumpGaps / jumpLargeGaps: still recover from real holes the
     //     PTS rebaser produces during upstream resyncs, but with the
     //     larger headroom they fire much less often.
+    // Stability over latency: the prior aggressive config (liveDelay=2 +
+    // jumpGaps) chased the live edge so tightly that PTS jitter from the
+    // upstream pull caused frequent freeze-then-skip behaviour. Native /
+    // VLC playback of the same MPD was smooth, so the fix is to relax
+    // dashjs rather than touch the server.
+    //
+    //   - liveDelay=10: ~2.5 segments of headroom (matches MPD SPD=12s
+    //     within margin) so normal segment-arrival jitter never starves
+    //     the playback head.
+    //   - liveCatchup ±5 %: drift correction by gentle rate adjustment.
+    //   - buffer: keep ~12 s ahead of playhead, 4 s of startup buffer.
+    //   - gaps.jumpGaps OFF: dashjs's gap jumper was the visible
+    //     "freeze + jump 1 segment" symptom. With a larger live delay
+    //     the buffer absorbs small holes, so disable the hard seek.
+    //     jumpLargeGaps stays on as a last-resort recovery.
+    //   - abr.autoSwitchBitrate.video OFF: ABR swaps mid-playback also
+    //     stuttered; the preview / grid use case doesn't need adaptive
+    //     quality. Operators can still pick a rendition on the detail
+    //     page through the quality dropdown.
     player.updateSettings({
       streaming: {
         delay: {
           useSuggestedPresentationDelay: false,
-          liveDelay: 6,
+          liveDelay: 10,
         },
         liveCatchup: {
           enabled: true,
           playbackRate: { min: -0.05, max: 0.05 },
         },
         buffer: {
-          initialBufferLevel: 2,
+          initialBufferLevel: 4,
+          bufferTimeAtTopQuality: 12,
+          bufferTimeAtTopQualityLongForm: 12,
+          fastSwitchEnabled: false,
         },
         gaps: {
-          jumpGaps: true,
+          jumpGaps: false,
           jumpLargeGaps: true,
+        },
+        abr: {
+          autoSwitchBitrate: { video: false, audio: false },
         },
       },
     });
