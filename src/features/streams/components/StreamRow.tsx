@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import type { ErrorEntry, Stream } from '@/api/types';
+import type { Stream } from '@/api/types';
 import { RuntimeErrorIndicator } from './RuntimeErrorIndicator';
 import { StreamInputSummary } from './StreamInputSummary';
 import { StreamQuickView } from './StreamQuickView';
@@ -45,8 +45,6 @@ export function StreamRow({ stream }: StreamRowProps) {
   // re-deriving from `errors.length`, which over-counts stale failures.
   const profiles = stream.runtime?.transcoder?.profiles ?? [];
   const transcoderActive = hasTranscoder && (stream.runtime?.pipeline_active ?? false);
-  const allTranscoderErrors: ErrorEntry[] = profiles.flatMap((p) => p.errors ?? []);
-  const totalRestarts = profiles.reduce((sum, p) => sum + (p.restart_count ?? 0), 0);
   const anyUnhealthy = profiles.some(
     (p) => p.status === 'unhealthy' || (!p.status && (p.errors ?? []).length > 0),
   );
