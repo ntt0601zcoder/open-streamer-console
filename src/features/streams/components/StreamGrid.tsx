@@ -251,6 +251,7 @@ function StreamInfoPanel({ stream }: { stream: Stream }) {
                       errors={errs}
                       label={label}
                       meta={restarts > 0 ? `Restarts: ${restarts}` : undefined}
+                      errorsAreHistorical
                     />
                   );
                 })}

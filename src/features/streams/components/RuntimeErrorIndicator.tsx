@@ -21,6 +21,14 @@ interface RuntimeErrorIndicatorProps {
   /** Optional secondary line shown under the label (e.g. "restart count: 2"). */
   meta?: string;
   size?: 'sm' | 'md';
+  /**
+   * Skip the "recent errors → amber" override. Set this when the caller has
+   * an authoritative current-health signal separate from the errors list
+   * (e.g. transcoder profiles emit `status: 'healthy'` after recovering, but
+   * keep historical errors for context). Without it, a healthy profile with
+   * stale errors would still render amber, contradicting the server.
+   */
+  errorsAreHistorical?: boolean;
 }
 
 export function RuntimeErrorIndicator({
@@ -29,11 +37,14 @@ export function RuntimeErrorIndicator({
   label,
   meta,
   size = 'md',
+  errorsAreHistorical = false,
 }: RuntimeErrorIndicatorProps) {
   const recent = errors ?? [];
-  // Tint amber when there are recent errors but status hasn't yet flipped to degraded.
+  // Tint amber when there are recent errors but status hasn't yet flipped to
+  // degraded — UNLESS the caller flagged errors as historical, in which case
+  // we trust the status.
   const dotColor =
-    recent.length > 0 && status === 'active'
+    !errorsAreHistorical && recent.length > 0 && status === 'active'
       ? 'bg-amber-500'
       : (status && COLOR_BY_STATUS[status]) || 'bg-slate-400';
 

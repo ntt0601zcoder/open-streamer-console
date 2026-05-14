@@ -255,6 +255,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                           errors={errors}
                           label={label}
                           meta={`Restarts: ${restarts}`}
+                          errorsAreHistorical
                         />
                         <span className="font-mono text-xs">{label}</span>
                         {restarts > 0 && (

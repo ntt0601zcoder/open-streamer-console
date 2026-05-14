@@ -110,6 +110,7 @@ export function StreamRow({ stream }: StreamRowProps) {
                         errors={errs}
                         label={label}
                         meta={restarts > 0 ? `Restarts: ${restarts}` : undefined}
+                        errorsAreHistorical
                       />
                     );
                   })}
