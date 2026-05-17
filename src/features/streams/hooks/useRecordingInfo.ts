@@ -8,7 +8,7 @@ export const recordingInfoKeys = {
 export function useRecordingInfo(code: string, enabled: boolean) {
   return useQuery({
     queryKey: recordingInfoKeys.detail(code),
-    queryFn: () => recordingsApi.info(code).then((res) => res.data),
+    queryFn: () => recordingsApi.status(code).then((res) => res.data),
     enabled,
     refetchInterval: 4000,
     retry: false,

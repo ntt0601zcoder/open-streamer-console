@@ -1,13 +1,15 @@
 import { api, BASE_URL } from './client';
-import type { DataResponse, Recording, RecordingStatus } from './types';
+import type { DataResponse, RecordingStatus } from './types';
 
 export interface TimeshiftOptions {
-  /** Absolute start time (RFC3339). */
-  from?: string;
-  /** Relative start offset in seconds from recording start. */
-  offsetSec?: number;
-  /** Window duration in seconds (default: all remaining). */
-  duration?: number;
+  /** Absolute start time as Unix seconds. Wins over `delay`/`ago`. */
+  from?: number;
+  /** Start N seconds before now (live-edge offset). Alias of `ago`. */
+  delay?: number;
+  /** Alias of `delay`. */
+  ago?: number;
+  /** Clip duration in seconds. Omit for everything from the start. */
+  dur?: number;
 }
 
 export interface DvrRange {
@@ -18,8 +20,12 @@ export interface DvrRange {
 }
 
 export interface DvrGap {
-  start: string;
-  end: string;
+  /** Wall-clock time the gap began (signal loss / server restart). */
+  from: string;
+  /** Wall-clock time recording resumed. */
+  to: string;
+  /** Gap duration in Go's `time.Duration` JSON form (nanoseconds). */
+  duration?: number;
 }
 
 export interface RecordingInfo {
@@ -33,29 +39,30 @@ export interface RecordingInfo {
 
 function appendQuery(base: string, opts: TimeshiftOptions): string {
   const params = new URLSearchParams();
-  if (opts.from) params.set('from', opts.from);
-  if (opts.offsetSec != null) params.set('offset_sec', String(opts.offsetSec));
-  if (opts.duration != null) params.set('duration', String(opts.duration));
+  if (opts.from != null) params.set('from', String(Math.floor(opts.from)));
+  if (opts.delay != null) params.set('delay', String(opts.delay));
+  if (opts.ago != null) params.set('ago', String(opts.ago));
+  if (opts.dur != null) params.set('dur', String(opts.dur));
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }
 
 export const recordingsApi = {
-  get: (rid: string) => api.get(`recordings/${rid}`).json<DataResponse<Recording>>(),
-
-  /** DVR range, gaps, segment count, total bytes. */
-  info: (rid: string) => api.get(`recordings/${rid}/info`).json<DataResponse<RecordingInfo>>(),
-
-  playlistUrl: (rid: string) => `${BASE_URL}/recordings/${rid}/playlist.m3u8`,
+  /** DVR status JSON — dvr_range, gaps, segment count, total bytes, status. */
+  status: (code: string) =>
+    api.get(`${code}/recording_status.json`).json<DataResponse<RecordingInfo>>(),
 
   /**
-   * Build a timeshift VOD playlist URL. Same `playlist.m3u8` endpoint —
-   * server dispatches dynamic slice when `from`/`offset_sec` is present.
+   * Live HLS playlist served from the publisher dir. No params = always
+   * the live edge; the same URL accepts timeshift query params and the
+   * server returns a sliced VOD playlist instead.
    */
-  timeshiftUrl: (rid: string, opts: TimeshiftOptions = {}) =>
-    appendQuery(`${BASE_URL}/recordings/${rid}/playlist.m3u8`, opts),
+  playlistUrl: (code: string) => `${BASE_URL}/${code}/index.m3u8`,
 
-  /** Direct URL to a segment or other file inside a recording (e.g. `000000.ts`). */
-  fileUrl: (rid: string, file: string) =>
-    `${BASE_URL}/recordings/${rid}/${encodeURIComponent(file)}`,
+  /**
+   * Build a timeshift VOD playlist URL. Same `index.m3u8` endpoint —
+   * server returns a dynamic VOD slice whenever any timeshift param is set.
+   */
+  timeshiftUrl: (code: string, opts: TimeshiftOptions = {}) =>
+    appendQuery(`${BASE_URL}/${code}/index.m3u8`, opts),
 };

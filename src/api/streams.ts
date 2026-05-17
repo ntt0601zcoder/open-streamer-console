@@ -1,8 +1,16 @@
 import { api } from './client';
-import type { DataResponse, ListResponse, Recording, Stream, StreamBody } from './types';
+import type { DataResponse, ListResponse, Stream, StreamBody, StreamStatus } from './types';
+
+export interface StreamListOptions {
+  /** Server-side status filter — e.g. only `active` streams. */
+  status?: StreamStatus;
+}
 
 export const streamsApi = {
-  list: () => api.get('streams').json<ListResponse<Stream>>(),
+  list: (opts: StreamListOptions = {}) =>
+    api
+      .get('streams', { searchParams: opts.status ? { status: opts.status } : undefined })
+      .json<ListResponse<Stream>>(),
 
   get: (code: string) => api.get(`streams/${code}`).json<DataResponse<Stream>>(),
 
@@ -14,11 +22,8 @@ export const streamsApi = {
 
   restart: (code: string) => api.post(`streams/${code}/restart`),
 
-  getRecordings: (code: string) =>
-    api.get(`streams/${code}/recordings`).json<ListResponse<Recording>>(),
-
   switchInput: (code: string, priority: number) =>
     api
-      .post(`streams/${code}/inputs/switch`, { json: { priority } })
+      .post(`streams/${code}/switch`, { json: { priority } })
       .json<DataResponse<{ status: string }>>(),
 };

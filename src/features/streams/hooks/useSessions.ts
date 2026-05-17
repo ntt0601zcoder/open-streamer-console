@@ -21,7 +21,7 @@ export function useSessions(opts: SessionListOptions = {}) {
 export function useStreamSessions(code: string, opts: SessionListOptions = {}) {
   return useQuery({
     queryKey: sessionKeys.forStream(code, opts),
-    queryFn: () => sessionsApi.listForStream(code, opts),
+    queryFn: () => sessionsApi.list({ ...opts, stream: code }),
     refetchInterval: 5_000,
   });
 }

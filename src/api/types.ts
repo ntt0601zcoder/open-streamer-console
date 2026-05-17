@@ -73,21 +73,39 @@ export const EventType = {
   session_opened: 'session.opened',
   session_closed: 'session.closed',
   stream_created: 'stream.created',
+  stream_updated: 'stream.updated',
   stream_started: 'stream.started',
   stream_stopped: 'stream.stopped',
   stream_deleted: 'stream.deleted',
+  stream_runtime_created: 'stream.runtime_created',
+  stream_runtime_expired: 'stream.runtime_expired',
   input_connected: 'input.connected',
   input_reconnecting: 'input.reconnecting',
   input_degraded: 'input.degraded',
   input_failed: 'input.failed',
   input_failover: 'input.failover',
+  input_recovered: 'input.recovered',
   recording_started: 'recording.started',
   recording_stopped: 'recording.stopped',
   recording_failed: 'recording.failed',
   segment_written: 'segment.written',
+  dvr_segment_pruned: 'dvr.segment_pruned',
   transcoder_started: 'transcoder.started',
   transcoder_stopped: 'transcoder.stopped',
   transcoder_error: 'transcoder.error',
+  push_started: 'push.started',
+  push_active: 'push.active',
+  push_reconnecting: 'push.reconnecting',
+  push_failed: 'push.failed',
+  config_changed: 'config.changed',
+  watermark_asset_created: 'watermark.asset_created',
+  watermark_asset_deleted: 'watermark.asset_deleted',
+  hook_created: 'hook.created',
+  hook_updated: 'hook.updated',
+  hook_deleted: 'hook.deleted',
+  template_created: 'template.created',
+  template_updated: 'template.updated',
+  template_deleted: 'template.deleted',
 } as const;
 export type EventType = (typeof EventType)[keyof typeof EventType];
 
@@ -294,6 +312,8 @@ export interface WatermarkAsset {
 
 export interface WatermarkAssetListResponse {
   data: WatermarkAsset[];
+  /** Absolute on-disk directory where uploaded asset files live. */
+  dir?: string;
   total: number;
 }
 
@@ -421,18 +441,15 @@ export interface Stream {
   transcoder?: TranscoderConfig;
   watermark?: WatermarkConfig;
   tags?: string[];
+  /**
+   * Optional reference to a {@link Template} code. Config-like fields left
+   * empty on the stream inherit from the template at runtime; the server
+   * resolves the merged view in `GET /streams/:code`.
+   */
+  template?: string;
   runtime?: StreamRuntime;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface Recording {
-  id: string;
-  stream_code: string;
-  status: RecordingStatus;
-  segment_dir?: string;
-  started_at: string;
-  stopped_at?: string;
 }
 
 // ─── Play sessions ────────────────────────────────────────────────────────────
@@ -541,6 +558,7 @@ export type StreamBody = {
   transcoder?: TranscoderConfig;
   watermark?: WatermarkConfig;
   tags?: string[];
+  template?: string;
 };
 
 export type CreateHookBody = Omit<Hook, 'id'>;
@@ -556,3 +574,27 @@ export interface ListResponse<T> {
 export interface DataResponse<T> {
   data: T;
 }
+
+// ─── Templates ────────────────────────────────────────────────────────────────
+// A Template is a reusable bundle of stream configuration (inputs, protocols,
+// transcoder, watermark, …) that Streams can inherit from via `template: <code>`.
+// `prefixes` lets the server auto-publish ingest URLs that match any listed
+// URL-path prefix using this template.
+
+export interface Template {
+  code: string;
+  name?: string;
+  description?: string;
+  stream_key?: string;
+  prefixes?: string[];
+  inputs?: Input[];
+  protocols?: OutputProtocols;
+  push?: PushDestination[];
+  dvr?: StreamDVRConfig;
+  thumbnail?: ThumbnailConfig;
+  transcoder?: TranscoderConfig;
+  watermark?: WatermarkConfig;
+  tags?: string[];
+}
+
+export type TemplateBody = Omit<Template, 'code'>;

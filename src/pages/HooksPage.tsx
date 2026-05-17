@@ -79,9 +79,12 @@ const EVENT_GROUPS: { label: string; events: { value: string; label: string }[] 
     label: 'Stream',
     events: [
       { value: EventType.stream_created, label: 'Stream created' },
+      { value: EventType.stream_updated, label: 'Stream updated' },
       { value: EventType.stream_started, label: 'Stream started' },
       { value: EventType.stream_stopped, label: 'Stream stopped' },
       { value: EventType.stream_deleted, label: 'Stream deleted' },
+      { value: EventType.stream_runtime_created, label: 'Stream runtime created' },
+      { value: EventType.stream_runtime_expired, label: 'Stream runtime expired' },
     ],
   },
   {
@@ -92,15 +95,17 @@ const EVENT_GROUPS: { label: string; events: { value: string; label: string }[] 
       { value: EventType.input_degraded, label: 'Input degraded' },
       { value: EventType.input_failed, label: 'Input failed' },
       { value: EventType.input_failover, label: 'Input failover' },
+      { value: EventType.input_recovered, label: 'Input recovered' },
     ],
   },
   {
-    label: 'Recording',
+    label: 'Recording / DVR',
     events: [
       { value: EventType.recording_started, label: 'Recording started' },
       { value: EventType.recording_stopped, label: 'Recording stopped' },
       { value: EventType.recording_failed, label: 'Recording failed' },
       { value: EventType.segment_written, label: 'Segment written' },
+      { value: EventType.dvr_segment_pruned, label: 'DVR segment pruned' },
     ],
   },
   {
@@ -112,10 +117,33 @@ const EVENT_GROUPS: { label: string; events: { value: string; label: string }[] 
     ],
   },
   {
+    label: 'Push',
+    events: [
+      { value: EventType.push_started, label: 'Push started' },
+      { value: EventType.push_active, label: 'Push active' },
+      { value: EventType.push_reconnecting, label: 'Push reconnecting' },
+      { value: EventType.push_failed, label: 'Push failed' },
+    ],
+  },
+  {
     label: 'Session',
     events: [
       { value: EventType.session_opened, label: 'Session opened' },
       { value: EventType.session_closed, label: 'Session closed' },
+    ],
+  },
+  {
+    label: 'Config / Assets',
+    events: [
+      { value: EventType.config_changed, label: 'Config changed' },
+      { value: EventType.watermark_asset_created, label: 'Watermark created' },
+      { value: EventType.watermark_asset_deleted, label: 'Watermark deleted' },
+      { value: EventType.hook_created, label: 'Hook created' },
+      { value: EventType.hook_updated, label: 'Hook updated' },
+      { value: EventType.hook_deleted, label: 'Hook deleted' },
+      { value: EventType.template_created, label: 'Template created' },
+      { value: EventType.template_updated, label: 'Template updated' },
+      { value: EventType.template_deleted, label: 'Template deleted' },
     ],
   },
 ];

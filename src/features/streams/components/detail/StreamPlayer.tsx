@@ -106,7 +106,7 @@ export function StreamPlayer({
   const gapRanges = useMemo<MsRange[]>(() => {
     if (!recordingInfo?.gaps) return [];
     return recordingInfo.gaps
-      .map((g) => ({ start: Date.parse(g.start), end: Date.parse(g.end) }))
+      .map((g) => ({ start: Date.parse(g.from), end: Date.parse(g.to) }))
       .filter((g) => Number.isFinite(g.start) && Number.isFinite(g.end) && g.end > g.start);
   }, [recordingInfo]);
 
@@ -114,14 +114,13 @@ export function StreamPlayer({
   // `endMs` is recomputed from props, so the slider follows.
 
   // Source URL — live or timeshift VOD slice.
-  // `from` uses second-level RFC3339 (the server parses with `time.RFC3339`,
-  // not `RFC3339Nano`). We also nudge the requested time +1s so the server's
-  // segment overlap test (segEnd > startTime) doesn't reject borderline picks.
+  // `from` is Unix seconds (server parses with strconv.ParseInt). We nudge
+  // the requested time +1s so the server's segment overlap test
+  // (segEnd > startTime) doesn't reject borderline picks.
   const sourceUrl = useMemo(() => {
     if (timeshiftMs == null) return hlsUrl;
-    const safeMs = timeshiftMs + 1000;
-    const fromIso = new Date(safeMs).toISOString().replace(/\.\d+Z$/, 'Z');
-    return recordingsApi.timeshiftUrl(streamCode, { from: fromIso });
+    const fromSec = Math.floor(timeshiftMs / 1000) + 1;
+    return recordingsApi.timeshiftUrl(streamCode, { from: fromSec });
   }, [hlsUrl, streamCode, timeshiftMs]);
 
   // Track timeshift state in a ref so the HLS error handler (created once per

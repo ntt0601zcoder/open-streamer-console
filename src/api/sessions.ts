@@ -7,6 +7,8 @@ import type {
 } from './types';
 
 export interface SessionListOptions {
+  /** Filter to a single stream code (server-side). */
+  stream?: string;
   proto?: SessionProto;
   /** "active" | "closed" — server filters; omit for both. */
   status?: 'active' | 'closed';
@@ -16,6 +18,7 @@ export interface SessionListOptions {
 
 function searchParams(opts: SessionListOptions) {
   const sp = new URLSearchParams();
+  if (opts.stream) sp.set('stream', opts.stream);
   if (opts.proto) sp.set('proto', opts.proto);
   if (opts.status) sp.set('status', opts.status);
   if (opts.limit && opts.limit > 0) sp.set('limit', String(opts.limit));
@@ -25,11 +28,6 @@ function searchParams(opts: SessionListOptions) {
 export const sessionsApi = {
   list: (opts: SessionListOptions = {}) =>
     api.get('sessions', { searchParams: searchParams(opts) }).json<SessionListResponse>(),
-
-  listForStream: (code: string, opts: SessionListOptions = {}) =>
-    api
-      .get(`streams/${code}/sessions`, { searchParams: searchParams(opts) })
-      .json<SessionListResponse>(),
 
   get: (id: string) => api.get(`sessions/${id}`).json<DataResponse<PlaySession>>(),
 

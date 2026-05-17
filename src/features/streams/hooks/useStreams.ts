@@ -5,7 +5,6 @@ import type { StreamBody } from '@/api/types';
 export const streamKeys = {
   all: ['streams'] as const,
   detail: (code: string) => ['streams', code] as const,
-  recordings: (code: string) => ['streams', code, 'recordings'] as const,
 } as const;
 
 export function useStreams() {
@@ -27,16 +26,6 @@ export function useStream(code: string) {
       return res.data;
     },
     refetchInterval: 4_000,
-  });
-}
-
-export function useStreamRecordings(code: string) {
-  return useQuery({
-    queryKey: streamKeys.recordings(code),
-    queryFn: async () => {
-      const res = await streamsApi.getRecordings(code);
-      return res.data;
-    },
   });
 }
 
