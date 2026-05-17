@@ -4,6 +4,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import type { Stream } from '@/api/types';
 import { dashUrl, hlsUrl } from '@/lib/streamUrls';
 import { cn } from '@/lib/utils';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 
 const StreamPlayer = lazy(() =>
   import('./detail/StreamPlayer').then((m) => ({ default: m.StreamPlayer })),
@@ -22,10 +23,11 @@ interface StreamQuickViewProps {
 export function StreamQuickView({ stream, children }: StreamQuickViewProps) {
   const [open, setOpen] = useState(false);
 
+  const { resolved } = useStreamTemplate(stream);
   const status = stream.runtime?.status;
   const isRunning = status === 'active' || status === 'degraded';
-  const hlsEnabled = stream.protocols?.hls ?? false;
-  const dashEnabled = stream.protocols?.dash ?? false;
+  const hlsEnabled = resolved.protocols?.hls ?? false;
+  const dashEnabled = resolved.protocols?.dash ?? false;
 
   const availableProtos = useMemo<PlayerProto[]>(() => {
     const out: PlayerProto[] = [];

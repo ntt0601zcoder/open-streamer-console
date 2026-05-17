@@ -18,6 +18,8 @@ import type { Stream } from '@/api/types';
 import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
+import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import { dvrFormSchema, type DvrFormValues } from '@/features/streams/schemas';
 
 interface DvrTabProps {
@@ -37,14 +39,17 @@ function toFormValues(stream: Stream): DvrFormValues {
 
 export function DvrTab({ stream }: DvrTabProps) {
   const update = useSaveStream();
+  const tplState = useStreamTemplate(stream);
   const { data: defaults } = useConfigDefaults();
+
+  const initial = toFormValues(tplState.resolved);
 
   const form = useForm<DvrFormValues>({
     resolver: zodResolver(dvrFormSchema),
-    defaultValues: toFormValues(stream),
+    defaultValues: initial,
   });
 
-  useFormConfigSync(form, toFormValues(stream));
+  useFormConfigSync(form, initial);
 
   const enabled = useWatch({ control: form.control, name: 'enabled' });
 
@@ -54,6 +59,10 @@ export function DvrTab({ stream }: DvrTabProps) {
     defaults?.dvr?.storage_path_template?.replace('{streamCode}', stream.code) ?? 'default';
 
   function onSubmit(values: DvrFormValues) {
+    if (!form.formState.isDirty) {
+      toast.info('No changes to save');
+      return;
+    }
     update.mutate(
       { code: stream.code, body: { dvr: values } },
       {
@@ -69,6 +78,13 @@ export function DvrTab({ stream }: DvrTabProps) {
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {stream.template && tplState.inherited.dvr && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label="DVR"
+            isLoading={tplState.isLoading}
+          />
+        )}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

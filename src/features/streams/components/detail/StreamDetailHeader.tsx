@@ -1,4 +1,4 @@
-import { ChevronRight, Loader2, Play, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronRight, Layers, Loader2, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,17 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
             <Badge variant="outline" className="text-muted-foreground">
               disabled
             </Badge>
+          )}
+          {stream.template && (
+            <Link to={`/templates/${stream.template}`} title="Open template">
+              <Badge
+                variant="secondary"
+                className="gap-1 font-mono text-[10px] hover:bg-secondary/80"
+              >
+                <Layers className="h-3 w-3" />
+                {stream.template}
+              </Badge>
+            </Link>
           )}
         </div>
 

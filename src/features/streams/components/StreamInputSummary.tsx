@@ -3,6 +3,7 @@ import type { Input as InputType, InputHealthSnapshot, Stream } from '@/api/type
 import { StreamStatus } from '@/api/types';
 import { formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { useSwitchInput } from '@/features/streams/hooks/useStreams';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -11,7 +12,8 @@ interface StreamInputSummaryProps {
 }
 
 export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
-  const inputs = stream.inputs;
+  const { resolved } = useStreamTemplate(stream);
+  const inputs = resolved.inputs;
   const switchInput = useSwitchInput();
   const activeIndex =
     stream.runtime?.override_input_priority ?? stream.runtime?.active_input_priority ?? null;

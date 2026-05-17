@@ -28,6 +28,8 @@ import { StringListEditor } from '@/features/streams/components/StringListEditor
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
+import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import {
   cleanExtraArgs,
   transcoderFormSchema,
@@ -119,21 +121,33 @@ const INTERLACE_OPTIONS: { value: string; label: string }[] = [
 ];
 
 export function TranscoderTab({ stream }: TranscoderTabProps) {
+  const tplState = useStreamTemplate(stream);
   const { data: serverConfig } = useServerConfig();
   const update = useSaveStream();
 
+  // Use the resolved view (stream with template merge applied) so the form
+  // shows the runtime's effective config. Inherited sections are no longer
+  // visually blank — they show the template's values.
+  const initial = toFormValues(tplState.resolved);
+
   const form = useForm<TranscoderFormValues>({
     resolver: zodResolver(transcoderFormSchema),
-    defaultValues: toFormValues(stream),
+    defaultValues: initial,
   });
 
-  useFormConfigSync(form, toFormValues(stream));
+  useFormConfigSync(form, initial);
 
   const enabled = useWatch({ control: form.control, name: 'enabled' });
   const audioCopy = useWatch({ control: form.control, name: 'audio.copy' });
   const videoCopy = useWatch({ control: form.control, name: 'video.copy' });
 
   function onSubmit(values: TranscoderFormValues) {
+    // No-op when the form is clean — saving an unmodified merged view would
+    // copy the template values onto the stream and break inheritance.
+    if (!form.formState.isDirty) {
+      toast.info('No changes to save');
+      return;
+    }
     const transcoder = values.enabled ? buildTranscoderConfig(values) : null;
     update.mutate(
       { code: stream.code, body: { transcoder } as never },
@@ -200,6 +214,13 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {stream.template && tplState.inherited.transcoder && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label="Transcoder"
+            isLoading={tplState.isLoading}
+          />
+        )}
         {/* Master toggle */}
         <Card>
           <CardHeader>

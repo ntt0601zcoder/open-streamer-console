@@ -39,6 +39,8 @@ import {
 import { watermarksApi } from '@/api/watermarks';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
+import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import {
   watermarkFormSchema,
   type WatermarkFormValues,
@@ -114,14 +116,17 @@ function toApiBody(v: WatermarkFormValues): WatermarkConfig {
 
 export function WatermarkTab({ stream }: WatermarkTabProps) {
   const update = useSaveStream();
+  const tplState = useStreamTemplate(stream);
   const { data: assets } = useWatermarkAssets();
+
+  const initial = toFormValues(tplState.resolved);
 
   const form = useForm<WatermarkFormValues>({
     resolver: zodResolver(watermarkFormSchema),
-    defaultValues: toFormValues(stream),
+    defaultValues: initial,
   });
 
-  useFormConfigSync(form, toFormValues(stream));
+  useFormConfigSync(form, initial);
 
   const enabled = useWatch({ control: form.control, name: 'enabled' });
   const type = useWatch({ control: form.control, name: 'type' });
@@ -131,6 +136,10 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
   const selectedAsset = assets?.find((a) => a.id === assetId);
 
   function onSubmit(values: WatermarkFormValues) {
+    if (!form.formState.isDirty) {
+      toast.info('No changes to save');
+      return;
+    }
     update.mutate(
       { code: stream.code, body: { watermark: toApiBody(values) } },
       {
@@ -147,6 +156,13 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {stream.template && tplState.inherited.watermark && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label="Watermark"
+            isLoading={tplState.isLoading}
+          />
+        )}
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>

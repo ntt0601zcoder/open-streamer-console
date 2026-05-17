@@ -3,6 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StreamDetailHeader } from '@/features/streams/components/detail/StreamDetailHeader';
 import { StreamPreview } from '@/features/streams/components/detail/StreamPreview';
+import { TemplateInheritanceBanner } from '@/features/streams/components/detail/TemplateInheritanceBanner';
 import { DvrTab } from '@/features/streams/components/detail/tabs/DvrTab';
 import { GeneralTab } from '@/features/streams/components/detail/tabs/GeneralTab';
 import { InputTab } from '@/features/streams/components/detail/tabs/InputTab';
@@ -13,8 +14,11 @@ import { WatermarkTab } from '@/features/streams/components/detail/tabs/Watermar
 import { useStream } from '@/features/streams/hooks/useStreams';
 
 export function StreamDetailPage() {
-  const { code } = useParams<{ code: string }>();
-  const { data: stream, isLoading, error } = useStream(code!);
+  // Splat (`streams/*`) captures the whole code under the `'*'` param so
+  // namespaced codes like `receiver/test_tpl_push` survive routing.
+  const params = useParams();
+  const code = params['*'] ?? '';
+  const { data: stream, isLoading, error } = useStream(code);
 
   if (isLoading) {
     return (
@@ -39,6 +43,8 @@ export function StreamDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       <StreamDetailHeader stream={stream} />
+
+      {stream.template && <TemplateInheritanceBanner stream={stream} />}
 
       <Separator />
 

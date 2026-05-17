@@ -26,6 +26,8 @@ import { useSaveStream, useSwitchInput } from '@/features/streams/hooks/useStrea
 import { InputSwitchHistory } from '@/features/streams/components/InputSwitchHistory';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
+import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { inputsFormSchema, parsePids, type InputsFormValues } from '@/features/streams/schemas';
 
 interface InputTabProps {
@@ -55,6 +57,7 @@ function toFormValues(stream: Stream): InputsFormValues {
 export function InputTab({ stream }: InputTabProps) {
   const update = useSaveStream();
   const switchInput = useSwitchInput();
+  const tplState = useStreamTemplate(stream);
   const streamStatus = stream.runtime?.status;
   const isStreamLive =
     streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
@@ -69,9 +72,11 @@ export function InputTab({ stream }: InputTabProps) {
     );
   }
 
+  const initial = toFormValues(tplState.resolved);
+
   const form = useForm<InputsFormValues>({
     resolver: zodResolver(inputsFormSchema),
-    defaultValues: toFormValues(stream),
+    defaultValues: initial,
   });
 
   const { fields, append, remove, move } = useFieldArray({
@@ -79,9 +84,13 @@ export function InputTab({ stream }: InputTabProps) {
     name: 'inputs',
   });
 
-  useFormConfigSync(form, toFormValues(stream));
+  useFormConfigSync(form, initial);
 
   function onSubmit(values: InputsFormValues) {
+    if (!form.formState.isDirty) {
+      toast.info('No changes to save');
+      return;
+    }
     const inputs = values.inputs.map((inp, i) => ({
       ...inp,
       priority: i,
@@ -108,6 +117,13 @@ export function InputTab({ stream }: InputTabProps) {
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {tplState.inherited.inputs && stream.template && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label="Inputs"
+            isLoading={tplState.isLoading}
+          />
+        )}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

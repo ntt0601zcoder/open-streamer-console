@@ -6,6 +6,7 @@ import { dashUrl, hlsUrl } from '@/lib/streamUrls';
 import { cn } from '@/lib/utils';
 import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useRecordingInfo } from '@/features/streams/hooks/useRecordingInfo';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { InputBytesChart } from './InputBytesChart';
 import { MediaSummaryCard } from './MediaSummaryCard';
 
@@ -26,11 +27,16 @@ interface StreamPreviewProps {
 type PlayerProto = 'hls' | 'dash';
 
 export function StreamPreview({ stream }: StreamPreviewProps) {
-  const status = stream.runtime?.status;
+  // Use the resolved view so template-inherited protocols / DVR show up in
+  // the preview just like they do at runtime. The raw stream object can have
+  // protocols.hls == false even though the pipeline is publishing HLS via
+  // the template merge.
+  const { resolved } = useStreamTemplate(stream);
+  const status = resolved.runtime?.status;
   const isRunning = status === 'active' || status === 'degraded';
-  const hlsEnabled = stream.protocols?.hls ?? false;
-  const dashEnabled = stream.protocols?.dash ?? false;
-  const dvrEnabled = stream.dvr?.enabled ?? false;
+  const hlsEnabled = resolved.protocols?.hls ?? false;
+  const dashEnabled = resolved.protocols?.dash ?? false;
+  const dvrEnabled = resolved.dvr?.enabled ?? false;
 
   const availableProtos = useMemo<PlayerProto[]>(() => {
     const out: PlayerProto[] = [];
@@ -51,8 +57,8 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
   );
   const { data: defaults } = useConfigDefaults();
   const segmentDurationSec =
-    (stream.dvr?.segment_duration && stream.dvr.segment_duration > 0
-      ? stream.dvr.segment_duration
+    (resolved.dvr?.segment_duration && resolved.dvr.segment_duration > 0
+      ? resolved.dvr.segment_duration
       : defaults?.dvr?.segment_duration) ?? 4;
 
   const externalUrl =

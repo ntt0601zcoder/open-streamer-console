@@ -13,12 +13,23 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { Stream } from '@/api/types';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
+import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import { generalSchema, type GeneralFormValues } from '@/features/streams/schemas';
+import { useTemplates } from '@/features/templates/hooks/useTemplates';
+import { Link } from 'react-router-dom';
 
 interface GeneralTabProps {
   stream: Stream;
@@ -31,21 +42,26 @@ function toFormValues(stream: Stream): GeneralFormValues {
     stream_key: stream.stream_key ?? '',
     disabled: stream.disabled ?? false,
     tags: stream.tags?.join(', ') ?? '',
+    template: stream.template ?? '',
   };
 }
 
 export function GeneralTab({ stream }: GeneralTabProps) {
   const update = useSaveStream();
+  const { data: templates } = useTemplates();
+  const tplState = useStreamTemplate(stream);
+
+  const initial = toFormValues(tplState.resolved);
 
   const form = useForm<GeneralFormValues>({
     resolver: zodResolver(generalSchema),
-    defaultValues: toFormValues(stream),
+    defaultValues: initial,
   });
 
-  useFormConfigSync(form, toFormValues(stream));
+  useFormConfigSync(form, initial);
 
   function onSubmit(values: GeneralFormValues) {
-    const original = toFormValues(stream);
+    const original = initial;
 
     const patch: Partial<Record<string, unknown>> = {};
     if (values.name !== original.name) patch.name = values.name;
@@ -62,6 +78,10 @@ export function GeneralTab({ stream }: GeneralTabProps) {
             .filter(Boolean)
         : [];
     }
+    // Empty template = inherit nothing; explicit '' clears a previously-set
+    // reference. Server treats missing field as no-op so we send '' when the
+    // user removes the template.
+    if (values.template !== original.template) patch.template = values.template;
 
     if (Object.keys(patch).length === 0) {
       toast.info('No changes to save');
@@ -82,9 +102,23 @@ export function GeneralTab({ stream }: GeneralTabProps) {
     );
   }
 
+  // Build a concise list of inherited general fields (e.g. "Name, Tags").
+  const inheritedFields = (
+    Object.entries(tplState.generalInherited) as [keyof typeof tplState.generalInherited, boolean][]
+  )
+    .filter(([, v]) => v)
+    .map(([k]) => k);
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {stream.template && tplState.inherited.general && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label={`General (${inheritedFields.join(', ')})`}
+            isLoading={tplState.isLoading}
+          />
+        )}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Basic info</CardTitle>
@@ -153,6 +187,43 @@ export function GeneralTab({ stream }: GeneralTabProps) {
                     <Input placeholder="news, hd, live — comma separated" {...field} />
                   </FormControl>
                   <FormDescription>Comma-separated tags for filtering</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Template */}
+            <FormField
+              control={form.control}
+              name="template"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2">
+                  <FormLabel>Template</FormLabel>
+                  <Select
+                    onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                    value={field.value ? field.value : '__none__'}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {(templates ?? []).map((t) => (
+                        <SelectItem key={t.code} value={t.code}>
+                          {t.name ? `${t.name} (${t.code})` : t.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Inherit config-like fields from a{' '}
+                    <Link to="/templates" className="underline">
+                      template
+                    </Link>
+                    . Fields you set explicitly on this stream override the template.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

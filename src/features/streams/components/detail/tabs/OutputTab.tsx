@@ -24,6 +24,8 @@ import { CollapsibleRow } from '@/features/streams/components/CollapsibleRow';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
+import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
 import { copyText } from '@/lib/clipboard';
 import { formatDurationSince } from '@/lib/format';
@@ -95,12 +97,17 @@ function toFormValues(stream: Stream): OutputFormValues {
 
 export function OutputTab({ stream }: OutputTabProps) {
   const update = useSaveStream();
+  const tplState = useStreamTemplate(stream);
   const { data: serverConfig } = useServerConfig();
   const ports = serverConfig?.ports;
 
+  // Use the resolved view so inherited sections render with the template's
+  // values instead of empty toggles / lists.
+  const initial = toFormValues(tplState.resolved);
+
   const form = useForm<OutputFormValues>({
     resolver: zodResolver(outputFormSchema),
-    defaultValues: toFormValues(stream),
+    defaultValues: initial,
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -108,10 +115,10 @@ export function OutputTab({ stream }: OutputTabProps) {
     name: 'push',
   });
 
-  useFormConfigSync(form, toFormValues(stream));
+  useFormConfigSync(form, initial);
 
   function onSubmit(values: OutputFormValues) {
-    const original = toFormValues(stream);
+    const original = initial;
     const patch: Partial<Record<string, unknown>> = {};
 
     const protocolsChanged =
@@ -141,6 +148,20 @@ export function OutputTab({ stream }: OutputTabProps) {
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {stream.template && tplState.inherited.protocols && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label="Output protocols"
+            isLoading={tplState.isLoading}
+          />
+        )}
+        {stream.template && tplState.inherited.push && (
+          <InheritedSectionNotice
+            templateCode={stream.template}
+            label="Push destinations"
+            isLoading={tplState.isLoading}
+          />
+        )}
         {/* Protocols + URLs (combined) */}
         <Card>
           <CardHeader>

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import type { Stream } from '@/api/types';
 import { dashUrl, hlsUrl } from '@/lib/streamUrls';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { RuntimeErrorIndicator } from './RuntimeErrorIndicator';
 import { StreamStatusBadge } from './StreamStatusBadge';
 
@@ -34,11 +35,9 @@ export function StreamGrid({ streams, filter, proto }: StreamGridProps) {
         s.tags?.some((t) => t.toLowerCase().includes(q))
       );
     })
-    .filter((s) => (proto === 'hls' ? s.protocols?.hls : s.protocols?.dash));
+    .filter((s) => hasProtocol(s, proto));
 
-  const totalWithProto = streams.filter((s) =>
-    proto === 'hls' ? s.protocols?.hls : s.protocols?.dash,
-  ).length;
+  const totalWithProto = streams.filter((s) => hasProtocol(s, proto)).length;
   const hiddenByProto = streams.length - totalWithProto;
 
   if (filtered.length === 0) {
@@ -76,6 +75,14 @@ export function StreamGrid({ streams, filter, proto }: StreamGridProps) {
       </div>
     </div>
   );
+}
+
+// Accept the stream into the grid if it has the proto enabled directly or if
+// it references a template — in the latter case the template likely enables
+// the proto and the per-tile resolved view will catch the actual state.
+function hasProtocol(s: Stream, proto: GridProto): boolean {
+  if (proto === 'hls' ? s.protocols?.hls : s.protocols?.dash) return true;
+  return !!s.template;
 }
 
 function StreamGridTile({ stream, proto }: { stream: Stream; proto: GridProto }) {
@@ -164,23 +171,26 @@ function PlayerFallback() {
 }
 
 function StreamInfoPanel({ stream }: { stream: Stream }) {
-  const inputs = stream.inputs ?? [];
+  // Read inheritance-affected fields from the resolved view so panels for
+  // template-inheriting streams show the effective config.
+  const { resolved } = useStreamTemplate(stream);
+  const inputs = resolved.inputs ?? [];
   const runtimeInputs = stream.runtime?.inputs ?? [];
   const activeInputPriority =
     stream.runtime?.override_input_priority ?? stream.runtime?.active_input_priority ?? null;
-  const tc = stream.transcoder;
+  const tc = resolved.transcoder;
   const videoProfiles = tc?.video?.profiles ?? [];
   const videoCodec = tc?.video?.copy
     ? 'copy'
     : videoProfiles[0]?.codec || tc?.video?.profiles?.[0]?.codec || null;
   const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec || null;
-  const dvr = stream.dvr;
-  const enabledProtos = stream.protocols
-    ? (Object.entries(stream.protocols) as [string, boolean | undefined][])
+  const dvr = resolved.dvr;
+  const enabledProtos = resolved.protocols
+    ? (Object.entries(resolved.protocols) as [string, boolean | undefined][])
         .filter(([, v]) => v)
         .map(([k]) => k.toUpperCase())
     : [];
-  const pushes = stream.push ?? [];
+  const pushes = resolved.push ?? [];
   const activePushes = stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active')
     .length ?? 0;
   const transcoderProfiles = stream.runtime?.transcoder?.profiles ?? [];

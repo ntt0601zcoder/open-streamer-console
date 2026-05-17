@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { Stream } from '@/api/types';
+import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { RuntimeErrorIndicator } from './RuntimeErrorIndicator';
 import { StreamInputSummary } from './StreamInputSummary';
 import { StreamQuickView } from './StreamQuickView';
@@ -15,21 +16,26 @@ export function StreamRow({ stream }: StreamRowProps) {
   const navigate = useNavigate();
   const detailPath = `/streams/${stream.code}`;
 
+  // Use the resolved view so rows for template-inheriting streams show the
+  // effective config (protocols / transcoder / dvr / push) the runtime is
+  // actually using, not the raw empty placeholders the server persists.
+  const { resolved } = useStreamTemplate(stream);
+
   // Output summary
-  const enabledProtocols = stream.protocols
-    ? (Object.entries(stream.protocols) as [string, boolean | undefined][])
+  const enabledProtocols = resolved.protocols
+    ? (Object.entries(resolved.protocols) as [string, boolean | undefined][])
         .filter(([, v]) => v)
         .map(([k]) => k.toUpperCase())
     : [];
 
   const activePushCount =
     stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active').length ?? 0;
-  const totalPushCount = stream.push?.filter((p) => p.enabled).length ?? 0;
+  const totalPushCount = resolved.push?.filter((p) => p.enabled).length ?? 0;
 
   // Transcode summary. The Go server emits empty strings for unset enum fields
   // (codec: "" instead of omitting), so treat both as "no codec set" and let the
   // rendition count speak for itself.
-  const tc = stream.transcoder;
+  const tc = resolved.transcoder;
   const hasTranscoder = !!tc;
   const videoProfileCount = tc?.video?.profiles?.length ?? 0;
   const videoCodec = tc?.video?.copy
@@ -145,7 +151,7 @@ export function StreamRow({ stream }: StreamRowProps) {
 
       {/* DVR */}
       <TableCell>
-        {stream.dvr?.enabled ? (
+        {resolved.dvr?.enabled ? (
           <span className="text-xs text-emerald-600 dark:text-emerald-400">Enabled</span>
         ) : (
           <span className="text-xs text-muted-foreground">Disabled</span>
