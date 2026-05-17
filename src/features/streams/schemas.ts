@@ -8,6 +8,8 @@ export const generalSchema = z.object({
   stream_key: z.string(),
   disabled: z.boolean(),
   tags: z.string(), // comma-separated — converted to/from string[]
+  /** Optional template code to inherit config-like fields from. '' = none. */
+  template: z.string(),
 });
 
 export type GeneralFormValues = z.infer<typeof generalSchema>;
@@ -201,3 +203,32 @@ export const createStreamSchema = z.object({
 });
 
 export type CreateStreamValues = z.infer<typeof createStreamSchema>;
+
+// ─── Templates ────────────────────────────────────────────────────────────────
+// Templates share most of the stream form shape but:
+// - no `disabled` / `template` (templates can't reference templates)
+// - no inputs.min(1) — a template may carry zero inputs
+// - add `prefixes` (auto-publish URL paths)
+
+export const templateGeneralSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  stream_key: z.string(),
+  tags: z.string(),
+});
+
+export const templateSchema = z.object({
+  code: z
+    .string()
+    .min(1, 'Code is required')
+    .regex(/^[a-z0-9][a-z0-9-_]*$/, 'Lowercase letters, numbers, hyphens, underscores only'),
+  general: templateGeneralSchema,
+  prefixes: z.array(z.object({ value: z.string() })),
+  inputs: z.array(inputSchema),
+  protocols: outputFormSchema.shape.protocols,
+  push: z.array(pushDestSchema),
+  transcoder: transcoderFormSchema,
+  dvr: dvrFormSchema,
+});
+
+export type TemplateFormValues = z.infer<typeof templateSchema>;

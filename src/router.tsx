@@ -22,7 +22,11 @@ export const router = createBrowserRouter([
         },
       },
       {
-        path: 'streams/:code',
+        // Splat route — stream codes may contain '/' (template-prefix
+        // namespaces like `receiver/test_tpl_push`), and `:code` only
+        // matches a single segment. Static `streams/new` above ranks
+        // higher than this splat so create still wins.
+        path: 'streams/*',
         lazy: async () => {
           const { StreamDetailPage } = await import('@/pages/StreamDetailPage');
           return { Component: StreamDetailPage };
@@ -40,6 +44,27 @@ export const router = createBrowserRouter([
         lazy: async () => {
           const { VodMountPage } = await import('@/pages/VodMountPage');
           return { Component: VodMountPage };
+        },
+      },
+      {
+        path: 'templates',
+        lazy: async () => {
+          const { TemplatesPage } = await import('@/pages/TemplatesPage');
+          return { Component: TemplatesPage };
+        },
+      },
+      {
+        path: 'templates/new',
+        lazy: async () => {
+          const { TemplateEditorPage } = await import('@/pages/TemplateEditorPage');
+          return { Component: TemplateEditorPage };
+        },
+      },
+      {
+        path: 'templates/:code',
+        lazy: async () => {
+          const { TemplateEditorPage } = await import('@/pages/TemplateEditorPage');
+          return { Component: TemplateEditorPage };
         },
       },
       {

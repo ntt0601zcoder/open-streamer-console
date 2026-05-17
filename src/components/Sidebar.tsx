@@ -1,6 +1,7 @@
 import {
   Film,
   ImageIcon,
+  Layers,
   PanelLeftClose,
   PanelLeftOpen,
   Radio,
@@ -17,6 +18,7 @@ import { useServerConfig } from '@/features/config/hooks/useServerConfig';
 
 const navItems = [
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
+  { to: '/templates', label: 'Templates', icon: Layers, end: false },
   { to: '/vod', label: 'VOD', icon: Film, end: false },
   { to: '/sessions', label: 'Sessions', icon: Users, end: false },
   { to: '/watermarks', label: 'Watermarks', icon: ImageIcon, end: false },
