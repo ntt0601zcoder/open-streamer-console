@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// See InputsSection.tsx for rationale on `Control<any>`.
+// See InputsSection.tsx for rationale on reading `control` via useFormContext.
 import { Plus, Trash2 } from 'lucide-react';
-import { useFieldArray, type Control } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +30,8 @@ const PROTOCOL_LABELS: Record<string, string> = {
  * Output protocols + push destinations editor. Form must have a `protocols`
  * object (hls/dash/mpegts/rtmp/rtsp/srt booleans) and a `push` field array.
  */
-export function OutputSection({ control }: { control: Control<any> }) {
+export function OutputSection() {
+  const { control } = useFormContext();
   const { data: serverConfig } = useServerConfig();
   const ports = serverConfig?.ports;
 

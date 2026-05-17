@@ -141,16 +141,16 @@ export function StreamCreatePage() {
               <GeneralSection form={form} />
             </TabsContent>
             <TabsContent value="input" className="mt-6">
-              <InputsSection control={form.control} />
+              <InputsSection />
             </TabsContent>
             <TabsContent value="output" className="mt-6">
-              <OutputSection control={form.control} />
+              <OutputSection />
             </TabsContent>
             <TabsContent value="transcoder" className="mt-6">
-              <TranscoderSection control={form.control} setValue={form.setValue} />
+              <TranscoderSection />
             </TabsContent>
             <TabsContent value="dvr" className="mt-6">
-              <DvrSection control={form.control} />
+              <DvrSection />
             </TabsContent>
           </Tabs>
 

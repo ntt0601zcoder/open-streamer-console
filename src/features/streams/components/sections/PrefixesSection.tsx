@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// See InputsSection.tsx for rationale on `Control<any>`.
-import { type Control } from 'react-hook-form';
+// See InputsSection.tsx for rationale on reading `control` via useFormContext.
+import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StringListEditor } from '@/features/streams/components/StringListEditor';
 
@@ -9,7 +8,8 @@ import { StringListEditor } from '@/features/streams/components/StringListEditor
  * path prefixes auto-publish using this template. Form must have a
  * `prefixes` field array of `{ value: string }`.
  */
-export function PrefixesSection({ control }: { control: Control<any> }) {
+export function PrefixesSection() {
+  const { control } = useFormContext();
   return (
     <Card>
       <CardHeader>

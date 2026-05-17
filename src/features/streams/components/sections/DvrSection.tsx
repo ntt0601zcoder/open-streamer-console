@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// See InputsSection.tsx for rationale on `Control<any>`.
-import { useWatch, type Control } from 'react-hook-form';
+// See InputsSection.tsx for rationale on reading `control` via useFormContext.
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   FormControl,
@@ -14,7 +13,6 @@ import { Switch } from '@/components/ui/switch';
 import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 
 interface DvrSectionProps {
-  control: Control<any>;
   /**
    * The form field name to read for the storage-path placeholder substitution
    * (the placeholder shows `dvr/{streamCode}` rendered with the live code).
@@ -24,7 +22,8 @@ interface DvrSectionProps {
   codeFieldName?: string;
 }
 
-export function DvrSection({ control, codeFieldName = 'code' }: DvrSectionProps) {
+export function DvrSection({ codeFieldName = 'code' }: DvrSectionProps = {}) {
+  const { control } = useFormContext();
   const enabled = useWatch({ control, name: 'dvr.enabled' });
   const code = useWatch({ control, name: codeFieldName });
   const { data: defaults } = useConfigDefaults();

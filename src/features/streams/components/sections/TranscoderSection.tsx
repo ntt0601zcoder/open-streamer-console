@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// See InputsSection.tsx for rationale on `Control<any>` / `UseFormSetValue<any>`.
-import { useWatch, type Control, type UseFormSetValue } from 'react-hook-form';
+// See InputsSection.tsx for rationale on reading `control` via useFormContext.
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   FormControl,
@@ -55,17 +54,13 @@ const INTERLACE_OPTIONS: { value: string; label: string }[] = [
   { value: 'bff', label: 'BFF — bottom field first' },
 ];
 
-interface TranscoderSectionProps {
-  control: Control<any>;
-  setValue: UseFormSetValue<any>;
-}
-
 /**
  * Full transcoder editor — hardware/video/audio/extra args. Form must have a
  * `transcoder` object matching `transcoderFormSchema` (enabled, video, audio,
  * global, extra_args).
  */
-export function TranscoderSection({ control, setValue }: TranscoderSectionProps) {
+export function TranscoderSection() {
+  const { control, setValue } = useFormContext();
   const { data: serverConfig } = useServerConfig();
   const enabled = useWatch({ control, name: 'transcoder.enabled' });
   const videoCopy = useWatch({ control, name: 'transcoder.video.copy' });

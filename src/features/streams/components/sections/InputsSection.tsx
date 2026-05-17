@@ -1,18 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// `any` is intentional: these sections are shared between the Stream create
-// form and the Template editor. Both forms have an `inputs` top-level field
-// of the same shape, but the surrounding form values differ; threading
-// react-hook-form generics through every FormField + useFieldArray call
-// would add ~40 lines of casts for no runtime benefit.
+// Section is wrapped in a <FormProvider> at the call site (StreamCreatePage,
+// TemplateEditorPage). Reading `control` via useFormContext avoids the
+// invariance issue with passing `Control<SpecificForm>` into a generic
+// `Control<any>` prop — react-hook-form's invariant `ValidateForm<T>`
+// rejects the downcast on newer versions.
 import { Plus, Trash2 } from 'lucide-react';
-import { useFieldArray, type Control } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 
-export function InputsSection({ control }: { control: Control<any> }) {
+export function InputsSection() {
+  const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: 'inputs' });
 
   return (
