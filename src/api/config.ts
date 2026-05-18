@@ -120,6 +120,14 @@ export interface TranscoderConfig {
   ffmpeg_path?: string;
 }
 
+export interface WatermarksConfig {
+  /**
+   * Directory where uploaded watermark assets live. Must be writable by
+   * the open-streamer process. Empty = server default (`./watermarks`).
+   */
+  dir?: string;
+}
+
 export interface SessionsConfig {
   enabled?: boolean;
   /** Reserved for MaxMind/IP2Location integration (currently unused). */
@@ -141,6 +149,7 @@ export interface GlobalConfig {
   server?: AppServerConfig;
   transcoder?: TranscoderConfig;
   sessions?: SessionsConfig;
+  watermarks?: WatermarksConfig;
 }
 
 // ─── Version info ──────────────────────────────────────────────────────────────

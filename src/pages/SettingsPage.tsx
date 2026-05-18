@@ -122,6 +122,11 @@ const transcoderSchema = z.object({
 });
 type TranscoderValues = z.infer<typeof transcoderSchema>;
 
+const watermarksSchema = z.object({
+  dir: z.string().optional(),
+});
+type WatermarksValues = z.infer<typeof watermarksSchema>;
+
 const managerSchema = z.object({
   input_packet_timeout_sec: z.coerce.number().int().min(0).optional(),
 });
@@ -196,6 +201,7 @@ export function SettingsPage() {
           <TabsTrigger value="publisher-hls">HLS</TabsTrigger>
           <TabsTrigger value="publisher-dash">DASH</TabsTrigger>
           <TabsTrigger value="transcoder">Transcoder</TabsTrigger>
+          <TabsTrigger value="watermarks">Watermarks</TabsTrigger>
           <TabsTrigger value="manager">Manager</TabsTrigger>
           <TabsTrigger value="hooks">Hooks</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
@@ -220,6 +226,9 @@ export function SettingsPage() {
         </TabsContent>
         <TabsContent value="transcoder" className="mt-6">
           <TranscoderSection />
+        </TabsContent>
+        <TabsContent value="watermarks" className="mt-6">
+          <WatermarksSection />
         </TabsContent>
         <TabsContent value="manager" className="mt-6">
           <ManagerSection />
@@ -1283,6 +1292,77 @@ function TranscoderSection() {
           isPending={update.isPending}
           onDiscard={() => form.reset()}
           disabledReason={probeBlockReason}
+        />
+      </form>
+    </Form>
+  );
+}
+
+// ─── Watermarks section ────────────────────────────────────────────────────────
+
+function WatermarksSection() {
+  const { data: serverConfig } = useServerConfig();
+  const cfg = serverConfig?.global_config?.watermarks;
+  const update = useUpdateGlobalConfig();
+  const form = useForm<WatermarksValues>({
+    resolver: zodResolver(watermarksSchema),
+    values: { dir: cfg?.dir ?? '' },
+  });
+
+  function onSubmit(values: WatermarksValues) {
+    update.mutate(
+      { watermarks: { dir: values.dir || undefined } },
+      {
+        onSuccess: () => {
+          toast.success('Watermarks settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Watermark library</CardTitle>
+            <CardDescription>
+              Directory where uploaded watermark assets are stored. Streams reference assets by
+              filename — the server resolves the absolute path from this directory before passing
+              to the transcoder.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FormField
+              control={form.control}
+              name="dir"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assets directory</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="./watermarks"
+                      className="placeholder:italic"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Absolute or process-relative path. Must be writable by the open-streamer
+                    process. Empty = server default <code>./watermarks</code>. Existing assets
+                    are not migrated when this path changes — move files manually.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
         />
       </form>
     </Form>
