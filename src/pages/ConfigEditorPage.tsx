@@ -172,8 +172,8 @@ export function ConfigEditorPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Config editor</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Edit the full system configuration (global, streams, hooks) as a single YAML document.
-            Changes are applied immediately on save.
+            Edit the full system configuration (global, streams, templates, hooks, vod) as a
+            single YAML document. Changes are applied immediately on save.
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
