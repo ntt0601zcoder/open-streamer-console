@@ -1,8 +1,9 @@
-import { ChevronRight, Layers, Loader2, Play, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronRight, Layers, Loader2, Play, RefreshCw, Trash2, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Stream } from '@/api/types';
+import { StreamSource } from '@/api/types';
 import { useRestartStream } from '@/features/streams/hooks/useStreams';
 import { StreamActionConfirmDialog } from '../StreamActionConfirmDialog';
 import { StreamStatusBadge } from '../StreamStatusBadge';
@@ -45,6 +46,16 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
                 {stream.template}
               </Badge>
             </Link>
+          )}
+          {stream.source === StreamSource.runtime && (
+            <Badge
+              variant="outline"
+              className="gap-1 border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300"
+              title="Materialised by auto-publish — config is not persisted and cannot be edited."
+            >
+              <Zap className="h-3 w-3" />
+              runtime
+            </Badge>
           )}
         </div>
 

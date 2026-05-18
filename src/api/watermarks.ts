@@ -3,26 +3,28 @@ import type { DataResponse, WatermarkAsset, WatermarkAssetListResponse } from '.
 
 export interface UploadWatermarkInput {
   file: File;
-  /** Optional display name. Defaults to the original filename on the server. */
-  name?: string;
+}
+
+// Asset identifier is the on-disk filename (e.g. "logo.png") — the server
+// uses it as both the URL slug and the value of WatermarkConfig.filename.
+function encodeFilename(filename: string): string {
+  return encodeURIComponent(filename);
 }
 
 export const watermarksApi = {
   list: () => api.get('watermarks').json<WatermarkAssetListResponse>(),
 
-  get: (id: string) => api.get(`watermarks/${id}`).json<DataResponse<WatermarkAsset>>(),
+  get: (filename: string) =>
+    api.get(`watermarks/${encodeFilename(filename)}`).json<DataResponse<WatermarkAsset>>(),
 
-  upload: ({ file, name }: UploadWatermarkInput) => {
+  upload: ({ file }: UploadWatermarkInput) => {
     const body = new FormData();
     body.append('file', file);
-    const searchParams = name ? { name } : undefined;
-    return api
-      .post('watermarks', { body, searchParams })
-      .json<DataResponse<WatermarkAsset>>();
+    return api.post('watermarks', { body }).json<DataResponse<WatermarkAsset>>();
   },
 
-  delete: (id: string) => api.delete(`watermarks/${id}`),
+  delete: (filename: string) => api.delete(`watermarks/${encodeFilename(filename)}`),
 
   /** Direct binary URL — usable as <img src={...}> for previews. */
-  rawUrl: (id: string) => `${BASE_URL}/watermarks/${id}/raw`,
+  rawUrl: (filename: string) => `${BASE_URL}/watermarks/${encodeFilename(filename)}/raw`,
 };

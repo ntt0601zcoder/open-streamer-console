@@ -8,6 +8,15 @@ export const StreamStatus = {
 } as const;
 export type StreamStatus = (typeof StreamStatus)[keyof typeof StreamStatus];
 
+// Tags whether a Stream record was persisted in the config store or
+// materialised on the fly by auto-publish (template-prefix match).
+// Runtime streams have no on-disk config, so the UI must forbid edits.
+export const StreamSource = {
+  config: 'config',
+  runtime: 'runtime',
+} as const;
+export type StreamSource = (typeof StreamSource)[keyof typeof StreamSource];
+
 export const PushStatus = {
   idle: 'idle',
   connecting: 'connecting',
@@ -276,9 +285,12 @@ export interface WatermarkConfig {
   enabled?: boolean;
   type?: WatermarkType;
   text?: string;
-  /** Reference to a WatermarkAsset uploaded via /watermarks. Wins over image_path. */
-  asset_id?: string;
-  /** Absolute path to an image pre-staged on the host. Mutually exclusive with asset_id. */
+  /**
+   * On-disk basename of a WatermarkAsset uploaded via /watermarks. Wins over
+   * image_path. Server resolves this to a full path at pipeline start.
+   */
+  filename?: string;
+  /** Absolute path to an image pre-staged on the host. Mutually exclusive with `filename`. */
   image_path?: string;
   position?: WatermarkPosition;
   opacity?: number;
@@ -302,11 +314,13 @@ export interface WatermarkConfig {
 }
 
 export interface WatermarkAsset {
-  id: string;
-  name: string;
-  file_name: string;
+  /** On-disk basename. Stable identifier referenced by WatermarkConfig.filename. */
+  filename: string;
+  /** MIME type sniffed at upload time (e.g. "image/png"). */
   content_type: string;
+  /** File size in bytes. */
   size_bytes: number;
+  /** ISO timestamp of the file's mtime in UTC. */
   uploaded_at: string;
 }
 
@@ -447,6 +461,11 @@ export interface Stream {
    * resolves the merged view in `GET /streams/:code`.
    */
   template?: string;
+  /**
+   * Tag indicating whether the stream is persisted config or a runtime
+   * record materialised by auto-publish. Runtime streams cannot be edited.
+   */
+  source?: StreamSource;
   runtime?: StreamRuntime;
   created_at?: string;
   updated_at?: string;

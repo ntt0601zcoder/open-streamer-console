@@ -31,6 +31,10 @@ import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import {
+  RuntimeReadOnlyBanner,
+  isRuntimeStream,
+} from '@/features/streams/components/detail/RuntimeReadOnlyBanner';
+import {
   cleanExtraArgs,
   transcoderFormSchema,
   type TranscoderFormValues,
@@ -211,9 +215,12 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
       ? String(defaults.transcoder.audio.bitrate_k)
       : 'default';
 
+  const readOnly = isRuntimeStream(stream.source);
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.transcoder && (
           <InheritedSectionNotice
             templateCode={stream.template}
@@ -221,6 +228,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
+        <fieldset disabled={readOnly} className="contents">
         {/* Master toggle */}
         <Card>
           <CardHeader>
@@ -642,21 +650,24 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             </Card>
           </>
         )}
+        </fieldset>
 
-        <div className="flex justify-end gap-2">
-          {form.formState.isDirty && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset(toFormValues(stream))}
-            >
-              Discard
+        {!readOnly && (
+          <div className="flex justify-end gap-2">
+            {form.formState.isDirty && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset(toFormValues(stream))}
+              >
+                Discard
+              </Button>
+            )}
+            <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
+              {update.isPending ? 'Saving…' : 'Save changes'}
             </Button>
-          )}
-          <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
-            {update.isPending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </div>
+          </div>
+        )}
       </form>
     </Form>
   );

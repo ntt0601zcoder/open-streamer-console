@@ -159,7 +159,7 @@ export const watermarkFormSchema = z.object({
   enabled: z.boolean(),
   type: z.enum(['text', 'image']),
   text: z.string(),
-  asset_id: z.string(),
+  filename: z.string(),
   image_path: z.string(),
   position: z.enum(['top_left', 'top_right', 'bottom_left', 'bottom_right', 'center', 'custom']),
   opacity: z.coerce.number().min(0).max(1).optional(),

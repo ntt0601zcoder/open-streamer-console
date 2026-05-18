@@ -26,6 +26,10 @@ import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
+import {
+  RuntimeReadOnlyBanner,
+  isRuntimeStream,
+} from '@/features/streams/components/detail/RuntimeReadOnlyBanner';
 import { outputFormSchema, type OutputFormValues } from '@/features/streams/schemas';
 import { copyText } from '@/lib/clipboard';
 import { formatDurationSince } from '@/lib/format';
@@ -145,9 +149,12 @@ export function OutputTab({ stream }: OutputTabProps) {
     );
   }
 
+  const readOnly = isRuntimeStream(stream.source);
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.protocols && (
           <InheritedSectionNotice
             templateCode={stream.template}
@@ -162,6 +169,7 @@ export function OutputTab({ stream }: OutputTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
+        <fieldset disabled={readOnly} className="contents">
         {/* Protocols + URLs (combined) */}
         <Card>
           <CardHeader>
@@ -288,21 +296,24 @@ export function OutputTab({ stream }: OutputTabProps) {
             ))}
           </CardContent>
         </Card>
+        </fieldset>
 
-        <div className="flex justify-end gap-2">
-          {form.formState.isDirty && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset(toFormValues(stream))}
-            >
-              Discard
+        {!readOnly && (
+          <div className="flex justify-end gap-2">
+            {form.formState.isDirty && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset(toFormValues(stream))}
+              >
+                Discard
+              </Button>
+            )}
+            <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
+              {update.isPending ? 'Saving…' : 'Save changes'}
             </Button>
-          )}
-          <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
-            {update.isPending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </div>
+          </div>
+        )}
       </form>
     </Form>
   );

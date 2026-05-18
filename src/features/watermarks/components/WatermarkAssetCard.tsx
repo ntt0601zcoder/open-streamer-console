@@ -29,18 +29,18 @@ export function WatermarkAssetCard({ asset }: WatermarkAssetCardProps) {
   const remove = useDeleteWatermark();
 
   function handleDelete() {
-    remove.mutate(asset.id, {
+    remove.mutate(asset.filename, {
       onSuccess: () => {
-        toast.success(`Deleted "${asset.name}"`);
+        toast.success(`Deleted "${asset.filename}"`);
         setConfirmOpen(false);
       },
       onError: (err) => toast.error(err instanceof Error ? err.message : 'Delete failed'),
     });
   }
 
-  async function handleCopyId() {
-    const ok = await copyText(asset.id);
-    toast[ok ? 'success' : 'error'](ok ? 'Asset ID copied' : 'Copy failed');
+  async function handleCopyFilename() {
+    const ok = await copyText(asset.filename);
+    toast[ok ? 'success' : 'error'](ok ? 'Filename copied' : 'Copy failed');
   }
 
   return (
@@ -48,21 +48,19 @@ export function WatermarkAssetCard({ asset }: WatermarkAssetCardProps) {
       <Card className="overflow-hidden">
         <div className="aspect-video bg-[repeating-conic-gradient(#888_0_25%,_#aaa_0_50%)] bg-[length:16px_16px] dark:bg-[repeating-conic-gradient(#333_0_25%,_#555_0_50%)]">
           <img
-            src={watermarksApi.rawUrl(asset.id)}
-            alt={asset.name}
+            src={watermarksApi.rawUrl(asset.filename)}
+            alt={asset.filename}
             className="h-full w-full object-contain"
             loading="lazy"
           />
         </div>
         <CardContent className="space-y-2 p-3">
-          <div className="space-y-0.5">
-            <p className="truncate text-sm font-medium" title={asset.name}>
-              {asset.name}
-            </p>
-            <p className="truncate text-xs text-muted-foreground" title={asset.file_name}>
-              {asset.file_name}
-            </p>
-          </div>
+          <p
+            className="truncate text-sm font-medium font-mono"
+            title={asset.filename}
+          >
+            {asset.filename}
+          </p>
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
             <span>{formatBytes(asset.size_bytes)}</span>
             <span>{formatRelativeIso(asset.uploaded_at)}</span>
@@ -75,13 +73,13 @@ export function WatermarkAssetCard({ asset }: WatermarkAssetCardProps) {
                   size="sm"
                   variant="outline"
                   className="h-7 flex-1 font-mono text-[10px]"
-                  onClick={() => void handleCopyId()}
+                  onClick={() => void handleCopyFilename()}
                 >
                   <Copy className="mr-1 h-3 w-3" />
-                  {asset.id.slice(0, 10)}…
+                  Copy filename
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Copy asset ID — {asset.id}</TooltipContent>
+              <TooltipContent>Copy filename — {asset.filename}</TooltipContent>
             </Tooltip>
             <Button
               type="button"
@@ -100,7 +98,7 @@ export function WatermarkAssetCard({ asset }: WatermarkAssetCardProps) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete watermark "{asset.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>Delete watermark "{asset.filename}"?</AlertDialogTitle>
             <AlertDialogDescription>
               Streams currently referencing this asset will fail to apply the overlay until they
               are reconfigured. This cannot be undone.

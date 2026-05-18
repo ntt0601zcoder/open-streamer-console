@@ -42,6 +42,10 @@ import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
 import {
+  RuntimeReadOnlyBanner,
+  isRuntimeStream,
+} from '@/features/streams/components/detail/RuntimeReadOnlyBanner';
+import {
   watermarkFormSchema,
   type WatermarkFormValues,
 } from '@/features/streams/schemas';
@@ -68,7 +72,7 @@ function toFormValues(stream: Stream): WatermarkFormValues {
     enabled: w?.enabled ?? false,
     type: w?.type ?? WatermarkType.image,
     text: w?.text ?? '',
-    asset_id: w?.asset_id ?? '',
+    filename: w?.filename ?? '',
     image_path: w?.image_path ?? '',
     position: w?.position ?? WatermarkPosition.bottom_right,
     opacity: w?.opacity,
@@ -97,7 +101,7 @@ function toApiBody(v: WatermarkFormValues): WatermarkConfig {
     if (v.font_file) out.font_file = v.font_file;
     if (v.font_color) out.font_color = v.font_color;
   } else {
-    if (v.asset_id) out.asset_id = v.asset_id;
+    if (v.filename) out.filename = v.filename;
     else if (v.image_path) out.image_path = v.image_path;
   }
 
@@ -131,9 +135,9 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
   const enabled = useWatch({ control: form.control, name: 'enabled' });
   const type = useWatch({ control: form.control, name: 'type' });
   const position = useWatch({ control: form.control, name: 'position' });
-  const assetId = useWatch({ control: form.control, name: 'asset_id' });
+  const assetFilename = useWatch({ control: form.control, name: 'filename' });
 
-  const selectedAsset = assets?.find((a) => a.id === assetId);
+  const selectedAsset = assets?.find((a) => a.filename === assetFilename);
 
   function onSubmit(values: WatermarkFormValues) {
     if (!form.formState.isDirty) {
@@ -153,9 +157,12 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
     );
   }
 
+  const readOnly = isRuntimeStream(stream.source);
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.watermark && (
           <InheritedSectionNotice
             templateCode={stream.template}
@@ -163,14 +170,17 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            Saving any change here <strong>restarts the transcoder</strong>. Live viewers will
-            see a brief drop until encoding resumes.
-          </p>
-        </div>
+        {!readOnly && (
+          <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              Saving any change here <strong>restarts the transcoder</strong>. Live viewers will
+              see a brief drop until encoding resumes.
+            </p>
+          </div>
+        )}
 
+        <fieldset disabled={readOnly} className="contents">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -228,7 +238,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="asset_id"
+                    name="filename"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Asset from library</FormLabel>
@@ -250,8 +260,8 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                               </span>
                             </SelectItem>
                             {(assets ?? []).map((a) => (
-                              <SelectItem key={a.id} value={a.id}>
-                                {a.name}
+                              <SelectItem key={a.filename} value={a.filename}>
+                                {a.filename}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -280,12 +290,12 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                         <FormControl>
                           <Input
                             placeholder="/var/lib/open-streamer/logos/foo.png"
-                            disabled={!!assetId}
+                            disabled={!!assetFilename}
                             {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                          {assetId
+                          {assetFilename
                             ? 'Ignored — asset above takes precedence.'
                             : 'Absolute path to a host-staged image. PNG with alpha recommended.'}
                         </FormDescription>
@@ -299,8 +309,8 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                       <p className="mb-2 text-xs text-muted-foreground">Preview</p>
                       <div className="inline-block rounded-md border bg-[repeating-conic-gradient(#888_0_25%,_#aaa_0_50%)] bg-[length:16px_16px] p-3 dark:bg-[repeating-conic-gradient(#333_0_25%,_#555_0_50%)]">
                         <img
-                          src={watermarksApi.rawUrl(selectedAsset.id)}
-                          alt={selectedAsset.name}
+                          src={watermarksApi.rawUrl(selectedAsset.filename)}
+                          alt={selectedAsset.filename}
                           className="max-h-32 object-contain"
                         />
                       </div>
@@ -561,21 +571,24 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
             </CardHeader>
           </Card>
         )}
+        </fieldset>
 
-        <div className="flex justify-end gap-2">
-          {form.formState.isDirty && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset(toFormValues(stream))}
-            >
-              Discard
+        {!readOnly && (
+          <div className="flex justify-end gap-2">
+            {form.formState.isDirty && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset(toFormValues(stream))}
+              >
+                Discard
+              </Button>
+            )}
+            <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
+              {update.isPending ? 'Saving…' : 'Save changes'}
             </Button>
-          )}
-          <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
-            {update.isPending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </div>
+          </div>
+        )}
       </form>
     </Form>
   );

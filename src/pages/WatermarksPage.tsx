@@ -66,7 +66,7 @@ export function WatermarksPage() {
       {assets.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {assets.map((asset) => (
-            <WatermarkAssetCard key={asset.id} asset={asset} />
+            <WatermarkAssetCard key={asset.filename} asset={asset} />
           ))}
         </div>
       )}

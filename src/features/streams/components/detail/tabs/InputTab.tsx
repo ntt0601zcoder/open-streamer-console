@@ -27,6 +27,10 @@ import { InputSwitchHistory } from '@/features/streams/components/InputSwitchHis
 import { KeyValueListEditor } from '@/features/streams/components/KeyValueListEditor';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
 import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
+import {
+  RuntimeReadOnlyBanner,
+  isRuntimeStream,
+} from '@/features/streams/components/detail/RuntimeReadOnlyBanner';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { inputsFormSchema, parsePids, type InputsFormValues } from '@/features/streams/schemas';
 
@@ -114,9 +118,12 @@ export function InputTab({ stream }: InputTabProps) {
     append({ url: '', priority: fields.length });
   }
 
+  const readOnly = isRuntimeStream(stream.source);
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {readOnly && <RuntimeReadOnlyBanner />}
         {tplState.inherited.inputs && stream.template && (
           <InheritedSectionNotice
             templateCode={stream.template}
@@ -124,6 +131,7 @@ export function InputTab({ stream }: InputTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
+        <fieldset disabled={readOnly} className="contents">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -192,21 +200,24 @@ export function InputTab({ stream }: InputTabProps) {
         {stream.runtime?.switches && stream.runtime.switches.length > 0 && (
           <InputSwitchHistory switches={stream.runtime.switches} />
         )}
+        </fieldset>
 
-        <div className="flex justify-end gap-2">
-          {form.formState.isDirty && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset(toFormValues(stream))}
-            >
-              Discard
+        {!readOnly && (
+          <div className="flex justify-end gap-2">
+            {form.formState.isDirty && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset(toFormValues(stream))}
+              >
+                Discard
+              </Button>
+            )}
+            <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
+              {update.isPending ? 'Saving…' : 'Save changes'}
             </Button>
-          )}
-          <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
-            {update.isPending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </div>
+          </div>
+        )}
       </form>
     </Form>
   );

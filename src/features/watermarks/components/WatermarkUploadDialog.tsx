@@ -25,7 +25,6 @@ interface WatermarkUploadDialogProps {
 
 export function WatermarkUploadDialog({ open, onOpenChange }: WatermarkUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [name, setName] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const upload = useUploadWatermark();
@@ -43,7 +42,6 @@ export function WatermarkUploadDialog({ open, onOpenChange }: WatermarkUploadDia
   useEffect(() => {
     if (!open) {
       setFile(null);
-      setName('');
       if (inputRef.current) inputRef.current.value = '';
     }
   }, [open]);
@@ -63,10 +61,10 @@ export function WatermarkUploadDialog({ open, onOpenChange }: WatermarkUploadDia
   function handleSubmit() {
     if (!file) return;
     upload.mutate(
-      { file, name: name.trim() || undefined },
+      { file },
       {
         onSuccess: (res) => {
-          toast.success(`Uploaded "${res.data.name}"`);
+          toast.success(`Uploaded "${res.data.filename}"`);
           onOpenChange(false);
         },
         onError: (err) => toast.error(err instanceof Error ? err.message : 'Upload failed'),
@@ -110,16 +108,6 @@ export function WatermarkUploadDialog({ open, onOpenChange }: WatermarkUploadDia
               />
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="watermark-name">Display name (optional)</Label>
-            <Input
-              id="watermark-name"
-              placeholder={file?.name ?? 'Defaults to file name'}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
         </div>
 
         <DialogFooter>

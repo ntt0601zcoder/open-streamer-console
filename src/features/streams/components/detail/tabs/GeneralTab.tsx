@@ -27,6 +27,10 @@ import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { InheritedSectionNotice } from '@/features/streams/components/detail/InheritedSectionNotice';
+import {
+  RuntimeReadOnlyBanner,
+  isRuntimeStream,
+} from '@/features/streams/components/detail/RuntimeReadOnlyBanner';
 import { generalSchema, type GeneralFormValues } from '@/features/streams/schemas';
 import { useTemplates } from '@/features/templates/hooks/useTemplates';
 import { Link } from 'react-router-dom';
@@ -109,9 +113,12 @@ export function GeneralTab({ stream }: GeneralTabProps) {
     .filter(([, v]) => v)
     .map(([k]) => k);
 
+  const readOnly = isRuntimeStream(stream.source);
+
   return (
     <Form {...form}>
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.general && (
           <InheritedSectionNotice
             templateCode={stream.template}
@@ -119,6 +126,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
+        <fieldset disabled={readOnly} className="contents">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Basic info</CardTitle>
@@ -250,20 +258,24 @@ export function GeneralTab({ stream }: GeneralTabProps) {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-2">
-          {form.formState.isDirty && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset(toFormValues(stream))}
-            >
-              Discard
+        </fieldset>
+
+        {!readOnly && (
+          <div className="flex justify-end gap-2">
+            {form.formState.isDirty && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset(toFormValues(stream))}
+              >
+                Discard
+              </Button>
+            )}
+            <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
+              {update.isPending ? 'Saving…' : 'Save changes'}
             </Button>
-          )}
-          <Button type="submit" disabled={update.isPending || !form.formState.isDirty}>
-            {update.isPending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </div>
+          </div>
+        )}
       </form>
     </Form>
   );
