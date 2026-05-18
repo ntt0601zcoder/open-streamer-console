@@ -286,12 +286,13 @@ export interface WatermarkConfig {
   type?: WatermarkType;
   text?: string;
   /**
-   * On-disk basename of a WatermarkAsset uploaded via /watermarks. Wins over
-   * image_path. Server resolves this to a full path at pipeline start.
+   * On-disk basename of a WatermarkAsset uploaded via /watermarks. Required
+   * for image watermarks — the server resolves it to an absolute path at
+   * pipeline start. The previous free-form `image_path` field is no longer
+   * accepted on the wire (server tagged it `json:"-"` to prevent operators
+   * from pointing at arbitrary paths).
    */
   filename?: string;
-  /** Absolute path to an image pre-staged on the host. Mutually exclusive with `filename`. */
-  image_path?: string;
   position?: WatermarkPosition;
   opacity?: number;
   font_size?: number;

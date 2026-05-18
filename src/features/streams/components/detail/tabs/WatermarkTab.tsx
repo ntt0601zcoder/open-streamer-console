@@ -73,7 +73,6 @@ function toFormValues(stream: Stream): WatermarkFormValues {
     type: w?.type ?? WatermarkType.image,
     text: w?.text ?? '',
     filename: w?.filename ?? '',
-    image_path: w?.image_path ?? '',
     position: w?.position ?? WatermarkPosition.bottom_right,
     opacity: w?.opacity,
     font_size: w?.font_size,
@@ -102,7 +101,6 @@ function toApiBody(v: WatermarkFormValues): WatermarkConfig {
     if (v.font_color) out.font_color = v.font_color;
   } else {
     if (v.filename) out.filename = v.filename;
-    else if (v.image_path) out.image_path = v.image_path;
   }
 
   if (v.position === WatermarkPosition.custom) {
@@ -240,7 +238,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                     control={form.control}
                     name="filename"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="sm:col-span-2">
                         <FormLabel>Asset from library</FormLabel>
                         <Select
                           value={field.value || NO_ASSET}
@@ -256,7 +254,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                           <SelectContent>
                             <SelectItem value={NO_ASSET}>
                               <span className="text-muted-foreground">
-                                — None (use file path) —
+                                — None —
                               </span>
                             </SelectItem>
                             {(assets ?? []).map((a) => (
@@ -267,37 +265,14 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Manage assets in{' '}
+                          Upload assets in the{' '}
                           <Link
                             to="/watermarks"
                             className="underline underline-offset-2 hover:text-foreground"
                           >
                             Watermarks library
                           </Link>
-                          .
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="image_path"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image path (fallback)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="/var/lib/open-streamer/logos/foo.png"
-                            disabled={!!assetFilename}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {assetFilename
-                            ? 'Ignored — asset above takes precedence.'
-                            : 'Absolute path to a host-staged image. PNG with alpha recommended.'}
+                          . Required when type is image.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
