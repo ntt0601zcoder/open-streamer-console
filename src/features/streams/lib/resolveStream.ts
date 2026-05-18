@@ -1,4 +1,4 @@
-import type { OutputProtocols, Stream, Template } from '@/api/types';
+import type { Stream, Template } from '@/api/types';
 
 /**
  * Apply the same template merge the server performs in `domain.ResolveStream`
@@ -13,8 +13,9 @@ import type { OutputProtocols, Stream, Template } from '@/api/types';
  * Merge rules (mirror domain.ResolveStream):
  *   - string scalars: empty stream value falls back to template
  *   - slices: length 0 falls back to template
- *   - pointer fields (transcoder, dvr, watermark, thumbnail): nil falls back
- *   - protocols struct: all booleans false falls back
+ *   - pointer fields (protocols, transcoder, dvr, watermark, thumbnail):
+ *     nil/undefined falls back. A non-nil empty struct (e.g. all-false
+ *     protocols) is an EXPLICIT empty — no inheritance.
  */
 export function resolveStream(stream: Stream, template: Template | null): Stream {
   if (!template) return stream;
@@ -30,7 +31,9 @@ export function resolveStream(stream: Stream, template: Template | null): Stream
     out.inputs = template.inputs;
   }
   if (!out.transcoder && template.transcoder) out.transcoder = template.transcoder;
-  if (!hasAnyProtocol(out.protocols) && hasAnyProtocol(template.protocols)) {
+  // protocols is a pointer type on the server (apidocs.StreamResponse.protocols).
+  // nil/undefined → inherit; any present struct (even all-false) is explicit.
+  if (out.protocols == null && template.protocols) {
     out.protocols = template.protocols;
   }
   if ((out.push?.length ?? 0) === 0 && (template.push?.length ?? 0) > 0) {
@@ -41,8 +44,4 @@ export function resolveStream(stream: Stream, template: Template | null): Stream
   if (!out.thumbnail && template.thumbnail) out.thumbnail = template.thumbnail;
 
   return out;
-}
-
-function hasAnyProtocol(p: OutputProtocols | undefined): boolean {
-  return !!(p && (p.hls || p.dash || p.rtmp || p.rtsp || p.srt || p.mpegts));
 }

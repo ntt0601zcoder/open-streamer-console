@@ -146,9 +146,10 @@ function protocolsInherits(
   s: OutputProtocols | undefined,
   t: OutputProtocols | undefined,
 ): boolean {
+  // `protocols` is a pointer on the server: nil/undefined means inherit;
+  // a present struct (even with all-false toggles) is an explicit override.
   if (!t) return false;
   const tplAny = !!(t.hls || t.dash || t.rtmp || t.rtsp || t.srt || t.mpegts);
   if (!tplAny) return false;
-  const streamAny = !!(s && (s.hls || s.dash || s.rtmp || s.rtsp || s.srt || s.mpegts));
-  return !streamAny;
+  return s == null;
 }
