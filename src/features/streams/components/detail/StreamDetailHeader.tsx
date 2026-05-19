@@ -1,10 +1,12 @@
-import { ChevronRight, Layers, Loader2, Play, RefreshCw, Trash2, Zap } from 'lucide-react';
+import { ChevronRight, Clock, Layers, Loader2, Play, RefreshCw, Trash2, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Stream } from '@/api/types';
 import { StreamSource } from '@/api/types';
 import { useRestartStream } from '@/features/streams/hooks/useStreams';
+import { formatDurationSec } from '@/lib/format';
 import { StreamActionConfirmDialog } from '../StreamActionConfirmDialog';
 import { StreamStatusBadge } from '../StreamStatusBadge';
 
@@ -16,6 +18,8 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
   const restart = useRestartStream();
   const status = stream.runtime?.status;
   const isRunning = status === 'active' || status === 'degraded';
+  const uptimeSec = stream.runtime?.uptime_sec;
+  const startedAt = stream.runtime?.started_at;
 
   return (
     <div className="flex flex-col gap-3">
@@ -56,6 +60,23 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
               <Zap className="h-3 w-3" />
               runtime
             </Badge>
+          )}
+          {isRunning && uptimeSec != null && uptimeSec > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className="gap-1 font-mono text-[10px] text-muted-foreground"
+                >
+                  <Clock className="h-3 w-3" />
+                  {formatDurationSec(uptimeSec)}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Pipeline live since{' '}
+                {startedAt ? new Date(startedAt).toLocaleString() : 'unknown'}
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 

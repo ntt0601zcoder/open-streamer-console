@@ -39,15 +39,26 @@ export function formatDurationSince(iso: string | undefined | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  const diffSec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
-  if (diffSec < 60) return `${diffSec}s`;
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
-  if (diffSec < 86400) {
-    const h = Math.floor(diffSec / 3600);
-    const m = Math.floor((diffSec % 3600) / 60);
+  return formatDurationSec(Math.floor((Date.now() - d.getTime()) / 1000));
+}
+
+/**
+ * Compact duration formatter for an already-known elapsed-seconds value.
+ * Prefer this over `formatDurationSince` when the server precomputes the
+ * duration (e.g. `runtime.uptime_sec`) so the displayed value doesn't drift
+ * with the operator's clock skew.
+ */
+export function formatDurationSec(seconds: number | undefined | null): string {
+  if (seconds == null || !Number.isFinite(seconds)) return '—';
+  const s = Math.max(0, Math.floor(seconds));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   }
-  const d_ = Math.floor(diffSec / 86400);
-  const h = Math.floor((diffSec % 86400) / 3600);
-  return h > 0 ? `${d_}d ${h}h` : `${d_}d`;
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  return h > 0 ? `${d}d ${h}h` : `${d}d`;
 }

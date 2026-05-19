@@ -440,6 +440,10 @@ export interface StreamRuntime {
   switches?: SwitchEvent[];
   /** UI-friendly summary of input → output track shape for the dashboard. */
   media?: MediaSummary;
+  /** Wallclock RFC3339 timestamp the pipeline first went live. Empty when idle/stopped. */
+  started_at?: string;
+  /** Precomputed elapsed seconds since `started_at` at the time of the response. */
+  uptime_sec?: number;
 }
 
 export interface Stream {
