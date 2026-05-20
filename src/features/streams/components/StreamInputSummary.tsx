@@ -27,10 +27,12 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
   }
 
   const activeInput = activeIndex !== null ? inputs[activeIndex] : inputs[0];
-  // Bitrate snapshot for the currently-active input. Server reports per-input
-  // health under `stream.runtime.inputs[i]` indexed by input priority.
+  // Bitrate snapshot for the active input. Each runtime entry tags itself
+  // with `input_priority`, so look it up by that — array order is not
+  // guaranteed to mirror the config-side `inputs` order.
+  const effectivePriority = activeIndex ?? 0;
   const activeRuntime =
-    activeIndex != null ? runtimeInputs?.[activeIndex] : (runtimeInputs?.[0] ?? undefined);
+    runtimeInputs?.find((r) => r.input_priority === effectivePriority) ?? runtimeInputs?.[0];
   const activeBitrateKbps = activeRuntime?.bitrate_kbps;
 
   function handleSwitch(priority: number, e: React.MouseEvent) {
@@ -75,8 +77,18 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
             />
           ))}
         </div>
-        {isStreamLive && activeBitrateKbps != null && activeBitrateKbps > 0 && (
-          <span className="font-mono text-[11px] text-muted-foreground">
+        {isStreamLive && activeBitrateKbps != null && (
+          // Render even when 0 kbps — a stale "no traffic" reading on a green
+          // dot is itself diagnostic. The amber tint flags zero so operators
+          // notice without having to read the digits.
+          <span
+            className={cn(
+              'font-mono text-[11px]',
+              activeBitrateKbps > 0
+                ? 'text-muted-foreground'
+                : 'text-amber-600 dark:text-amber-400',
+            )}
+          >
             {formatBitrateKbps(activeBitrateKbps)}
           </span>
         )}
