@@ -27,6 +27,11 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
   }
 
   const activeInput = activeIndex !== null ? inputs[activeIndex] : inputs[0];
+  // Bitrate snapshot for the currently-active input. Server reports per-input
+  // health under `stream.runtime.inputs[i]` indexed by input priority.
+  const activeRuntime =
+    activeIndex != null ? runtimeInputs?.[activeIndex] : (runtimeInputs?.[0] ?? undefined);
+  const activeBitrateKbps = activeRuntime?.bitrate_kbps;
 
   function handleSwitch(priority: number, e: React.MouseEvent) {
     e.stopPropagation();
@@ -43,31 +48,53 @@ export function StreamInputSummary({ stream }: StreamInputSummaryProps) {
 
   return (
     <div className="space-y-1">
-      {/* Input URL */}
+      {/* Input URL — full URL preserved (CSS handles overflow); hover for the
+          untruncated form. Keeping port + query + userinfo visible matters for
+          UDP/SRT sources where `?fifo_size=...` and `iface@host:port` change
+          ingest behaviour. */}
       <span
-        className="block max-w-[220px] truncate font-mono text-xs text-muted-foreground"
+        className="block max-w-[260px] truncate font-mono text-xs text-muted-foreground"
         title={activeInput?.url}
       >
-        {shortenUrl(activeInput?.url ?? '')}
+        {activeInput?.url ?? ''}
       </span>
 
-      {/* Input dots */}
-      <div className="flex items-center gap-1">
-        {inputs.map((inp, i) => (
-          <InputDot
-            key={i}
-            input={inp}
-            runtime={runtimeInputs?.[i]}
-            index={i}
-            isActive={i === activeIndex}
-            canSwitch={isStreamLive && i !== activeIndex}
-            isPending={switchInput.isPending && switchInput.variables?.priority === i}
-            onClick={(e) => handleSwitch(i, e)}
-          />
-        ))}
+      {/* Input dots + active bitrate */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {inputs.map((inp, i) => (
+            <InputDot
+              key={i}
+              input={inp}
+              runtime={runtimeInputs?.[i]}
+              index={i}
+              isActive={i === activeIndex}
+              canSwitch={isStreamLive && i !== activeIndex}
+              isPending={switchInput.isPending && switchInput.variables?.priority === i}
+              onClick={(e) => handleSwitch(i, e)}
+            />
+          ))}
+        </div>
+        {isStreamLive && activeBitrateKbps != null && activeBitrateKbps > 0 && (
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {formatBitrateKbps(activeBitrateKbps)}
+          </span>
+        )}
       </div>
     </div>
   );
+}
+
+/**
+ * Compact bitrate label for the active input. Values are normalised so the
+ * row stays tight even when the source emits multi-Mbps streams.
+ *   600 kbps → "600 kbps"
+ *   6491 kbps → "6.49 Mbps"
+ */
+function formatBitrateKbps(kbps: number): string {
+  if (!Number.isFinite(kbps) || kbps <= 0) return '—';
+  if (kbps < 1000) return `${kbps} kbps`;
+  return `${(kbps / 1000).toFixed(2)} Mbps`;
 }
 
 interface InputDotProps {
@@ -152,11 +179,3 @@ function InputDot({
   );
 }
 
-function shortenUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/(.{35}).*$/, '$1…');
-  } catch {
-    return url.length > 38 ? url.slice(0, 38) + '…' : url;
-  }
-}
