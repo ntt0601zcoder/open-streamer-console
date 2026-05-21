@@ -1,8 +1,12 @@
+import { Send, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Stream } from '@/api/types';
+import { StreamStatus } from '@/api/types';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
+import { cn } from '@/lib/utils';
 import { RuntimeErrorIndicator } from './RuntimeErrorIndicator';
 import { StreamInputSummary } from './StreamInputSummary';
 import { StreamQuickView } from './StreamQuickView';
@@ -10,9 +14,11 @@ import { StreamStatusBadge } from './StreamStatusBadge';
 
 interface StreamRowProps {
   stream: Stream;
+  /** Active watcher count for this stream — supplied by the page-level session query. */
+  watchers?: number;
 }
 
-export function StreamRow({ stream }: StreamRowProps) {
+export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
   const navigate = useNavigate();
   const detailPath = `/streams/${stream.code}`;
 
@@ -31,6 +37,10 @@ export function StreamRow({ stream }: StreamRowProps) {
   const activePushCount =
     stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active').length ?? 0;
   const totalPushCount = resolved.push?.filter((p) => p.enabled).length ?? 0;
+
+  const streamStatus = stream.runtime?.status;
+  const isRunning =
+    streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
 
   // Transcode summary. The Go server emits empty strings for unset enum fields
   // (codec: "" instead of omitting), so treat both as "no codec set" and let the
@@ -172,10 +182,43 @@ export function StreamRow({ stream }: StreamRowProps) {
           ) : (
             <span className="text-xs text-muted-foreground">No output</span>
           )}
-          {totalPushCount > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Push: {activePushCount}/{totalPushCount} active
-            </p>
+          {isRunning && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {watchers}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {watchers === 0
+                    ? 'No watchers'
+                    : `${watchers} active watcher${watchers === 1 ? '' : 's'}`}
+                </TooltipContent>
+              </Tooltip>
+              {totalPushCount > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1',
+                        activePushCount < totalPushCount &&
+                          'text-amber-600 dark:text-amber-400',
+                      )}
+                    >
+                      <Send className="h-3 w-3" />
+                      {activePushCount}/{totalPushCount}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {activePushCount === totalPushCount
+                      ? `All ${totalPushCount} push destination${totalPushCount === 1 ? '' : 's'} active`
+                      : `${activePushCount} of ${totalPushCount} push destinations active`}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           )}
         </div>
       </TableCell>

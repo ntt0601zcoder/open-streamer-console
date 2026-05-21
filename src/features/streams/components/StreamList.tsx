@@ -6,9 +6,15 @@ import { StreamRow } from './StreamRow';
 interface StreamListProps {
   streams: Stream[];
   filter: string;
+  /**
+   * Map from stream code → active watcher count. Built once at the page
+   * level so rows don't each fan out a session query. Missing keys read
+   * as zero.
+   */
+  watchersByStream?: Map<string, number>;
 }
 
-export function StreamList({ streams, filter }: StreamListProps) {
+export function StreamList({ streams, filter, watchersByStream }: StreamListProps) {
   const filtered = filter.trim()
     ? streams.filter(
         (s) =>
@@ -49,7 +55,11 @@ export function StreamList({ streams, filter }: StreamListProps) {
       </TableHeader>
       <TableBody>
         {filtered.map((stream) => (
-          <StreamRow key={stream.code} stream={stream} />
+          <StreamRow
+            key={stream.code}
+            stream={stream}
+            watchers={watchersByStream?.get(stream.code) ?? 0}
+          />
         ))}
       </TableBody>
     </Table>

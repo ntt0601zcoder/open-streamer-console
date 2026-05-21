@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutGrid, List, Plus, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { BASE_URL } from '@/api/client';
 import { StreamGrid, type GridProto } from '@/features/streams/components/StreamGrid';
 import { StreamList } from '@/features/streams/components/StreamList';
+import { useSessions } from '@/features/streams/hooks/useSessions';
 import { useStreams } from '@/features/streams/hooks/useStreams';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,16 @@ export function StreamsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [gridProto, setGridProto] = useState<GridProto>('hls');
   const { data: streams, isLoading, isRefetching, error, refetch } = useStreams();
+  // Single global query that all rows share. TanStack dedups the cache key,
+  // so individual rows don't have to fan out their own requests.
+  const { data: sessionsData } = useSessions({ status: 'active' });
+  const watchersByStream = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of sessionsData?.sessions ?? []) {
+      m.set(s.stream_code, (m.get(s.stream_code) ?? 0) + 1);
+    }
+    return m;
+  }, [sessionsData]);
 
   const counts = {
     total: streams?.length ?? 0,
@@ -110,7 +121,11 @@ export function StreamsPage() {
         </div>
       ) : viewMode === 'table' ? (
         <div className="rounded-md border">
-          <StreamList streams={streams ?? []} filter={filter} />
+          <StreamList
+            streams={streams ?? []}
+            filter={filter}
+            watchersByStream={watchersByStream}
+          />
         </div>
       ) : (
         <StreamGrid streams={streams ?? []} filter={filter} proto={gridProto} />
