@@ -72,7 +72,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
       onClick={() => void navigate(detailPath)}
     >
       {/* Stream */}
-      <TableCell>
+      <TableCell className="align-top">
         <StreamQuickView stream={stream}>
           <div className="space-y-0.5">
             <Link
@@ -92,12 +92,12 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
       </TableCell>
 
       {/* Input */}
-      <TableCell>
+      <TableCell className="align-top">
         <StreamInputSummary stream={stream} />
       </TableCell>
 
       {/* Transcode */}
-      <TableCell>
+      <TableCell className="align-top">
         {hasTranscoder ? (
           <div className="space-y-1">
             {transcoderStatus && (
@@ -160,7 +160,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
       </TableCell>
 
       {/* DVR */}
-      <TableCell>
+      <TableCell className="align-top">
         {resolved.dvr?.enabled ? (
           <span className="text-xs text-emerald-600 dark:text-emerald-400">Enabled</span>
         ) : (
@@ -169,7 +169,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
       </TableCell>
 
       {/* Output */}
-      <TableCell>
+      <TableCell className="align-top">
         <div className="space-y-1">
           {enabledProtocols.length > 0 ? (
             <div className="flex flex-wrap gap-1">
