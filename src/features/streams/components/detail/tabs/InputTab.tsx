@@ -420,6 +420,10 @@ function InputRow({
             status={runtime?.status}
             errors={runtime?.errors}
             label={`Input ${index + 1}`}
+            // Two healthy inputs can both show status=active (manager probes
+            // failovers for warmth). Solid dot = currently consumed; outline
+            // = healthy stand-by.
+            isActive={isActive}
           />
           <span className="text-sm font-medium">Input {index + 1}</span>
           {isActive && (

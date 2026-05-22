@@ -4,15 +4,19 @@ import { formatRelativeIso } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 // Covers domain.StreamStatus + publisher.PushStatus + a generic fallback.
-const COLOR_BY_STATUS: Record<string, string> = {
-  active: 'bg-emerald-500',
-  degraded: 'bg-amber-500',
-  reconnecting: 'bg-amber-500',
-  starting: 'bg-blue-500',
-  failed: 'bg-red-500',
-  idle: 'bg-slate-400',
-  stopped: 'bg-slate-300',
+// Each entry pairs a solid (filled) and outline (border-only) variant so a
+// caller can show "currently consumed" vs "healthy stand-by" without dropping
+// the status colour entirely.
+const COLOR_BY_STATUS: Record<string, { solid: string; outline: string }> = {
+  active: { solid: 'bg-emerald-500 border-emerald-500', outline: 'border-emerald-500/60' },
+  degraded: { solid: 'bg-amber-500 border-amber-500', outline: 'border-amber-500/60' },
+  reconnecting: { solid: 'bg-amber-500 border-amber-500', outline: 'border-amber-500/60' },
+  starting: { solid: 'bg-blue-500 border-blue-500', outline: 'border-blue-500/60' },
+  failed: { solid: 'bg-red-500 border-red-500', outline: 'border-red-500/60' },
+  idle: { solid: 'bg-slate-400 border-slate-400', outline: 'border-slate-400/60' },
+  stopped: { solid: 'bg-slate-300 border-slate-300', outline: 'border-slate-300/60' },
 };
+const FALLBACK = { solid: 'bg-slate-400 border-slate-400', outline: 'border-slate-400/60' };
 
 interface RuntimeErrorIndicatorProps {
   status?: string;
@@ -29,6 +33,14 @@ interface RuntimeErrorIndicatorProps {
    * stale errors would still render amber, contradicting the server.
    */
   errorsAreHistorical?: boolean;
+  /**
+   * When set, switches between solid (true) and outline (false) variants so
+   * a row showing multiple healthy items can still surface which one the
+   * pipeline is actively consuming. Leave undefined for callers that don't
+   * have an "active" vs "stand-by" distinction (transcoder profiles,
+   * publisher pushes, etc.) — they keep the solid behaviour.
+   */
+  isActive?: boolean;
 }
 
 export function RuntimeErrorIndicator({
@@ -38,24 +50,28 @@ export function RuntimeErrorIndicator({
   meta,
   size = 'md',
   errorsAreHistorical = false,
+  isActive,
 }: RuntimeErrorIndicatorProps) {
   const recent = errors ?? [];
   // Tint amber when there are recent errors but status hasn't yet flipped to
   // degraded — UNLESS the caller flagged errors as historical, in which case
   // we trust the status.
-  const dotColor =
-    !errorsAreHistorical && recent.length > 0 && status === 'active'
-      ? 'bg-amber-500'
-      : (status && COLOR_BY_STATUS[status]) || 'bg-slate-400';
+  const effectiveStatus =
+    !errorsAreHistorical && recent.length > 0 && status === 'active' ? 'degraded' : status;
+  const palette = (effectiveStatus && COLOR_BY_STATUS[effectiveStatus]) || FALLBACK;
+  // Active = solid (the pipeline is consuming this entry). Standby = outline
+  // (healthy but not currently consumed). Undefined keeps the legacy solid
+  // styling for callers that don't expose the active/standby distinction.
+  const dotClass = isActive === false ? `bg-transparent border-2 ${palette.outline}` : palette.solid;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span
           className={cn(
-            'inline-block shrink-0 rounded-full',
+            'inline-block shrink-0 rounded-full border',
             size === 'sm' ? 'h-2 w-2' : 'h-2.5 w-2.5',
-            dotColor,
+            dotClass,
           )}
         />
       </TooltipTrigger>
@@ -64,6 +80,7 @@ export function RuntimeErrorIndicator({
           <p className="text-xs font-medium">{label}</p>
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
             {status ?? 'unknown'}
+            {isActive === false ? ' · stand-by' : ''}
           </p>
         </div>
         {meta && <p className="text-xs text-muted-foreground">{meta}</p>}
