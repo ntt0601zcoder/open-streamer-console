@@ -4,7 +4,6 @@ import type {
   HWAccel,
   ResizeMode,
   StreamStatus,
-  TranscoderMode,
   VideoCodec,
   WatermarkPosition,
   WatermarkType,
@@ -116,10 +115,6 @@ export interface AppServerConfig {
   pprof_addr?: string;
 }
 
-export interface TranscoderConfig {
-  ffmpeg_path?: string;
-}
-
 export interface WatermarksConfig {
   /**
    * Directory where uploaded watermark assets live. Must be writable by
@@ -147,7 +142,6 @@ export interface GlobalConfig {
   manager?: ManagerConfig;
   publisher?: PublisherConfig;
   server?: AppServerConfig;
-  transcoder?: TranscoderConfig;
   sessions?: SessionsConfig;
   watermarks?: WatermarksConfig;
 }
@@ -232,9 +226,6 @@ export interface ConfigDefaults {
   };
   push?: { retry_timeout_sec?: number; timeout_sec?: number };
   transcoder?: {
-    ffmpeg_path?: string;
-    /** Default FFmpeg topology used when Stream.transcoder.mode is empty. */
-    mode?: TranscoderMode;
     audio?: { bitrate_k?: number; codec?: AudioCodec };
     global?: { hw?: HWAccel; deviceid?: number };
     video?: {
@@ -252,31 +243,13 @@ export interface ConfigDefaults {
 }
 
 // ─── /config/transcoder/probe ─────────────────────────────────────────────────
-// Inspects the FFmpeg binary at `ffmpeg_path` (empty = $PATH) and reports
-// which required/optional encoders + muxers are available. Pure check; does
-// not mutate any state.
+// Stub endpoint during the native libav migration. Always returns ok=true
+// with an explanatory notice; the previous FFmpeg capability probe is
+// scheduled to come back once the native pipeline lands.
 
-export interface ProbeRequest {
-  /** Empty string = probe whatever ffmpeg is on $PATH. */
-  ffmpeg_path?: string;
-}
-
-export interface ProbeResult {
+export interface ProbeStubResponse {
   ok?: boolean;
-  /** Resolved binary path. */
-  path?: string;
-  /** First line of `ffmpeg -version`. */
-  version?: string;
-  /** Nested map: encoders[codec][hw] = available?  e.g. encoders.h264.nvenc */
-  encoders?: Record<string, Record<string, boolean>>;
-  /** muxers[name] = available?  e.g. muxers.hls, muxers.mpegts */
-  muxers?: Record<string, boolean>;
-  /** filters[name] = available?  e.g. filters.scale2ref, filters.drawtext, filters.overlay */
-  filters?: Record<string, boolean>;
-  /** Fatal compatibility issues (block usage). */
-  errors?: string[];
-  /** Non-fatal notices. */
-  warnings?: string[];
+  notice?: string;
 }
 
 // ─── API ───────────────────────────────────────────────────────────────────────
@@ -294,6 +267,5 @@ export const configApi = {
         headers: { 'Content-Type': 'application/yaml' },
       })
       .json<Record<string, unknown>>(),
-  probeTranscoder: (body: ProbeRequest) =>
-    api.post('config/transcoder/probe', { json: body }).json<ProbeResult>(),
+  probeTranscoder: () => api.post('config/transcoder/probe').json<ProbeStubResponse>(),
 };

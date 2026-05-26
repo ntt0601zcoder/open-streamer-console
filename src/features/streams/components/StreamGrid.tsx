@@ -193,7 +193,12 @@ function StreamInfoPanel({ stream }: { stream: Stream }) {
   const pushes = resolved.push ?? [];
   const activePushes = stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active')
     .length ?? 0;
-  const transcoderProfiles = stream.runtime?.transcoder?.profiles ?? [];
+  const tcRuntime = stream.runtime?.transcoder;
+  const tcRenditions = tcRuntime?.renditions ?? [];
+  const tcErrors = tcRuntime?.errors ?? [];
+  const tcRestarts = tcRuntime?.restart_count ?? 0;
+  const tcUnhealthy =
+    tcRuntime?.status === 'unhealthy' || (tcRuntime?.status == null && tcErrors.length > 0);
   const transcoderActive = !!tc && (stream.runtime?.pipeline_active ?? false);
 
   return (
@@ -245,26 +250,25 @@ function StreamInfoPanel({ stream }: { stream: Stream }) {
           <span className="text-muted-foreground">Disabled</span>
         ) : (
           <div className="space-y-1">
-            {transcoderActive && transcoderProfiles.length > 0 && (
-              <div className="flex items-center gap-1">
-                {transcoderProfiles.map((p, i) => {
-                  const errs = p.errors ?? [];
-                  const restarts = p.restart_count ?? 0;
-                  const label = p.track || `track_${(p.index ?? i) + 1}`;
-                  const unhealthy =
-                    p.status === 'unhealthy' || (!p.status && errs.length > 0);
-                  return (
-                    <RuntimeErrorIndicator
-                      key={p.index ?? i}
-                      size="sm"
-                      status={unhealthy ? 'degraded' : 'active'}
-                      errors={errs}
-                      label={label}
-                      meta={restarts > 0 ? `Restarts: ${restarts}` : undefined}
-                      errorsAreHistorical
-                    />
-                  );
-                })}
+            {transcoderActive && (
+              <div className="flex items-center gap-1.5">
+                <RuntimeErrorIndicator
+                  size="sm"
+                  status={tcUnhealthy ? 'degraded' : 'active'}
+                  errors={tcErrors}
+                  label={
+                    tcRenditions.length === 0
+                      ? 'Transcoder'
+                      : `Transcoder · ${tcRenditions.map((r, i) => r.track || `track_${(r.index ?? i) + 1}`).join(', ')}`
+                  }
+                  meta={tcRestarts > 0 ? `Restarts: ${tcRestarts}` : undefined}
+                  errorsAreHistorical
+                />
+                {tcRenditions.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {tcRenditions.length} rendition{tcRenditions.length === 1 ? '' : 's'}
+                  </span>
+                )}
               </div>
             )}
             {(videoCodec || videoProfiles.length > 0) && (

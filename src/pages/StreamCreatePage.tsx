@@ -38,7 +38,6 @@ import { OutputSection } from '@/features/streams/components/sections/OutputSect
 import { TranscoderSection } from '@/features/streams/components/sections/TranscoderSection';
 import { streamKeys } from '@/features/streams/hooks/useStreams';
 import {
-  cleanExtraArgs,
   createStreamSchema,
   parsePids,
   type CreateStreamValues,
@@ -55,7 +54,6 @@ const DEFAULT_VALUES: CreateStreamValues = {
   push: [],
   transcoder: {
     enabled: false,
-    mode: '',
     audio: {
       copy: true,
       codec: undefined,
@@ -66,7 +64,6 @@ const DEFAULT_VALUES: CreateStreamValues = {
     },
     video: { copy: true, interlace: undefined, profiles: [] },
     global: { hw: undefined, deviceid: undefined, fps: undefined, gop: undefined },
-    extra_args: [],
   },
   dvr: {
     enabled: false,
@@ -207,7 +204,6 @@ function buildCreateBody(v: CreateStreamValues): StreamBody {
             : undefined,
       },
       global: v.transcoder.global as TranscoderConfig['global'],
-      extra_args: cleanExtraArgs(v.transcoder.extra_args),
     };
   }
 

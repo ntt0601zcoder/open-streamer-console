@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Code2 } from 'lucide-react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -28,7 +27,6 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import type { GlobalConfig } from '@/api/config';
-import { FFmpegProbeDialog } from '@/features/config/components/FFmpegProbeDialog';
 import {
   useConfigDefaults,
   useServerConfig,
@@ -117,11 +115,6 @@ const dashSchema = z.object({
 });
 type DashValues = z.infer<typeof dashSchema>;
 
-const transcoderSchema = z.object({
-  ffmpeg_path: z.string().optional(),
-});
-type TranscoderValues = z.infer<typeof transcoderSchema>;
-
 const watermarksSchema = z.object({
   dir: z.string().optional(),
 });
@@ -200,7 +193,6 @@ export function SettingsPage() {
           <TabsTrigger value="ingestor">Ingestor</TabsTrigger>
           <TabsTrigger value="publisher-hls">HLS</TabsTrigger>
           <TabsTrigger value="publisher-dash">DASH</TabsTrigger>
-          <TabsTrigger value="transcoder">Transcoder</TabsTrigger>
           <TabsTrigger value="watermarks">Watermarks</TabsTrigger>
           <TabsTrigger value="manager">Manager</TabsTrigger>
           <TabsTrigger value="hooks">Hooks</TabsTrigger>
@@ -223,9 +215,6 @@ export function SettingsPage() {
         </TabsContent>
         <TabsContent value="publisher-dash" className="mt-6">
           <DashSection />
-        </TabsContent>
-        <TabsContent value="transcoder" className="mt-6">
-          <TranscoderSection />
         </TabsContent>
         <TabsContent value="watermarks" className="mt-6">
           <WatermarksSection />
@@ -1200,98 +1189,6 @@ function DashSection() {
           isDirty={form.formState.isDirty}
           isPending={update.isPending}
           onDiscard={() => form.reset()}
-        />
-      </form>
-    </Form>
-  );
-}
-
-// ─── Transcoder section ────────────────────────────────────────────────────────
-
-function TranscoderSection() {
-  const { data: serverConfig } = useServerConfig();
-  const { data: defaults } = useConfigDefaults();
-  const cfg = serverConfig?.global_config?.transcoder;
-  const update = useUpdateGlobalConfig();
-  const form = useForm<TranscoderValues>({
-    resolver: zodResolver(transcoderSchema),
-    values: {
-      ffmpeg_path: cfg?.ffmpeg_path ?? '',
-    },
-  });
-
-  const ffmpegPathPlaceholder = defaults?.transcoder?.ffmpeg_path ?? 'ffmpeg';
-
-  // Gate Save: a changed ffmpeg_path must be probed (and probe must pass)
-  // before saving, so an operator can't push a binary the server can't run.
-  // The YAML editor bypasses this rule — that's the escape hatch for power users.
-  const [lastProbe, setLastProbe] = useState<{ path: string; ok: boolean } | null>(null);
-  const watchedPath = useWatch({ control: form.control, name: 'ffmpeg_path' }) ?? '';
-  const originalPath = cfg?.ffmpeg_path ?? '';
-  const pathChanged = watchedPath !== originalPath;
-  const needsProbe = pathChanged && (lastProbe?.path !== watchedPath || !lastProbe.ok);
-  const probeBlockReason = needsProbe
-    ? lastProbe?.path === watchedPath && !lastProbe.ok
-      ? 'Probe reported issues — fix or revert'
-      : 'Probe FFmpeg before saving'
-    : undefined;
-
-  function onSubmit(values: TranscoderValues) {
-    update.mutate(
-      { transcoder: { ...values, ffmpeg_path: values.ffmpeg_path || undefined } },
-      {
-        onSuccess: () => {
-          toast.success('Transcoder settings saved');
-          form.reset(values);
-        },
-        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
-      },
-    );
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Transcoder</CardTitle>
-            <CardDescription>FFmpeg binary location used by the transcoder.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="ffmpeg_path"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>FFmpeg path</FormLabel>
-                  <div className="flex items-start gap-2">
-                    <FormControl>
-                      <Input
-                        placeholder={ffmpegPathPlaceholder}
-                        className="placeholder:italic"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FFmpegProbeDialog
-                      ffmpegPath={field.value ?? ''}
-                      onProbeComplete={(path, ok) => setLastProbe({ path, ok })}
-                    />
-                  </div>
-                  <FormDescription>
-                    Absolute path to the FFmpeg binary. Leave empty to use <code>$PATH</code>.
-                    Use <strong>Probe</strong> to check encoder/muxer support.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-        <SaveRow
-          isDirty={form.formState.isDirty}
-          isPending={update.isPending}
-          onDiscard={() => form.reset()}
-          disabledReason={probeBlockReason}
         />
       </form>
     </Form>

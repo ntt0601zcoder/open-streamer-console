@@ -33,7 +33,6 @@ import { OutputSection } from '@/features/streams/components/sections/OutputSect
 import { PrefixesSection } from '@/features/streams/components/sections/PrefixesSection';
 import { TranscoderSection } from '@/features/streams/components/sections/TranscoderSection';
 import {
-  cleanExtraArgs,
   parsePids,
   templateSchema,
   type TemplateFormValues,
@@ -53,7 +52,6 @@ const EMPTY_VALUES: TemplateFormValues = {
   push: [],
   transcoder: {
     enabled: false,
-    mode: '',
     audio: {
       copy: true,
       codec: undefined,
@@ -64,7 +62,6 @@ const EMPTY_VALUES: TemplateFormValues = {
     },
     video: { copy: true, interlace: undefined, profiles: [] },
     global: { hw: undefined, deviceid: undefined, fps: undefined, gop: undefined },
-    extra_args: [],
   },
   dvr: {
     enabled: false,
@@ -339,7 +336,6 @@ function templateToFormValues(t: Template): TemplateFormValues {
     transcoder: tc
       ? {
           enabled: true,
-          mode: (tc.mode ?? '') as '' | 'multi' | 'per_profile',
           audio: {
             copy: tc.audio?.copy ?? transcoderDefaults.audio.copy,
             codec: tc.audio?.codec,
@@ -374,7 +370,6 @@ function templateToFormValues(t: Template): TemplateFormValues {
             fps: tc.global?.fps,
             gop: tc.global?.gop,
           },
-          extra_args: (tc.extra_args ?? []).map((value) => ({ value })),
         }
       : transcoderDefaults,
     dvr: t.dvr
@@ -428,7 +423,6 @@ function buildTemplateBody(v: TemplateFormValues, existing: Template | null): Te
             : undefined,
       },
       global: v.transcoder.global as TranscoderConfig['global'],
-      extra_args: cleanExtraArgs(v.transcoder.extra_args),
     };
   }
 

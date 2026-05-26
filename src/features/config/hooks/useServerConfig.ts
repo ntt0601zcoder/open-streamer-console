@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { configApi, type GlobalConfig, type ProbeRequest } from '@/api/config';
+import { configApi, type GlobalConfig } from '@/api/config';
 
 export const configKeys = {
   all: ['config'] as const,
@@ -61,11 +61,12 @@ export function useUpdateYamlConfig() {
 }
 
 /**
- * Probe an FFmpeg binary for app compatibility. One-shot mutation — caller
- * owns the result; nothing is cached or invalidated.
+ * Stub probe endpoint during the native libav migration — always returns
+ * ok=true with an explanatory notice. Kept so the UI can still surface the
+ * notice if anything needs it, but no longer drives a per-binary check.
  */
 export function useProbeTranscoder() {
   return useMutation({
-    mutationFn: (body: ProbeRequest) => configApi.probeTranscoder(body),
+    mutationFn: () => configApi.probeTranscoder(),
   });
 }
