@@ -117,7 +117,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-10">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.general && (
           <InheritedSectionNotice
@@ -261,7 +261,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
         </fieldset>
 
         {!readOnly && (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t pt-6">
             {form.formState.isDirty && (
               <Button
                 type="button"
