@@ -117,7 +117,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.general && (
           <InheritedSectionNotice
@@ -126,7 +126,7 @@ export function GeneralTab({ stream }: GeneralTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
+        <fieldset disabled={readOnly} className="contents space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Basic info</CardTitle>

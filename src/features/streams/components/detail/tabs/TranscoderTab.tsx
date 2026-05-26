@@ -216,7 +216,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.transcoder && (
           <InheritedSectionNotice
@@ -225,7 +225,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
+        <fieldset disabled={readOnly} className="contents space-y-4">
         {/* Master toggle */}
         <Card>
           <CardHeader>

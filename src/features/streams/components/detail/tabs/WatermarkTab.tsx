@@ -159,7 +159,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.watermark && (
           <InheritedSectionNotice
@@ -178,7 +178,7 @@ export function WatermarkTab({ stream }: WatermarkTabProps) {
           </div>
         )}
 
-        <fieldset disabled={readOnly} className="contents">
+        <fieldset disabled={readOnly} className="contents space-y-4">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

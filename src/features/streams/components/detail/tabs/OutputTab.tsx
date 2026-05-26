@@ -153,7 +153,7 @@ export function OutputTab({ stream }: OutputTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.protocols && (
           <InheritedSectionNotice
@@ -169,7 +169,7 @@ export function OutputTab({ stream }: OutputTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
+        <fieldset disabled={readOnly} className="contents space-y-4">
         {/* Protocols + URLs (combined) */}
         <Card>
           <CardHeader>

@@ -83,7 +83,7 @@ export function DvrTab({ stream }: DvrTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-8">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.dvr && (
           <InheritedSectionNotice
@@ -92,7 +92,7 @@ export function DvrTab({ stream }: DvrTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
+        <fieldset disabled={readOnly} className="contents space-y-4">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
