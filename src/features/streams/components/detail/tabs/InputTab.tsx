@@ -203,7 +203,7 @@ export function InputTab({ stream }: InputTabProps) {
         </fieldset>
 
         {!readOnly && (
-          <div className="flex justify-end gap-2 border-t pt-6">
+          <div className="flex justify-end gap-2 border-t pt-4">
             {form.formState.isDirty && (
               <Button
                 type="button"
