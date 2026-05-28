@@ -1,10 +1,5 @@
 import { api } from './client';
-import type {
-  DataResponse,
-  PlaySession,
-  SessionListResponse,
-  SessionProto,
-} from './types';
+import type { DataResponse, PlaySession, SessionListResponse, SessionProto } from './types';
 
 export interface SessionListOptions {
   /** Filter to a single stream code (server-side). */

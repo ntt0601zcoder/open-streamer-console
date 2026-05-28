@@ -101,11 +101,7 @@ export function WatermarkUploadDialog({ open, onOpenChange }: WatermarkUploadDia
 
           {previewUrl && (
             <div className="rounded-md border bg-[repeating-conic-gradient(#888_0_25%,_#aaa_0_50%)] bg-[length:16px_16px] p-3 dark:bg-[repeating-conic-gradient(#333_0_25%,_#555_0_50%)]">
-              <img
-                src={previewUrl}
-                alt="preview"
-                className="mx-auto max-h-40 object-contain"
-              />
+              <img src={previewUrl} alt="preview" className="mx-auto max-h-40 object-contain" />
             </div>
           )}
         </div>

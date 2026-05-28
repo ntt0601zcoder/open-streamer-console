@@ -55,10 +55,7 @@ export function WatermarkAssetCard({ asset }: WatermarkAssetCardProps) {
           />
         </div>
         <CardContent className="space-y-2 p-3">
-          <p
-            className="truncate text-sm font-medium font-mono"
-            title={asset.filename}
-          >
+          <p className="truncate text-sm font-medium font-mono" title={asset.filename}>
             {asset.filename}
           </p>
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
@@ -100,8 +97,8 @@ export function WatermarkAssetCard({ asset }: WatermarkAssetCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete watermark "{asset.filename}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              Streams currently referencing this asset will fail to apply the overlay until they
-              are reconfigured. This cannot be undone.
+              Streams currently referencing this asset will fail to apply the overlay until they are
+              reconfigured. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

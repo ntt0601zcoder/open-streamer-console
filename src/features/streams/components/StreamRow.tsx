@@ -39,8 +39,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
   const totalPushCount = resolved.push?.filter((p) => p.enabled).length ?? 0;
 
   const streamStatus = stream.runtime?.status;
-  const isRunning =
-    streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
+  const isRunning = streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
 
   // Transcode summary. The Go server emits empty strings for unset enum fields
   // (codec: "" instead of omitting), so treat both as "no codec set" and let the
@@ -55,16 +54,17 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
       : null;
   const audioCodec = tc?.audio?.copy ? 'copy' : tc?.audio?.codec || null;
 
-  // Aggregate transcoder runtime status so the row gets the same dot + tooltip
-  // as the detail page's per-profile indicators. The server now reports a
-  // per-profile `status` ('healthy' | 'unhealthy') — use it instead of
-  // re-deriving from `errors.length`, which over-counts stale failures.
-  const profiles = stream.runtime?.transcoder?.profiles ?? [];
+  // Transcoder runtime moved from per-profile snapshots to a single process
+  // envelope with top-level status / restart_count / errors. Renditions
+  // still appear under `renditions[]` but no longer carry their own state.
+  const tcRuntime = stream.runtime?.transcoder;
+  const tcRenditions = tcRuntime?.renditions ?? [];
+  const tcErrors = tcRuntime?.errors ?? [];
+  const tcRestarts = tcRuntime?.restart_count ?? 0;
   const transcoderActive = hasTranscoder && (stream.runtime?.pipeline_active ?? false);
-  const anyUnhealthy = profiles.some(
-    (p) => p.status === 'unhealthy' || (!p.status && (p.errors ?? []).length > 0),
-  );
-  const transcoderStatus = !transcoderActive ? undefined : anyUnhealthy ? 'degraded' : 'active';
+  const tcUnhealthy =
+    tcRuntime?.status === 'unhealthy' || (tcRuntime?.status == null && tcErrors.length > 0);
+  const transcoderStatus = !transcoderActive ? undefined : tcUnhealthy ? 'degraded' : 'active';
 
   return (
     <TableRow
@@ -102,6 +102,18 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
           <div className="space-y-1">
             {transcoderStatus && (
               <div className="flex items-center gap-1.5">
+                <RuntimeErrorIndicator
+                  size="sm"
+                  status={transcoderStatus}
+                  errors={tcErrors}
+                  label={
+                    tcRenditions.length === 0
+                      ? 'Transcoder'
+                      : `Transcoder · ${tcRenditions.map((r, i) => r.track || `track_${(r.index ?? i) + 1}`).join(', ')}`
+                  }
+                  meta={tcRestarts > 0 ? `Restarts: ${tcRestarts}` : undefined}
+                  errorsAreHistorical
+                />
                 <span
                   className={
                     transcoderStatus === 'degraded'
@@ -111,26 +123,11 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
                 >
                   {transcoderStatus}
                 </span>
-                <div className="flex items-center gap-1">
-                  {profiles.map((p, i) => {
-                    const errs = p.errors ?? [];
-                    const restarts = p.restart_count ?? 0;
-                    const label = p.track || `track_${(p.index ?? i) + 1}`;
-                    const profileUnhealthy =
-                      p.status === 'unhealthy' || (!p.status && errs.length > 0);
-                    return (
-                      <RuntimeErrorIndicator
-                        key={p.index ?? i}
-                        size="sm"
-                        status={profileUnhealthy ? 'degraded' : 'active'}
-                        errors={errs}
-                        label={label}
-                        meta={restarts > 0 ? `Restarts: ${restarts}` : undefined}
-                        errorsAreHistorical
-                      />
-                    );
-                  })}
-                </div>
+                {tcRenditions.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    · {tcRenditions.length} rendition{tcRenditions.length === 1 ? '' : 's'}
+                  </span>
+                )}
               </div>
             )}
             {(videoCodec !== null || videoProfileCount > 0) && (
@@ -203,8 +200,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
                     <span
                       className={cn(
                         'inline-flex items-center gap-1',
-                        activePushCount < totalPushCount &&
-                          'text-amber-600 dark:text-amber-400',
+                        activePushCount < totalPushCount && 'text-amber-600 dark:text-amber-400',
                       )}
                     >
                       <Send className="h-3 w-3" />

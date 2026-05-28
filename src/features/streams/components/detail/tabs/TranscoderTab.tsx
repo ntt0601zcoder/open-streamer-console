@@ -21,10 +21,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { InterlaceMode, ResizeMode, Stream, TranscoderConfig, VideoCodec } from '@/api/types';
+import type {
+  InterlaceMode,
+  ResizeMode,
+  Stream,
+  TranscoderConfig,
+  TranscoderRuntimeStatus,
+  VideoCodec,
+} from '@/api/types';
 import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
 import { RuntimeErrorIndicator } from '@/features/streams/components/RuntimeErrorIndicator';
-import { StringListEditor } from '@/features/streams/components/StringListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
@@ -34,11 +40,7 @@ import {
   RuntimeReadOnlyBanner,
   isRuntimeStream,
 } from '@/features/streams/components/detail/RuntimeReadOnlyBanner';
-import {
-  cleanExtraArgs,
-  transcoderFormSchema,
-  type TranscoderFormValues,
-} from '@/features/streams/schemas';
+import { transcoderFormSchema, type TranscoderFormValues } from '@/features/streams/schemas';
 
 interface TranscoderTabProps {
   stream: Stream;
@@ -48,7 +50,6 @@ function toFormValues(stream: Stream): TranscoderFormValues {
   const t = stream.transcoder;
   return {
     enabled: t !== undefined && t !== null,
-    mode: (t?.mode ?? '') as TranscoderFormValues['mode'],
     audio: {
       copy: t?.audio?.copy ?? true,
       codec: t?.audio?.codec,
@@ -83,12 +84,8 @@ function toFormValues(stream: Stream): TranscoderFormValues {
       fps: t?.global?.fps,
       gop: t?.global?.gop,
     },
-    extra_args: (t?.extra_args ?? []).map((value) => ({ value })),
   };
 }
-
-/** Sentinel for the "inherit server default" Select option — Radix forbids "". */
-const MODE_DEFAULT = '__default__';
 
 const HW_LABELS: Record<string, string> = {
   none: 'None (CPU)',
@@ -193,8 +190,6 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             : undefined,
       },
       global: values.global as TranscoderConfig['global'],
-      extra_args: cleanExtraArgs(values.extra_args),
-      mode: values.mode === '' ? undefined : values.mode,
     };
   }
 
@@ -203,7 +198,6 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
   const audioCodecOptions = serverConfig?.audio_codecs ?? [];
 
   const { data: defaults } = useConfigDefaults();
-  const modePlaceholder = defaults?.transcoder?.mode ?? 'multi';
   const hwPlaceholder = defaults?.transcoder?.global?.hw ?? 'default';
   const deviceIdPlaceholder =
     defaults?.transcoder?.global?.deviceid != null
@@ -219,7 +213,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-10">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.transcoder && (
           <InheritedSectionNotice
@@ -228,313 +222,72 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
-        {/* Master toggle */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">Transcoder</CardTitle>
-                <CardDescription>
-                  When disabled, the source is delivered as-is — no transcoder pipeline is started.
-                  When enabled, you can re-encode video/audio or pass them through (Copy mode).
-                </CardDescription>
-              </div>
-              <FormField
-                control={form.control}
-                name="enabled"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2 space-y-0">
-                    <FormLabel className="text-sm text-muted-foreground">Enabled</FormLabel>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardHeader>
-        </Card>
-
-        {enabled &&
-          stream.runtime?.transcoder?.profiles &&
-          stream.runtime.transcoder.profiles.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Runtime</CardTitle>
-                <CardDescription>
-                  Live status of each profile. Hover a dot to see the most recent FFmpeg errors.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  {stream.runtime.transcoder.profiles.map((p, i) => {
-                    const errors = p.errors ?? [];
-                    const restarts = p.restart_count ?? 0;
-                    const label = p.track || `track_${(p.index ?? i) + 1}`;
-                    // Prefer the server-reported current health over inferring
-                    // from `errors.length`, which would flag stale failures.
-                    const unhealthy =
-                      p.status === 'unhealthy' || (!p.status && errors.length > 0);
-                    const status = unhealthy ? 'degraded' : 'active';
-                    return (
-                      <div key={p.index ?? i} className="flex items-center gap-2 text-sm">
-                        <RuntimeErrorIndicator
-                          status={status}
-                          errors={errors}
-                          label={label}
-                          meta={`Restarts: ${restarts}`}
-                          errorsAreHistorical
-                        />
-                        <span className="font-mono text-xs">{label}</span>
-                        {restarts > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            · {restarts} restart{restarts === 1 ? '' : 's'}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
+        <fieldset disabled={readOnly} className="contents space-y-4">
+          {/* Master toggle */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Transcoder</CardTitle>
+                  <CardDescription>
+                    When disabled, the source is delivered as-is — no transcoder pipeline is
+                    started. When enabled, you can re-encode video/audio or pass them through (Copy
+                    mode).
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
+                <FormField
+                  control={form.control}
+                  name="enabled"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormLabel className="text-sm text-muted-foreground">Enabled</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardHeader>
+          </Card>
+
+          {enabled && stream.runtime?.transcoder && (
+            <TranscoderRuntimeCard runtime={stream.runtime.transcoder} />
           )}
 
-        {enabled && (
-          <>
-            {/* Process topology */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Process topology</CardTitle>
-                <CardDescription>
-                  Multi runs one FFmpeg per stream emitting every profile (single decode,
-                  multi encode) — saves RAM and decode work. Per-profile spawns one FFmpeg
-                  per profile, isolating glitches per rendition.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="mode"
-                  render={({ field }) => (
-                    <FormItem className="max-w-sm">
-                      <FormLabel>Mode</FormLabel>
-                      <Select
-                        onValueChange={(v) => field.onChange(v === MODE_DEFAULT ? '' : v)}
-                        value={field.value === '' ? MODE_DEFAULT : field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value={MODE_DEFAULT}>
-                            <span className="italic text-muted-foreground">
-                              Server default ({modePlaceholder})
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="multi">Multi — one process, all profiles</SelectItem>
-                          <SelectItem value="per_profile">
-                            Per-profile — one process per profile
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Hardware */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Hardware acceleration</CardTitle>
-                <CardDescription>
-                  Available accelerators are detected from the server at runtime.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-4">
-                <FormField
-                  control={form.control}
-                  name="global.hw"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Accelerator</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? ''}
-                        disabled={hwOptions.length === 0}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="data-[placeholder]:italic">
-                            <SelectValue placeholder={hwPlaceholder} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {hwOptions.map((hw) => (
-                            <SelectItem key={hw} value={hw}>
-                              {HW_LABELS[hw] ?? hw}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="global.deviceid"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Device ID</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          placeholder={deviceIdPlaceholder}
-                          className="placeholder:italic"
-                          {...field}
+          {enabled && (
+            <>
+              {/* Hardware */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Hardware acceleration</CardTitle>
+                  <CardDescription>
+                    Available accelerators are detected from the server at runtime.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-4">
+                  <FormField
+                    control={form.control}
+                    name="global.hw"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>Accelerator</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="global.gop"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GOP (frames)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          placeholder="default"
-                          className="placeholder:italic"
-                          {...field}
-                          value={field.value ?? ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Video */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">Video</CardTitle>
-                    <CardDescription>Video encoding settings</CardDescription>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="video.copy"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0">
-                        <FormLabel className="text-sm text-muted-foreground">
-                          Copy (passthrough)
-                        </FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardHeader>
-              {!videoCopy && (
-                <CardContent className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <FormField
-                      control={form.control}
-                      name="video.interlace"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Interlace handling</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                            <FormControl>
-                              <SelectTrigger className="data-[placeholder]:italic">
-                                <SelectValue placeholder="default" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {INTERLACE_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <VideoProfilesEditor
-                    control={form.control}
-                    setValue={form.setValue}
-                    name="video.profiles"
-                    codecOptions={videoCodecOptions}
-                  />
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Audio */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">Audio</CardTitle>
-                    <CardDescription>Audio encoding settings</CardDescription>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="audio.copy"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0">
-                        <FormLabel className="text-sm text-muted-foreground">
-                          Copy (passthrough)
-                        </FormLabel>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardHeader>
-              {!audioCopy && (
-                <CardContent className="grid gap-4 sm:grid-cols-3">
-                  <FormField
-                    control={form.control}
-                    name="audio.codec"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Codec</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                          disabled={hwOptions.length === 0}
+                        >
                           <FormControl>
                             <SelectTrigger className="data-[placeholder]:italic">
-                              <SelectValue placeholder={audioCodecPlaceholder} />
+                              <SelectValue placeholder={hwPlaceholder} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {audioCodecOptions
-                              .filter((c) => c !== 'copy')
-                              .map((c) => (
-                                <SelectItem key={c} value={c}>
-                                  {CODEC_LABELS[c] ?? c}
-                                </SelectItem>
-                              ))}
+                            {hwOptions.map((hw) => (
+                              <SelectItem key={hw} value={hw}>
+                                {HW_LABELS[hw] ?? hw}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -543,15 +296,15 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="audio.bitrate"
+                    name="global.deviceid"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bitrate (kbps)</FormLabel>
+                        <FormLabel>Device ID</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             min={0}
-                            placeholder={audioBitratePlaceholder}
+                            placeholder={deviceIdPlaceholder}
                             className="placeholder:italic"
                             {...field}
                             value={field.value ?? ''}
@@ -563,37 +316,10 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="audio.channels"
+                    name="global.gop"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Channels</FormLabel>
-                        <Select
-                          onValueChange={(v) => field.onChange(Number(v))}
-                          value={field.value != null ? String(field.value) : ''}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="data-[placeholder]:italic">
-                              <SelectValue placeholder="default" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(CHANNEL_LABELS).map(([v, label]) => (
-                              <SelectItem key={v} value={v}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="audio.sample_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sample rate (Hz)</FormLabel>
+                        <FormLabel>GOP (frames)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -608,52 +334,216 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="audio.normalize"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0">
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <div>
-                          <FormLabel>Normalize loudness</FormLabel>
-                          <FormDescription className="text-xs">
-                            Apply EBU R128 normalization
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
-              )}
-            </Card>
+              </Card>
 
-            {/* Extra FFmpeg args (advanced escape hatch) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Extra FFmpeg arguments</CardTitle>
-                <CardDescription>
-                  One token per row, appended after the generated command. Use sparingly — may
-                  conflict with auto-generated args.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <StringListEditor
-                  control={form.control}
-                  name="extra_args"
-                  placeholder="-x264-params"
-                  emptyHint="No extra arguments configured."
-                  addLabel="Add argument"
-                />
-              </CardContent>
-            </Card>
-          </>
-        )}
+              {/* Video */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base">Video</CardTitle>
+                      <CardDescription>Video encoding settings</CardDescription>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="video.copy"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormLabel className="text-sm text-muted-foreground">
+                            Copy (passthrough)
+                          </FormLabel>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardHeader>
+                {!videoCopy && (
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormField
+                        control={form.control}
+                        name="video.interlace"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Interlace handling</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                              <FormControl>
+                                <SelectTrigger className="data-[placeholder]:italic">
+                                  <SelectValue placeholder="default" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {INTERLACE_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <VideoProfilesEditor
+                      control={form.control}
+                      setValue={form.setValue}
+                      name="video.profiles"
+                      codecOptions={videoCodecOptions}
+                    />
+                  </CardContent>
+                )}
+              </Card>
+
+              {/* Audio */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base">Audio</CardTitle>
+                      <CardDescription>Audio encoding settings</CardDescription>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="audio.copy"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormLabel className="text-sm text-muted-foreground">
+                            Copy (passthrough)
+                          </FormLabel>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardHeader>
+                {!audioCopy && (
+                  <CardContent className="grid gap-4 sm:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="audio.codec"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Codec</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                            <FormControl>
+                              <SelectTrigger className="data-[placeholder]:italic">
+                                <SelectValue placeholder={audioCodecPlaceholder} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {audioCodecOptions
+                                .filter((c) => c !== 'copy')
+                                .map((c) => (
+                                  <SelectItem key={c} value={c}>
+                                    {CODEC_LABELS[c] ?? c}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="audio.bitrate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bitrate (kbps)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder={audioBitratePlaceholder}
+                              className="placeholder:italic"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="audio.channels"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Channels</FormLabel>
+                          <Select
+                            onValueChange={(v) => field.onChange(Number(v))}
+                            value={field.value != null ? String(field.value) : ''}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="data-[placeholder]:italic">
+                                <SelectValue placeholder="default" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(CHANNEL_LABELS).map(([v, label]) => (
+                                <SelectItem key={v} value={v}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="audio.sample_rate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sample rate (Hz)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="default"
+                              className="placeholder:italic"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="audio.normalize"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2 space-y-0">
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div>
+                            <FormLabel>Normalize loudness</FormLabel>
+                            <FormDescription className="text-xs">
+                              Apply EBU R128 normalization
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                )}
+              </Card>
+            </>
+          )}
         </fieldset>
 
         {!readOnly && (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t pt-4">
             {form.formState.isDirty && (
               <Button
                 type="button"
@@ -670,5 +560,61 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
         )}
       </form>
     </Form>
+  );
+}
+
+/**
+ * Live runtime status of the transcoder. The new pipeline runs ONE process
+ * per stream emitting every rendition, so health, error list and restart
+ * counter live at the top of `runtime.transcoder` instead of per-rendition.
+ * Renditions still appear as a label list so operators see which tracks
+ * the process is producing — they just don't carry their own status.
+ */
+function TranscoderRuntimeCard({ runtime }: { runtime: TranscoderRuntimeStatus }) {
+  const renditions = runtime.renditions ?? [];
+  const errors = runtime.errors ?? [];
+  const restarts = runtime.restart_count ?? 0;
+  const unhealthy = runtime.status === 'unhealthy' || (runtime.status == null && errors.length > 0);
+  const status = unhealthy ? 'degraded' : 'active';
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Runtime</CardTitle>
+        <CardDescription>
+          Live status of the transcoder process. Hover the dot for the most recent errors.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex items-center gap-2 text-sm">
+          <RuntimeErrorIndicator
+            status={status}
+            errors={errors}
+            label="Transcoder"
+            meta={`Restarts: ${restarts}`}
+            errorsAreHistorical
+          />
+          <span className="font-mono text-xs">{unhealthy ? 'unhealthy' : 'healthy'}</span>
+          {restarts > 0 && (
+            <span className="text-xs text-muted-foreground">
+              · {restarts} restart{restarts === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+        {renditions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="uppercase tracking-wide text-[10px]">Renditions:</span>
+            {renditions.map((r, i) => {
+              const label = r.track || `track_${(r.index ?? i) + 1}`;
+              return (
+                <span key={r.index ?? i} className="font-mono">
+                  {label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

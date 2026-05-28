@@ -39,9 +39,7 @@ export function InputsSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.length === 0 && (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            No inputs configured.
-          </p>
+          <p className="py-4 text-center text-sm text-muted-foreground">No inputs configured.</p>
         )}
         {fields.map((field, index) => (
           <div key={field.id} className="rounded-lg border">

@@ -57,7 +57,6 @@ function toFormValues(stream: Stream): InputsFormValues {
   };
 }
 
-
 export function InputTab({ stream }: InputTabProps) {
   const update = useSaveStream();
   const switchInput = useSwitchInput();
@@ -122,7 +121,7 @@ export function InputTab({ stream }: InputTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-10">
         {readOnly && <RuntimeReadOnlyBanner />}
         {tplState.inherited.inputs && stream.template && (
           <InheritedSectionNotice
@@ -131,79 +130,79 @@ export function InputTab({ stream }: InputTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">Input sources</CardTitle>
-                <CardDescription>
-                  First input is primary. Stream manager switches to the next input on failure. Use
-                  the arrows to reorder.
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={addInput}
-              >
-                <Plus className="h-4 w-4" />
-                Add input
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {fields.length === 0 && (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                No inputs configured. Add an input source to get started.
-              </p>
-            )}
-
-            {stream.runtime?.exhausted && (
-              <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-                <div className="text-red-700 dark:text-red-300">
-                  <p className="font-medium">All inputs exhausted</p>
-                  <p className="text-xs">
-                    Every input is degraded and no failover candidate is available. Check each input
-                    below.
-                  </p>
+        <fieldset disabled={readOnly} className="contents space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Input sources</CardTitle>
+                  <CardDescription>
+                    First input is primary. Stream manager switches to the next input on failure.
+                    Use the arrows to reorder.
+                  </CardDescription>
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={addInput}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add input
+                </Button>
               </div>
-            )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {fields.length === 0 && (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No inputs configured. Add an input source to get started.
+                </p>
+              )}
 
-            {fields.map((field, index) => (
-              <InputRow
-                key={field.id}
-                index={index}
-                total={fields.length}
-                activeIndex={
-                  stream.runtime?.override_input_priority ??
-                  stream.runtime?.active_input_priority ??
-                  null
-                }
-                runtime={stream.runtime?.inputs?.[index]}
-                canSwitch={isStreamLive}
-                switchPending={switchInput.isPending && switchInput.variables?.priority === index}
-                form={form}
-                onRemove={() => remove(index)}
-                onMoveUp={() => move(index, index - 1)}
-                onMoveDown={() => move(index, index + 1)}
-                onSwitch={() => handleSwitch(index)}
-              />
-            ))}
-          </CardContent>
-        </Card>
+              {stream.runtime?.exhausted && (
+                <div className="flex items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                  <div className="text-red-700 dark:text-red-300">
+                    <p className="font-medium">All inputs exhausted</p>
+                    <p className="text-xs">
+                      Every input is degraded and no failover candidate is available. Check each
+                      input below.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-        {stream.runtime?.switches && stream.runtime.switches.length > 0 && (
-          <InputSwitchHistory switches={stream.runtime.switches} />
-        )}
+              {fields.map((field, index) => (
+                <InputRow
+                  key={field.id}
+                  index={index}
+                  total={fields.length}
+                  activeIndex={
+                    stream.runtime?.override_input_priority ??
+                    stream.runtime?.active_input_priority ??
+                    null
+                  }
+                  runtime={stream.runtime?.inputs?.[index]}
+                  canSwitch={isStreamLive}
+                  switchPending={switchInput.isPending && switchInput.variables?.priority === index}
+                  form={form}
+                  onRemove={() => remove(index)}
+                  onMoveUp={() => move(index, index - 1)}
+                  onMoveDown={() => move(index, index + 1)}
+                  onSwitch={() => handleSwitch(index)}
+                />
+              ))}
+            </CardContent>
+          </Card>
+
+          {stream.runtime?.switches && stream.runtime.switches.length > 0 && (
+            <InputSwitchHistory switches={stream.runtime.switches} />
+          )}
         </fieldset>
 
         {!readOnly && (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t pt-4">
             {form.formState.isDirty && (
               <Button
                 type="button"
@@ -285,8 +284,8 @@ function UdpFilterFields({
               />
             </FormControl>
             <p className="text-[11px] text-muted-foreground">
-              Pick a single program when the UDP source is a multi-program transport stream
-              (MPTS). 0 = forward all programs.
+              Pick a single program when the UDP source is a multi-program transport stream (MPTS).
+              0 = forward all programs.
             </p>
             <FormMessage />
           </FormItem>
@@ -308,9 +307,9 @@ function UdpFilterFields({
               />
             </FormControl>
             <p className="text-[11px] text-muted-foreground">
-              Comma- or space-separated TS PIDs to keep — every other PID is dropped. Include
-              PID 0 (PAT), the PMT PID, and every desired ES PID. Empty = no filter. Combines
-              with Program (program runs first, then this restricts further).
+              Comma- or space-separated TS PIDs to keep — every other PID is dropped. Include PID 0
+              (PAT), the PMT PID, and every desired ES PID. Empty = no filter. Combines with Program
+              (program runs first, then this restricts further).
             </p>
             <FormMessage />
           </FormItem>
@@ -348,8 +347,8 @@ function NetworkTimeoutField({
             />
           </FormControl>
           <p className="text-[11px] text-muted-foreground">
-            HLS: HTTP request timeout · RTMP/RTSP: dial · SRT: handshake. 0 = use server
-            default for the URL scheme.
+            HLS: HTTP request timeout · RTMP/RTSP: dial · SRT: handshake. 0 = use server default for
+            the URL scheme.
           </p>
           <FormMessage />
         </FormItem>
@@ -420,6 +419,10 @@ function InputRow({
             status={runtime?.status}
             errors={runtime?.errors}
             label={`Input ${index + 1}`}
+            // Two healthy inputs can both show status=active (manager probes
+            // failovers for warmth). Solid dot = currently consumed; outline
+            // = healthy stand-by.
+            isActive={isActive}
           />
           <span className="text-sm font-medium">Input {index + 1}</span>
           {isActive && (

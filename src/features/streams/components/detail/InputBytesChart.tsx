@@ -11,11 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Tooltip as InfoTooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip as InfoTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useInputBytesRate } from '@/features/streams/hooks/useInputBytesRate';
 import { cn } from '@/lib/utils';
 
@@ -102,9 +98,7 @@ export function InputBytesChart({ streamCode }: InputBytesChartProps) {
                   <TooltipTrigger asChild>
                     <AlertCircle className="h-3 w-3 text-amber-500" />
                   </TooltipTrigger>
-                  <TooltipContent>
-                    No fresh sample — /metrics is failing or slow.
-                  </TooltipContent>
+                  <TooltipContent>No fresh sample — /metrics is failing or slow.</TooltipContent>
                 </InfoTooltip>
               )}
               <span
@@ -169,9 +163,7 @@ export function InputBytesChart({ streamCode }: InputBytesChartProps) {
                     [formatRate(Number(value)), String(name)] as [string, string]
                   }
                 />
-                {protocols.length > 1 && (
-                  <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />
-                )}
+                {protocols.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} iconSize={8} />}
                 {protocols.length > 1 && (
                   <Line
                     type="monotone"

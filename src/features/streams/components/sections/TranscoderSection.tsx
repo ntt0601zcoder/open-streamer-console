@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useConfigDefaults, useServerConfig } from '@/features/config/hooks/useServerConfig';
-import { StringListEditor } from '@/features/streams/components/StringListEditor';
 import { VideoProfilesEditor } from '@/features/streams/components/VideoProfilesEditor';
 
 const HW_LABELS: Record<string, string> = {
@@ -55,9 +54,10 @@ const INTERLACE_OPTIONS: { value: string; label: string }[] = [
 ];
 
 /**
- * Full transcoder editor — hardware/video/audio/extra args. Form must have a
+ * Full transcoder editor — hardware/video/audio. Form must have a
  * `transcoder` object matching `transcoderFormSchema` (enabled, video, audio,
- * global, extra_args).
+ * global). The native libav pipeline doesn't accept raw FFmpeg argv or a
+ * topology mode, so those fields are gone server-side.
  */
 export function TranscoderSection() {
   const { control, setValue } = useFormContext();
@@ -385,25 +385,6 @@ export function TranscoderSection() {
                 />
               </CardContent>
             )}
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Extra FFmpeg arguments</CardTitle>
-              <CardDescription>
-                Raw argv tokens appended after the generated FFmpeg command. One token per row.
-                Use sparingly — may conflict with the auto-generated arguments.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StringListEditor
-                control={control}
-                name="transcoder.extra_args"
-                placeholder="-x264-params"
-                emptyHint="No extra arguments configured."
-                addLabel="Add argument"
-              />
-            </CardContent>
           </Card>
         </>
       )}

@@ -83,7 +83,7 @@ export function DvrTab({ stream }: DvrTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-10">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.dvr && (
           <InheritedSectionNotice
@@ -92,132 +92,132 @@ export function DvrTab({ stream }: DvrTabProps) {
             isLoading={tplState.isLoading}
           />
         )}
-        <fieldset disabled={readOnly} className="contents">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">DVR / Recording</CardTitle>
-                <CardDescription>
-                  Configure DVR (time-shift) recording for this stream. When enabled, segments are
-                  archived to disk and available for playback.
-                </CardDescription>
+        <fieldset disabled={readOnly} className="contents space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">DVR / Recording</CardTitle>
+                  <CardDescription>
+                    Configure DVR (time-shift) recording for this stream. When enabled, segments are
+                    archived to disk and available for playback.
+                  </CardDescription>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="enabled"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormLabel className="text-sm text-muted-foreground">DVR enabled</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
-              <FormField
-                control={form.control}
-                name="enabled"
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2 space-y-0">
-                    <FormLabel className="text-sm text-muted-foreground">DVR enabled</FormLabel>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardHeader>
+            </CardHeader>
 
-          {enabled && (
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="retention_sec"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Retention (seconds)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="0 = keep forever"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      How long segments are kept on disk. 0 = unlimited.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {enabled && (
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="retention_sec"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Retention (seconds)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="0 = keep forever"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        How long segments are kept on disk. 0 = unlimited.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="segment_duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Segment duration (seconds)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder={segmentDurationPlaceholder}
-                        className="placeholder:italic"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Overrides the global segment length for this stream
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="segment_duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Segment duration (seconds)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder={segmentDurationPlaceholder}
+                          className="placeholder:italic"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Overrides the global segment length for this stream
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="max_size_gb"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Max size (GB)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={0.1}
-                        placeholder="0 = no limit"
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Oldest segments are pruned when this cap is exceeded
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="max_size_gb"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max size (GB)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.1}
+                          placeholder="0 = no limit"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Oldest segments are pruned when this cap is exceeded
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="storage_path"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Storage path</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={storagePathPlaceholder}
-                        className="placeholder:italic"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Overrides the default DVR root directory for this stream
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          )}
-        </Card>
+                <FormField
+                  control={form.control}
+                  name="storage_path"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Storage path</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={storagePathPlaceholder}
+                          className="placeholder:italic"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Overrides the default DVR root directory for this stream
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            )}
+          </Card>
         </fieldset>
 
         {!readOnly && (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t pt-4">
             {form.formState.isDirty && (
               <Button
                 type="button"

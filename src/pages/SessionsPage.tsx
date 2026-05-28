@@ -43,9 +43,7 @@ export function SessionsPage() {
 
   const allSessions = data?.sessions ?? [];
   const sessions = streamFilter
-    ? allSessions.filter((s) =>
-        s.stream_code.toLowerCase().includes(streamFilter.toLowerCase()),
-      )
+    ? allSessions.filter((s) => s.stream_code.toLowerCase().includes(streamFilter.toLowerCase()))
     : allSessions;
   const stats = data?.stats;
 
@@ -220,10 +218,7 @@ function SessionRow({ session }: { session: PlaySession }) {
         )}
       </TableCell>
       <TableCell>
-        <Link
-          to={`/streams/${session.stream_code}`}
-          className="font-mono text-xs hover:underline"
-        >
+        <Link to={`/streams/${session.stream_code}`} className="font-mono text-xs hover:underline">
           {session.stream_code}
         </Link>
       </TableCell>
@@ -239,9 +234,7 @@ function SessionRow({ session }: { session: PlaySession }) {
         {session.user_name && (
           <p className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{session.user_name}</span>
-            {session.named_by && (
-              <span className="ml-1 text-[10px]">· {session.named_by}</span>
-            )}
+            {session.named_by && <span className="ml-1 text-[10px]">· {session.named_by}</span>}
           </p>
         )}
       </TableCell>

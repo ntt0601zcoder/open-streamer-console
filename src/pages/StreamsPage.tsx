@@ -121,11 +121,7 @@ export function StreamsPage() {
         </div>
       ) : viewMode === 'table' ? (
         <div className="rounded-md border">
-          <StreamList
-            streams={streams ?? []}
-            filter={filter}
-            watchersByStream={watchersByStream}
-          />
+          <StreamList streams={streams ?? []} filter={filter} watchersByStream={watchersByStream} />
         </div>
       ) : (
         <StreamGrid streams={streams ?? []} filter={filter} proto={gridProto} />

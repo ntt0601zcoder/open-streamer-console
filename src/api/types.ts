@@ -264,21 +264,11 @@ export interface TranscoderGlobalConfig {
   gop?: number;
 }
 
-export const TranscoderMode = { multi: 'multi', per_profile: 'per_profile' } as const;
-export type TranscoderMode = (typeof TranscoderMode)[keyof typeof TranscoderMode];
-
 export interface TranscoderConfig {
   decoder?: DecoderConfig;
   video?: VideoTranscodeConfig;
   audio?: AudioTranscodeConfig;
   global?: TranscoderGlobalConfig;
-  extra_args?: string[];
-  /**
-   * FFmpeg process topology. `multi` runs one process per stream emitting
-   * every profile (single decode, multi encode); `legacy` spawns one process
-   * per profile. Empty = inherit per-server default ("multi").
-   */
-  mode?: TranscoderMode;
 }
 
 export interface WatermarkConfig {
@@ -369,23 +359,37 @@ export interface InputHealthSnapshot {
   tracks?: MediaTrackInfo[];
 }
 
-export const ProfileStatus = {
+export const ProcessStatus = {
   healthy: 'healthy',
   unhealthy: 'unhealthy',
 } as const;
-export type ProfileStatus = (typeof ProfileStatus)[keyof typeof ProfileStatus];
+export type ProcessStatus = (typeof ProcessStatus)[keyof typeof ProcessStatus];
 
-export interface TranscoderProfileSnapshot {
+/**
+ * Per-rendition descriptor. The new transcoder pipeline runs a single
+ * process per stream that emits every rendition, so per-rendition health
+ * is no longer tracked — only the rendition's logical identity (ladder
+ * index + track slug used in playlist names).
+ */
+export interface TranscoderRenditionSnapshot {
   index?: number;
   track?: string;
-  restart_count?: number;
-  errors?: ErrorEntry[];
-  /** Current health (not history) — server's authoritative read. */
-  status?: ProfileStatus;
 }
 
+/**
+ * Transcoder runtime envelope — one process per stream, so health,
+ * restart count and the running errors list moved up from the previous
+ * per-profile shape.
+ */
 export interface TranscoderRuntimeStatus {
-  profiles?: TranscoderProfileSnapshot[];
+  /** Current health of the transcoder process. */
+  status?: ProcessStatus;
+  /** Total restarts since the stream came up. */
+  restart_count?: number;
+  /** Rolling list of recent transcoder errors (newest first). */
+  errors?: ErrorEntry[];
+  /** Renditions the process is currently emitting. */
+  renditions?: TranscoderRenditionSnapshot[];
 }
 
 export const PublisherPushStatus = {
@@ -494,8 +498,7 @@ export const SessionCloseReason = {
   shutdown: 'shutdown',
   kicked: 'kicked',
 } as const;
-export type SessionCloseReason =
-  (typeof SessionCloseReason)[keyof typeof SessionCloseReason];
+export type SessionCloseReason = (typeof SessionCloseReason)[keyof typeof SessionCloseReason];
 
 export const SessionNamedBy = {
   token: 'token',
