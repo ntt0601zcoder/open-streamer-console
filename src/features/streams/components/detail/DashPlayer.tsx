@@ -76,14 +76,10 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
         // Sort ascending by bitrate so the dropdown reads low → high.
         const sorted = [...reps].sort((a, b) => (a.bitrateInKbit ?? 0) - (b.bitrateInKbit ?? 0));
         setVideoReps(sorted);
+        // ABR is on by default — keep the dropdown on "Auto" and only track
+        // which representation is currently on screen for the label.
         const cur = player.getCurrentRepresentationForType('video');
-        // ABR is off by default (see updateSettings below) — reflect the
-        // representation dashjs actually picked rather than defaulting the
-        // dropdown to "Auto", which would misrepresent the live state.
-        if (cur?.id) {
-          setCurrentRepId(cur.id);
-          setSelectedRepId(cur.id);
-        }
+        if (cur?.id) setCurrentRepId(cur.id);
       } catch {
         /* representations not ready yet — STREAM_INITIALIZED retries */
       }
@@ -206,10 +202,10 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     //     "freeze + jump 1 segment" symptom. With a larger live delay
     //     the buffer absorbs small holes, so disable the hard seek.
     //     jumpLargeGaps stays on as a last-resort recovery.
-    //   - abr.autoSwitchBitrate.video OFF: ABR swaps mid-playback also
-    //     stuttered; the preview / grid use case doesn't need adaptive
-    //     quality. Operators can still pick a rendition on the detail
-    //     page through the quality dropdown.
+    //   - abr.autoSwitchBitrate.video ON: adaptive quality by default so the
+    //     player picks the rendition that fits the client's bandwidth. The
+    //     quality dropdown lets operators pin a specific rendition (which
+    //     flips this off for the session) or return to Auto.
     player.updateSettings({
       streaming: {
         delay: {
@@ -231,7 +227,7 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
           jumpLargeGaps: true,
         },
         abr: {
-          autoSwitchBitrate: { video: false, audio: false },
+          autoSwitchBitrate: { video: true, audio: false },
         },
       },
     });
