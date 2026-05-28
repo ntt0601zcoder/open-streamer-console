@@ -14,6 +14,42 @@ export function useServerConfig() {
   });
 }
 
+/** The leading semver core (x.y.z) of a version string, ignoring any `v`
+ * prefix or `-suffix` (rc/avsync-test/git-describe). null when absent. */
+function semverCore(v: string | undefined | null): string | null {
+  if (!v) return null;
+  const m = v.match(/\d+\.\d+\.\d+/);
+  return m ? m[0] : null;
+}
+
+export interface VersionState {
+  /** Console version baked at build time (git tag via APP_VERSION, else package.json). */
+  client: string;
+  /** Server version from /config, or undefined until loaded. */
+  server?: string;
+  /**
+   * True when both expose a comparable semver core and they differ. False
+   * while loading or when either side lacks a parseable version — we only
+   * warn on a confirmed mismatch, never on uncertainty.
+   */
+  mismatch: boolean;
+}
+
+/**
+ * Compare the console's own version against the server version reported by
+ * /config. Used to warn operators running a console build that's out of
+ * sync with the server (stale tab, half-finished deploy, etc.).
+ */
+export function useVersionState(): VersionState {
+  const { data } = useServerConfig();
+  const client = __APP_VERSION__;
+  const server = data?.version?.version;
+  const clientCore = semverCore(client);
+  const serverCore = semverCore(server);
+  const mismatch = !!clientCore && !!serverCore && clientCore !== serverCore;
+  return { client, server, mismatch };
+}
+
 /**
  * Server-side static defaults — fetched once at app init and cached for the
  * lifetime of the tab. Use as form placeholders so users see the real fallback

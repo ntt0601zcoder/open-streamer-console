@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Film,
   ImageIcon,
   Layers,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { useServerConfig } from '@/features/config/hooks/useServerConfig';
+import { useServerConfig, useVersionState } from '@/features/config/hooks/useServerConfig';
 
 const navItems = [
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
@@ -34,6 +35,7 @@ interface SidebarProps {
 export function Sidebar({ open, onToggle }: SidebarProps) {
   const { data: serverConfig } = useServerConfig();
   const version = serverConfig?.version;
+  const versionState = useVersionState();
 
   return (
     <aside
@@ -105,25 +107,40 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
           <TooltipTrigger asChild>
             <div
               className={cn(
-                'border-t px-3 py-2 text-[10px] text-sidebar-foreground/60',
-                open ? 'text-left' : 'text-center',
+                'flex items-center gap-1.5 border-t px-3 py-2 text-[10px] text-sidebar-foreground/60',
+                open ? 'text-left' : 'justify-center',
               )}
-              title={!open ? `version: ${version.version}` : undefined}
             >
-              <span className="font-mono">
+              {versionState.mismatch && (
+                <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />
+              )}
+              <span className="min-w-0 truncate font-mono">
                 {open ? `version: ${version.version}` : version.version}
               </span>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="space-y-0.5">
-            <p className="text-xs font-medium">Open Streamer {version.version}</p>
+          <TooltipContent side="right" className="max-w-[280px] space-y-1">
+            {versionState.mismatch && (
+              <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                Console / server version mismatch
+              </p>
+            )}
+            <p className="text-xs">
+              <span className="text-muted-foreground">Console</span>{' '}
+              <span className="font-mono">{versionState.client}</span>
+            </p>
+            <p className="text-xs">
+              <span className="text-muted-foreground">Server</span>{' '}
+              <span className="font-mono">{version.version}</span>
+            </p>
             {version.commit && (
               <p className="font-mono text-[10px] text-muted-foreground">
-                commit {version.commit.slice(0, 12)}
+                server commit {version.commit.slice(0, 12)}
               </p>
             )}
             {version.built_at && (
-              <p className="text-[10px] text-muted-foreground">built {version.built_at}</p>
+              <p className="text-[10px] text-muted-foreground">server built {version.built_at}</p>
             )}
           </TooltipContent>
         </Tooltip>

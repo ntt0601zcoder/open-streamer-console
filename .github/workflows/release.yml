@@ -73,8 +73,11 @@ jobs:
           # `VITE_API_BASE_URL` repo/org variable to point the published image
           # at the production API; falls back to the Dockerfile default
           # (http://localhost:8080) when unset.
+          # APP_VERSION is the pushed tag (or the manual version input); the
+          # console displays it and compares against the server version.
           build-args: |
             VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || 'http://localhost:8080' }}
+            APP_VERSION=${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

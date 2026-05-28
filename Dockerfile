@@ -13,6 +13,12 @@ RUN npm ci
 ARG VITE_API_BASE_URL=http://localhost:8080
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
+# Console version baked into the bundle. The release workflow passes the
+# pushed git tag here; self-builds leave it empty and fall back to the
+# package.json version (see vite.config.ts).
+ARG APP_VERSION=
+ENV APP_VERSION=${APP_VERSION}
+
 COPY . .
 RUN npm run build
 
