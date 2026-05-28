@@ -9,12 +9,7 @@ interface VolumeControlProps {
   onVolumeChange: (v: number) => void;
 }
 
-export function VolumeControl({
-  volume,
-  muted,
-  onToggleMute,
-  onVolumeChange,
-}: VolumeControlProps) {
+export function VolumeControl({ volume, muted, onToggleMute, onVolumeChange }: VolumeControlProps) {
   const Icon = muted || volume === 0 ? VolumeOff : volume < 0.5 ? Volume1 : Volume2;
   const effective = muted ? 0 : volume;
   const fillPct = effective * 100;

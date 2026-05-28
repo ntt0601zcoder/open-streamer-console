@@ -190,4 +190,3 @@ function InputDot({
     </Tooltip>
   );
 }
-

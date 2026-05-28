@@ -185,9 +185,7 @@ function SessionRow({ session }: { session: PlaySession }) {
         {session.user_name && (
           <p className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{session.user_name}</span>
-            {session.named_by && (
-              <span className="ml-1 text-[10px]">· {session.named_by}</span>
-            )}
+            {session.named_by && <span className="ml-1 text-[10px]">· {session.named_by}</span>}
           </p>
         )}
       </TableCell>

@@ -50,7 +50,9 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
           ) : (
             <span className="h-4 w-4" aria-hidden />
           )}
-          {!compact && <span className="text-xs">{mounted ? (activeOption?.label ?? 'System') : 'Theme'}</span>}
+          {!compact && (
+            <span className="text-xs">{mounted ? (activeOption?.label ?? 'System') : 'Theme'}</span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-36">

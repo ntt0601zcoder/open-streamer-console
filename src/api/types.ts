@@ -498,8 +498,7 @@ export const SessionCloseReason = {
   shutdown: 'shutdown',
   kicked: 'kicked',
 } as const;
-export type SessionCloseReason =
-  (typeof SessionCloseReason)[keyof typeof SessionCloseReason];
+export type SessionCloseReason = (typeof SessionCloseReason)[keyof typeof SessionCloseReason];
 
 export const SessionNamedBy = {
   token: 'token',

@@ -34,11 +34,7 @@ export function VodPlayerDialog({ mountName, file, onClose }: VodPlayerDialogPro
         <VodFilePlayer src={playSrc} />
 
         <div className="space-y-3 pt-2">
-          <UrlRow
-            label="Play URL"
-            value={playSrc}
-            onCopy={() => void copy(playSrc, 'Play URL')}
-          />
+          <UrlRow label="Play URL" value={playSrc} onCopy={() => void copy(playSrc, 'Play URL')} />
           {ingestUrl && (
             <UrlRow
               label="Ingest URL"

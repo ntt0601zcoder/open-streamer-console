@@ -64,7 +64,14 @@ export function StreamPlayer({
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaErrorCountRef = useRef(0);
   const [state, setState] = useState<PlayerState>('loading');
-  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
+  const {
+    volume,
+    muted,
+    setVolume,
+    setMuted,
+    toggleMute,
+    apply: applyVolume,
+  } = usePlayerVolume({
     defaultMuted,
     controlledMuted,
   });
@@ -340,7 +347,6 @@ export function StreamPlayer({
     initHls(video);
   }
 
-
   function selectQuality(value: string) {
     const level = Number(value);
     const hls = hlsRef.current;
@@ -385,46 +391,46 @@ export function StreamPlayer({
             )}
             {dvrRange && <span className="flex-1" />}
             <div className="flex items-center gap-1">
-            {levels.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                    {selectedLevel === AUTO_LEVEL
-                      ? `Auto${autoLevel >= 0 && levels[autoLevel] ? ` (${formatLevel(levels[autoLevel])})` : ''}`
-                      : levels[selectedLevel]
-                        ? formatLevel(levels[selectedLevel])
-                        : 'Quality'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[180px]">
-                  <DropdownMenuLabel>Quality</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup
-                    value={String(selectedLevel)}
-                    onValueChange={selectQuality}
-                  >
-                    <DropdownMenuRadioItem value={String(AUTO_LEVEL)}>Auto</DropdownMenuRadioItem>
-                    {levels.map((level, index) => (
-                      <DropdownMenuRadioItem key={index} value={String(index)}>
-                        {formatLevel(level)}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <VolumeControl
-              volume={volume}
-              muted={muted}
-              onToggleMute={toggleMute}
-              onVolumeChange={setVolume}
-            />
-          </div>
+              {levels.length > 1 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      {selectedLevel === AUTO_LEVEL
+                        ? `Auto${autoLevel >= 0 && levels[autoLevel] ? ` (${formatLevel(levels[autoLevel])})` : ''}`
+                        : levels[selectedLevel]
+                          ? formatLevel(levels[selectedLevel])
+                          : 'Quality'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[180px]">
+                    <DropdownMenuLabel>Quality</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={String(selectedLevel)}
+                      onValueChange={selectQuality}
+                    >
+                      <DropdownMenuRadioItem value={String(AUTO_LEVEL)}>Auto</DropdownMenuRadioItem>
+                      {levels.map((level, index) => (
+                        <DropdownMenuRadioItem key={index} value={String(index)}>
+                          {formatLevel(level)}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <VolumeControl
+                volume={volume}
+                muted={muted}
+                onToggleMute={toggleMute}
+                onVolumeChange={setVolume}
+              />
+            </div>
           </div>
         </div>
       )}

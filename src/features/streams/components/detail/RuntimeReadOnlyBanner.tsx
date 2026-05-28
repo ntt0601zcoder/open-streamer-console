@@ -15,9 +15,9 @@ export function RuntimeReadOnlyBanner() {
       <div className="space-y-0.5">
         <p className="font-medium text-amber-700 dark:text-amber-300">Runtime stream (read-only)</p>
         <p className="text-xs text-muted-foreground">
-          This stream was materialised on the fly by auto-publish from a template prefix match.
-          It has no persisted config and cannot be edited here — change the template instead, or
-          stop the runtime stream and create a config-backed one with the same code.
+          This stream was materialised on the fly by auto-publish from a template prefix match. It
+          has no persisted config and cannot be edited here — change the template instead, or stop
+          the runtime stream and create a config-backed one with the same code.
         </p>
       </div>
     </div>

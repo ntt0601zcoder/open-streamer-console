@@ -48,7 +48,14 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
   const [selectedRepId, setSelectedRepId] = useState<string>(AUTO);
   // The representation actually on screen — drives the "Auto (720p)" label.
   const [currentRepId, setCurrentRepId] = useState<string | null>(null);
-  const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
+  const {
+    volume,
+    muted,
+    setVolume,
+    setMuted,
+    toggleMute,
+    apply: applyVolume,
+  } = usePlayerVolume({
     defaultMuted,
     controlledMuted,
   });

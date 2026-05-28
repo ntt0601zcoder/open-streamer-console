@@ -127,137 +127,136 @@ export function GeneralTab({ stream }: GeneralTabProps) {
           />
         )}
         <fieldset disabled={readOnly} className="contents space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Basic info</CardTitle>
-            <CardDescription>Stream identity and access settings</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            {/* Name */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="My Stream" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Stream key */}
-            <FormField
-              control={form.control}
-              name="stream_key"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Stream key</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Optional ingest auth key" {...field} />
-                  </FormControl>
-                  <FormDescription>Used for RTMP/SRT push authentication</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Description */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Optional description…"
-                      rows={2}
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Tags */}
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Tags</FormLabel>
-                  <FormControl>
-                    <Input placeholder="news, hd, live — comma separated" {...field} />
-                  </FormControl>
-                  <FormDescription>Comma-separated tags for filtering</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Template */}
-            <FormField
-              control={form.control}
-              name="template"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Template</FormLabel>
-                  <Select
-                    onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
-                    value={field.value ? field.value : '__none__'}
-                  >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Basic info</CardTitle>
+              <CardDescription>Stream identity and access settings</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              {/* Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
+                      <Input placeholder="My Stream" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">None</SelectItem>
-                      {(templates ?? []).map((t) => (
-                        <SelectItem key={t.code} value={t.code}>
-                          {t.name ? `${t.name} (${t.code})` : t.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Inherit config-like fields from a{' '}
-                    <Link to="/templates" className="underline">
-                      template
-                    </Link>
-                    . Fields you set explicitly on this stream override the template.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Disabled */}
-            <FormField
-              control={form.control}
-              name="disabled"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3 space-y-0 sm:col-span-2">
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div>
-                    <FormLabel>Disabled</FormLabel>
+              {/* Stream key */}
+              <FormField
+                control={form.control}
+                name="stream_key"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stream key</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Optional ingest auth key" {...field} />
+                    </FormControl>
+                    <FormDescription>Used for RTMP/SRT push authentication</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Description */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Optional description…"
+                        rows={2}
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Tags */}
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <Input placeholder="news, hd, live — comma separated" {...field} />
+                    </FormControl>
+                    <FormDescription>Comma-separated tags for filtering</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Template */}
+              <FormField
+                control={form.control}
+                name="template"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Template</FormLabel>
+                    <Select
+                      onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                      value={field.value ? field.value : '__none__'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {(templates ?? []).map((t) => (
+                          <SelectItem key={t.code} value={t.code}>
+                            {t.name ? `${t.name} (${t.code})` : t.code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormDescription>
-                      Exclude this stream from server bootstrap and reject pipeline starts
+                      Inherit config-like fields from a{' '}
+                      <Link to="/templates" className="underline">
+                        template
+                      </Link>
+                      . Fields you set explicitly on this stream override the template.
                     </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
+              {/* Disabled */}
+              <FormField
+                control={form.control}
+                name="disabled"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-3 space-y-0 sm:col-span-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div>
+                      <FormLabel>Disabled</FormLabel>
+                      <FormDescription>
+                        Exclude this stream from server bootstrap and reject pipeline starts
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
         </fieldset>
 
         {!readOnly && (

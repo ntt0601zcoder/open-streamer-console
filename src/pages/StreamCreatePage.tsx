@@ -37,11 +37,7 @@ import { InputsSection } from '@/features/streams/components/sections/InputsSect
 import { OutputSection } from '@/features/streams/components/sections/OutputSection';
 import { TranscoderSection } from '@/features/streams/components/sections/TranscoderSection';
 import { streamKeys } from '@/features/streams/hooks/useStreams';
-import {
-  createStreamSchema,
-  parsePids,
-  type CreateStreamValues,
-} from '@/features/streams/schemas';
+import { createStreamSchema, parsePids, type CreateStreamValues } from '@/features/streams/schemas';
 import { useTemplates } from '@/features/templates/hooks/useTemplates';
 import { listToRecord } from '@/lib/kvList';
 import { useMutation, useQueryClient } from '@tanstack/react-query';

@@ -62,7 +62,8 @@ export function RuntimeErrorIndicator({
   // Active = solid (the pipeline is consuming this entry). Standby = outline
   // (healthy but not currently consumed). Undefined keeps the legacy solid
   // styling for callers that don't expose the active/standby distinction.
-  const dotClass = isActive === false ? `bg-transparent border-2 ${palette.outline}` : palette.solid;
+  const dotClass =
+    isActive === false ? `bg-transparent border-2 ${palette.outline}` : palette.solid;
 
   return (
     <Tooltip>

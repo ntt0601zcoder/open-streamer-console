@@ -275,86 +275,85 @@ export function TimelineSlider({
 
       <div className="flex flex-1 flex-col gap-1">
         <div className="relative">
-        <div
-          ref={trackRef}
-          className={cn(
-            'group/track relative h-2 overflow-hidden rounded-full bg-white/15',
-            dragging ? 'cursor-grabbing' : hoverableForSeek ? 'cursor-pointer' : 'cursor-grab',
-          )}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={() => !dragging && setHoverMs(null)}
-        >
-          {/* Available data ranges — green. Anchor by `right` (data lives at
+          <div
+            ref={trackRef}
+            className={cn(
+              'group/track relative h-2 overflow-hidden rounded-full bg-white/15',
+              dragging ? 'cursor-grabbing' : hoverableForSeek ? 'cursor-pointer' : 'cursor-grab',
+            )}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={() => !dragging && setHoverMs(null)}
+          >
+            {/* Available data ranges — green. Anchor by `right` (data lives at
               the live edge) so a sub-percent strip with min-width=6px stays
               inside the overflow-hidden track instead of getting clipped off
               the right side. */}
-          {availableRanges?.map((r, i) => {
-            const left = ((r.start - viewStart) / visibleRange) * 100;
-            const right = ((viewEnd - r.end) / visibleRange) * 100;
-            if (left >= 100 || right >= 100) return null;
-            const clampedLeft = Math.max(left, 0);
-            const clampedRight = Math.max(right, 0);
-            const visibleWidth = 100 - clampedLeft - clampedRight;
-            if (visibleWidth <= 0) return null;
-            return (
+            {availableRanges?.map((r, i) => {
+              const left = ((r.start - viewStart) / visibleRange) * 100;
+              const right = ((viewEnd - r.end) / visibleRange) * 100;
+              if (left >= 100 || right >= 100) return null;
+              const clampedLeft = Math.max(left, 0);
+              const clampedRight = Math.max(right, 0);
+              const visibleWidth = 100 - clampedLeft - clampedRight;
+              if (visibleWidth <= 0) return null;
+              return (
+                <div
+                  key={`avail-${i}`}
+                  className="absolute inset-y-0 bg-emerald-500"
+                  style={{
+                    right: `${clampedRight}%`,
+                    width: `${visibleWidth}%`,
+                    minWidth: '6px',
+                  }}
+                />
+              );
+            })}
+
+            {/* Gaps — red */}
+            {gaps?.map((g, i) => {
+              const left = ((g.start - viewStart) / visibleRange) * 100;
+              const right = ((viewEnd - g.end) / visibleRange) * 100;
+              if (left >= 100 || right >= 100) return null;
+              const clampedLeft = Math.max(left, 0);
+              const clampedRight = Math.max(right, 0);
+              const visibleWidth = 100 - clampedLeft - clampedRight;
+              if (visibleWidth <= 0) return null;
+              return (
+                <div
+                  key={`gap-${i}`}
+                  className="absolute inset-y-0 bg-red-500"
+                  style={{
+                    left: `${clampedLeft}%`,
+                    width: `${visibleWidth}%`,
+                    minWidth: '4px',
+                  }}
+                />
+              );
+            })}
+
+            {/* Tick marks */}
+            {zoomTicks.map((t, i) => (
               <div
-                key={`avail-${i}`}
-                className="absolute inset-y-0 bg-emerald-500"
-                style={{
-                  right: `${clampedRight}%`,
-                  width: `${visibleWidth}%`,
-                  minWidth: '6px',
-                }}
+                key={`tick-${i}`}
+                className="absolute top-0 bottom-0 w-px bg-white/30"
+                style={{ left: `${((t - viewStart) / visibleRange) * 100}%` }}
               />
-            );
-          })}
+            ))}
 
-          {/* Gaps — red */}
-          {gaps?.map((g, i) => {
-            const left = ((g.start - viewStart) / visibleRange) * 100;
-            const right = ((viewEnd - g.end) / visibleRange) * 100;
-            if (left >= 100 || right >= 100) return null;
-            const clampedLeft = Math.max(left, 0);
-            const clampedRight = Math.max(right, 0);
-            const visibleWidth = 100 - clampedLeft - clampedRight;
-            if (visibleWidth <= 0) return null;
-            return (
+            {/* Playhead — only if it's inside the current zoom window */}
+            {playheadInView && (
               <div
-                key={`gap-${i}`}
-                className="absolute inset-y-0 bg-red-500"
-                style={{
-                  left: `${clampedLeft}%`,
-                  width: `${visibleWidth}%`,
-                  minWidth: '4px',
-                }}
+                className={cn(
+                  'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-black/40 transition-transform',
+                  isLive ? 'h-3.5 w-3.5 bg-red-500' : 'h-3.5 w-3.5 bg-white',
+                  dragging && 'scale-125',
+                )}
+                style={{ left: `${playheadPercent}%` }}
               />
-            );
-          })}
-
-          {/* Tick marks */}
-          {zoomTicks.map((t, i) => (
-            <div
-              key={`tick-${i}`}
-              className="absolute top-0 bottom-0 w-px bg-white/30"
-              style={{ left: `${((t - viewStart) / visibleRange) * 100}%` }}
-            />
-          ))}
-
-          {/* Playhead — only if it's inside the current zoom window */}
-          {playheadInView && (
-            <div
-              className={cn(
-                'absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-black/40 transition-transform',
-                isLive ? 'h-3.5 w-3.5 bg-red-500' : 'h-3.5 w-3.5 bg-white',
-                dragging && 'scale-125',
-              )}
-              style={{ left: `${playheadPercent}%` }}
-            />
-          )}
-
-        </div>
+            )}
+          </div>
           {/* Hover tooltip — outside overflow-hidden so it can sit above the track. */}
           {hoverMs != null && (
             <div

@@ -51,9 +51,7 @@ export function StreamGrid({ streams, filter, proto }: StreamGridProps) {
         ) : (
           <>
             <Radio className="h-8 w-8" />
-            <p className="text-sm">
-              No streams have {proto.toUpperCase()} enabled
-            </p>
+            <p className="text-sm">No streams have {proto.toUpperCase()} enabled</p>
           </>
         )}
       </div>
@@ -64,8 +62,8 @@ export function StreamGrid({ streams, filter, proto }: StreamGridProps) {
     <div className="space-y-3">
       {hiddenByProto > 0 && (
         <p className="text-xs text-muted-foreground">
-          {hiddenByProto} stream{hiddenByProto !== 1 ? 's' : ''} hidden — {proto.toUpperCase()}{' '}
-          not enabled.
+          {hiddenByProto} stream{hiddenByProto !== 1 ? 's' : ''} hidden — {proto.toUpperCase()} not
+          enabled.
         </p>
       )}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -96,10 +94,7 @@ function StreamGridTile({ stream, proto }: { stream: Stream; proto: GridProto })
 
   return (
     <div className="overflow-hidden rounded-md border bg-card">
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
+      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
         <Suspense fallback={<PlayerFallback />}>
           {proto === 'hls' ? (
             <StreamPlayer
@@ -130,9 +125,7 @@ function StreamGridTile({ stream, proto }: { stream: Stream; proto: GridProto })
               >
                 {stream.name || stream.code}
               </Link>
-              <p className="truncate font-mono text-[11px] text-muted-foreground">
-                {stream.code}
-              </p>
+              <p className="truncate font-mono text-[11px] text-muted-foreground">{stream.code}</p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <StreamStatusBadge stream={stream} />
@@ -191,8 +184,8 @@ function StreamInfoPanel({ stream }: { stream: Stream }) {
         .map(([k]) => k.toUpperCase())
     : [];
   const pushes = resolved.push ?? [];
-  const activePushes = stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active')
-    .length ?? 0;
+  const activePushes =
+    stream.runtime?.publisher?.pushes?.filter((p) => p.status === 'active').length ?? 0;
   const tcRuntime = stream.runtime?.transcoder;
   const tcRenditions = tcRuntime?.renditions ?? [];
   const tcErrors = tcRuntime?.errors ?? [];
@@ -237,9 +230,7 @@ function StreamInfoPanel({ stream }: { stream: Stream }) {
               );
             })}
             {inputs.length > 3 && (
-              <li className="text-[11px] text-muted-foreground">
-                +{inputs.length - 3} more
-              </li>
+              <li className="text-[11px] text-muted-foreground">+{inputs.length - 3} more</li>
             )}
           </ul>
         )}
@@ -280,8 +271,7 @@ function StreamInfoPanel({ stream }: { stream: Stream }) {
                 )}
                 {videoProfiles.length > 0 && (
                   <span className="font-medium">
-                    {videoProfiles.length}{' '}
-                    {videoProfiles.length === 1 ? 'rendition' : 'renditions'}
+                    {videoProfiles.length} {videoProfiles.length === 1 ? 'rendition' : 'renditions'}
                   </span>
                 )}
               </p>

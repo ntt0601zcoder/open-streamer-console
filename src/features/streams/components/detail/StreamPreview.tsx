@@ -16,9 +16,7 @@ import { MediaSummaryCard } from './MediaSummaryCard';
 const StreamPlayer = lazy(() =>
   import('./StreamPlayer').then((m) => ({ default: m.StreamPlayer })),
 );
-const DashPlayer = lazy(() =>
-  import('./DashPlayer').then((m) => ({ default: m.DashPlayer })),
-);
+const DashPlayer = lazy(() => import('./DashPlayer').then((m) => ({ default: m.DashPlayer })));
 
 interface StreamPreviewProps {
   stream: Stream;

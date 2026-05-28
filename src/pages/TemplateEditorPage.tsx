@@ -32,15 +32,8 @@ import { InputsSection } from '@/features/streams/components/sections/InputsSect
 import { OutputSection } from '@/features/streams/components/sections/OutputSection';
 import { PrefixesSection } from '@/features/streams/components/sections/PrefixesSection';
 import { TranscoderSection } from '@/features/streams/components/sections/TranscoderSection';
-import {
-  parsePids,
-  templateSchema,
-  type TemplateFormValues,
-} from '@/features/streams/schemas';
-import {
-  templateKeys,
-  useTemplate,
-} from '@/features/templates/hooks/useTemplates';
+import { parsePids, templateSchema, type TemplateFormValues } from '@/features/streams/schemas';
+import { templateKeys, useTemplate } from '@/features/templates/hooks/useTemplates';
 import { listToRecord, recordToList, type KeyValuePair } from '@/lib/kvList';
 
 const EMPTY_VALUES: TemplateFormValues = {
@@ -131,8 +124,8 @@ export function TemplateEditorPage() {
           {isEdit ? `Edit template "${editingCode}"` : 'Create template'}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Templates are reusable bundles of stream config. Streams that reference a template
-          inherit any field they leave empty.
+          Templates are reusable bundles of stream config. Streams that reference a template inherit
+          any field they leave empty.
         </p>
       </div>
 
@@ -220,9 +213,7 @@ function GeneralSection({
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
-                Unique slug. Cannot be changed after creation.
-              </FormDescription>
+              <FormDescription>Unique slug. Cannot be changed after creation.</FormDescription>
               <FormMessage />
             </FormItem>
           )}

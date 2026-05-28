@@ -586,8 +586,7 @@ function ListenersSection() {
   const rtspTransportPlaceholder = dl?.rtsp?.transport ?? 'default';
   const srtPortPlaceholder = dl?.srt?.port != null ? String(dl.srt.port) : 'default';
   const srtHostPlaceholder = dl?.srt?.listen_host ?? 'default';
-  const srtLatencyPlaceholder =
-    dl?.srt?.latency_ms != null ? String(dl.srt.latency_ms) : 'default';
+  const srtLatencyPlaceholder = dl?.srt?.latency_ms != null ? String(dl.srt.latency_ms) : 'default';
   const form = useForm<ListenersValues>({
     resolver: zodResolver(listenersSchema),
     values: {
@@ -1227,8 +1226,8 @@ function WatermarksSection() {
             <CardTitle className="text-base">Watermark library</CardTitle>
             <CardDescription>
               Directory where uploaded watermark assets are stored. Streams reference assets by
-              filename — the server resolves the absolute path from this directory before passing
-              to the transcoder.
+              filename — the server resolves the absolute path from this directory before passing to
+              the transcoder.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1239,16 +1238,12 @@ function WatermarksSection() {
                 <FormItem>
                   <FormLabel>Assets directory</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="./watermarks"
-                      className="placeholder:italic"
-                      {...field}
-                    />
+                    <Input placeholder="./watermarks" className="placeholder:italic" {...field} />
                   </FormControl>
                   <FormDescription>
                     Absolute or process-relative path. Must be writable by the open-streamer
-                    process. Empty = server default <code>./watermarks</code>. Existing assets
-                    are not migrated when this path changes — move files manually.
+                    process. Empty = server default <code>./watermarks</code>. Existing assets are
+                    not migrated when this path changes — move files manually.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1626,8 +1621,8 @@ function SessionsSection() {
                     />
                   </FormControl>
                   <FormDescription>
-                    Reserved for future MaxMind/IP2Location integration. The default GeoIP
-                    resolver is a no-op (Country=&quot;&quot;).
+                    Reserved for future MaxMind/IP2Location integration. The default GeoIP resolver
+                    is a no-op (Country=&quot;&quot;).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

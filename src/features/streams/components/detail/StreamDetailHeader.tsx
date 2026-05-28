@@ -73,8 +73,7 @@ export function StreamDetailHeader({ stream }: StreamDetailHeaderProps) {
                 </Badge>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                Pipeline live since{' '}
-                {startedAt ? new Date(startedAt).toLocaleString() : 'unknown'}
+                Pipeline live since {startedAt ? new Date(startedAt).toLocaleString() : 'unknown'}
               </TooltipContent>
             </Tooltip>
           )}

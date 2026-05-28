@@ -386,7 +386,6 @@ export function TranscoderSection() {
               </CardContent>
             )}
           </Card>
-
         </>
       )}
     </div>

@@ -1,11 +1,7 @@
 import { ArrowRight, Music, Radio, Video } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  MediaTrackKind,
-  type MediaSummary,
-  type MediaTrackInfo,
-} from '@/api/types';
+import { MediaTrackKind, type MediaSummary, type MediaTrackInfo } from '@/api/types';
 import { cn } from '@/lib/utils';
 
 interface MediaSummaryCardProps {
@@ -82,12 +78,7 @@ interface TrackColumnProps {
 function TrackColumn({ title, tracks, accent }: TrackColumnProps) {
   return (
     <div className="space-y-1.5">
-      <p
-        className={cn(
-          'text-[10px] font-semibold uppercase tracking-wide',
-          accent,
-        )}
-      >
+      <p className={cn('text-[10px] font-semibold uppercase tracking-wide', accent)}>
         {title} media
       </p>
       {tracks.length === 0 ? (
@@ -134,8 +125,7 @@ function TrackLine({ track, index }: { track: MediaTrackInfo; index: number }) {
   return (
     <span className="font-mono">
       <span className="text-muted-foreground">{prefix}</span>{' '}
-      <span className="uppercase">{codec}</span>{' '}
-      {res && <span>{res} </span>}
+      <span className="uppercase">{codec}</span> {res && <span>{res} </span>}
       {rate && <span className="text-muted-foreground">{rate}</span>}
     </span>
   );

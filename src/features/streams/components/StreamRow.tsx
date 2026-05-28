@@ -39,8 +39,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
   const totalPushCount = resolved.push?.filter((p) => p.enabled).length ?? 0;
 
   const streamStatus = stream.runtime?.status;
-  const isRunning =
-    streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
+  const isRunning = streamStatus === StreamStatus.active || streamStatus === StreamStatus.degraded;
 
   // Transcode summary. The Go server emits empty strings for unset enum fields
   // (codec: "" instead of omitting), so treat both as "no codec set" and let the
@@ -201,8 +200,7 @@ export function StreamRow({ stream, watchers = 0 }: StreamRowProps) {
                     <span
                       className={cn(
                         'inline-flex items-center gap-1',
-                        activePushCount < totalPushCount &&
-                          'text-amber-600 dark:text-amber-400',
+                        activePushCount < totalPushCount && 'text-amber-600 dark:text-amber-400',
                       )}
                     >
                       <Send className="h-3 w-3" />

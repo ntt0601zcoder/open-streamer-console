@@ -115,7 +115,8 @@ update (`POST /config`) — services start/stop in place, no restart needed.
 Sections: **Server** (HTTP + CORS), **Listeners** (RTMP/RTSP/SRT shared
 ports), **Ingestor**, **HLS** publisher, **DASH** publisher, **Transcoder**
 (FFmpeg path + multi-output toggle), **Manager**, **Hooks** (Kafka brokers
-+ worker count), **Buffer**, **Logging**.
+
+- worker count), **Buffer**, **Logging**.
 
 ### FFmpeg probe
 
