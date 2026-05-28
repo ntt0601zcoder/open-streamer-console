@@ -1,11 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
-import { MediaPlayer, type MediaPlayerClass } from 'dashjs';
-import { Loader2, RefreshCw, VideoOff, WifiOff } from 'lucide-react';
+import { MediaPlayer, type MediaPlayerClass, type Representation } from 'dashjs';
+import { Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { usePlayerVolume } from '@/features/streams/hooks/usePlayerVolume';
 import { VolumeControl } from './VolumeControl';
 
 type PlayerState = 'loading' | 'playing' | 'retrying' | 'error';
+
+const AUTO = '__auto__';
+
+function formatRep(r: Representation): string {
+  const height = r.height || undefined;
+  const mbps = r.bitrateInKbit ? (r.bitrateInKbit / 1000).toFixed(1) : null;
+  if (height && mbps) return `${height}p · ${mbps} Mbps`;
+  if (height) return `${height}p`;
+  if (mbps) return `${mbps} Mbps`;
+  return r.id;
+}
 
 interface DashPlayerProps {
   dashUrl: string;
@@ -22,6 +42,12 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
   const playerRef = useRef<MediaPlayerClass | null>(null);
   const [state, setState] = useState<PlayerState>('loading');
   const [errorMsg, setErrorMsg] = useState<string>('');
+  // Video representations + the operator's pick. `selected === AUTO` means
+  // adaptive (dashjs ABR re-enabled); otherwise a pinned representation id.
+  const [videoReps, setVideoReps] = useState<Representation[]>([]);
+  const [selectedRepId, setSelectedRepId] = useState<string>(AUTO);
+  // The representation actually on screen — drives the "Auto (720p)" label.
+  const [currentRepId, setCurrentRepId] = useState<string | null>(null);
   const { volume, muted, setVolume, setMuted, toggleMute, apply: applyVolume } = usePlayerVolume({
     defaultMuted,
     controlledMuted,
@@ -40,6 +66,28 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
 
     const player = MediaPlayer().create();
     playerRef.current = player;
+    setVideoReps([]);
+    setSelectedRepId(AUTO);
+    setCurrentRepId(null);
+
+    function refreshRepresentations() {
+      try {
+        const reps = player.getRepresentationsByType('video') ?? [];
+        // Sort ascending by bitrate so the dropdown reads low → high.
+        const sorted = [...reps].sort((a, b) => (a.bitrateInKbit ?? 0) - (b.bitrateInKbit ?? 0));
+        setVideoReps(sorted);
+        const cur = player.getCurrentRepresentationForType('video');
+        // ABR is off by default (see updateSettings below) — reflect the
+        // representation dashjs actually picked rather than defaulting the
+        // dropdown to "Auto", which would misrepresent the live state.
+        if (cur?.id) {
+          setCurrentRepId(cur.id);
+          setSelectedRepId(cur.id);
+        }
+      } catch {
+        /* representations not ready yet — STREAM_INITIALIZED retries */
+      }
+    }
 
     function onPlaying() {
       setState('playing');
@@ -82,6 +130,15 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     video.addEventListener('error', onVideoError);
     const events = MediaPlayer.events as unknown as Record<string, string>;
     if (events.ERROR) player.on(events.ERROR, onDashError);
+    // Representations become known once the stream initialises; keep the
+    // dropdown's "current" label in sync as ABR / manual switches render.
+    if (events.STREAM_INITIALIZED) player.on(events.STREAM_INITIALIZED, refreshRepresentations);
+    if (events.QUALITY_CHANGE_RENDERED) {
+      player.on(events.QUALITY_CHANGE_RENDERED, (e: unknown) => {
+        const rep = (e as { newRepresentation?: { id?: string } })?.newRepresentation;
+        if (rep?.id) setCurrentRepId(rep.id);
+      });
+    }
     // Belt-and-suspenders: dashjs's own PLAYBACK_PLAYING fires even in
     // edge cases where the <video> element doesn't surface a 'playing'
     // event (e.g. seek-on-attach into an already-buffered range). Without
@@ -208,6 +265,41 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     }
   }
 
+  function selectQuality(value: string) {
+    const player = playerRef.current;
+    if (!player) return;
+    setSelectedRepId(value);
+    if (value === AUTO) {
+      // Re-enable adaptive switching (off by default for grid stability).
+      player.updateSettings({
+        streaming: { abr: { autoSwitchBitrate: { video: true } } },
+      });
+      return;
+    }
+    // Pin a rendition: disable ABR first so it doesn't immediately swap back,
+    // then force-replace the buffer with the chosen representation.
+    player.updateSettings({
+      streaming: { abr: { autoSwitchBitrate: { video: false } } },
+    });
+    try {
+      player.setRepresentationForTypeById('video', value, true);
+      setCurrentRepId(value);
+    } catch {
+      /* representation gone (manifest reload) — ignore, ABR list refreshes */
+    }
+  }
+
+  const triggerLabel =
+    selectedRepId === AUTO
+      ? `Auto${(() => {
+          const cur = videoReps.find((r) => r.id === currentRepId);
+          return cur ? ` (${formatRep(cur)})` : '';
+        })()}`
+      : (() => {
+          const r = videoReps.find((r) => r.id === selectedRepId);
+          return r ? formatRep(r) : 'Quality';
+        })();
+
   return (
     <div className="group relative aspect-video w-full overflow-hidden rounded-md bg-black">
       <video ref={videoRef} className="h-full w-full" playsInline autoPlay />
@@ -218,12 +310,40 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
             LIVE · DASH
           </span>
-          <VolumeControl
-            volume={volume}
-            muted={muted}
-            onToggleMute={toggleMute}
-            onVolumeChange={setVolume}
-          />
+          <div className="flex items-center gap-1">
+            {videoReps.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                    {triggerLabel}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  <DropdownMenuLabel>Quality</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={selectedRepId} onValueChange={selectQuality}>
+                    <DropdownMenuRadioItem value={AUTO}>Auto</DropdownMenuRadioItem>
+                    {videoReps.map((r) => (
+                      <DropdownMenuRadioItem key={r.id} value={r.id}>
+                        {formatRep(r)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <VolumeControl
+              volume={volume}
+              muted={muted}
+              onToggleMute={toggleMute}
+              onVolumeChange={setVolume}
+            />
+          </div>
         </div>
       )}
 
