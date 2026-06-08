@@ -62,6 +62,7 @@ const EMPTY_VALUES: TemplateFormValues = {
     segment_duration: undefined,
     max_size_gb: undefined,
     storage_path: '',
+    profiles: 'best',
   },
 };
 
@@ -370,6 +371,7 @@ function templateToFormValues(t: Template): TemplateFormValues {
           segment_duration: t.dvr.segment_duration,
           max_size_gb: t.dvr.max_size_gb,
           storage_path: t.dvr.storage_path ?? '',
+          profiles: t.dvr.profiles === 'all' ? 'all' : 'best',
         }
       : EMPTY_VALUES.dvr,
   };

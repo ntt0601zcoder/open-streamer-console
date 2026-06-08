@@ -37,12 +37,6 @@ interface StreamPlayerProps {
   streamCode: string;
   /** Polled DVR range — null/undefined disables timeshift controls. */
   recordingInfo?: RecordingInfo | null;
-  /**
-   * DVR segment duration in seconds (per-stream override or global default).
-   * Combined with `segment_count` to estimate where actual on-disk data lives
-   * within the broader [started_at, last_segment_at] window.
-   */
-  segmentDurationSec?: number;
   /** Start muted (default false). Used by the grid view to prevent N tiles
       blasting audio simultaneously. */
   defaultMuted?: boolean;
@@ -55,7 +49,6 @@ export function StreamPlayer({
   active,
   streamCode,
   recordingInfo,
-  segmentDurationSec,
   defaultMuted,
   controlledMuted,
 }: StreamPlayerProps) {
@@ -89,31 +82,28 @@ export function StreamPlayer({
   // wall-clock RFC3339 with timezone; Date.parse normalises to UTC ms.
   const dvrRange = useMemo(() => {
     if (!recordingInfo) return null;
-    const startMs = Date.parse(recordingInfo.dvr_range.started_at);
-    const lastMs = recordingInfo.dvr_range.last_segment_at
-      ? Date.parse(recordingInfo.dvr_range.last_segment_at)
-      : Date.now();
+    const startMs = Date.parse(recordingInfo.dvr_range.from);
+    const lastMs = recordingInfo.dvr_range.to ? Date.parse(recordingInfo.dvr_range.to) : Date.now();
     if (!Number.isFinite(startMs) || !Number.isFinite(lastMs)) return null;
     if (lastMs <= startMs) return null;
     return { startMs, endMs: lastMs };
   }, [recordingInfo]);
 
-  // Where the on-disk data actually lives: assume contiguous from `last_segment_at`
-  // backwards by `segment_count × segment_duration`. Anything earlier (within the
+  // Where the on-disk data actually lives: assume contiguous from `to` backwards
+  // by `hour_count` hours (one CMAF blob per hour). Anything earlier (within the
   // boot→last span) is rendered grey — recording was off or pruned.
   const availableRanges = useMemo<MsRange[]>(() => {
     if (!dvrRange || !recordingInfo) return [];
-    if (!segmentDurationSec || segmentDurationSec <= 0) return [];
-    if (recordingInfo.segment_count <= 0) return [];
-    const dataSpanMs = recordingInfo.segment_count * segmentDurationSec * 1000;
+    if (recordingInfo.hour_count <= 0) return [];
+    const dataSpanMs = recordingInfo.hour_count * 3600 * 1000;
     const start = Math.max(dvrRange.startMs, dvrRange.endMs - dataSpanMs);
     return [{ start, end: dvrRange.endMs }];
-  }, [dvrRange, recordingInfo, segmentDurationSec]);
+  }, [dvrRange, recordingInfo]);
 
   const gapRanges = useMemo<MsRange[]>(() => {
     if (!recordingInfo?.gaps) return [];
     return recordingInfo.gaps
-      .map((g) => ({ start: Date.parse(g.from), end: Date.parse(g.to) }))
+      .map((g) => ({ start: g.from_ms, end: g.to_ms }))
       .filter((g) => Number.isFinite(g.start) && Number.isFinite(g.end) && g.end > g.start);
   }, [recordingInfo]);
 

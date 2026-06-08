@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MediaPlayer, type MediaPlayerClass, type Representation } from 'dashjs';
 import { Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { recordingsApi, type RecordingInfo } from '@/api/recordings';
+import { cn } from '@/lib/utils';
 import { usePlayerVolume } from '@/features/streams/hooks/usePlayerVolume';
+import { TimelineSlider, type MsRange } from './TimelineSlider';
 import { VolumeControl } from './VolumeControl';
 
 type PlayerState = 'loading' | 'playing' | 'retrying' | 'error';
@@ -30,6 +33,10 @@ function formatRep(r: Representation): string {
 interface DashPlayerProps {
   dashUrl: string;
   active: boolean;
+  /** Stream code — used to build the timeshift MPD URL when DVR is enabled. */
+  streamCode?: string;
+  /** Polled DVR range — null/undefined disables timeshift controls. */
+  recordingInfo?: RecordingInfo | null;
   /** Start muted (default false). Used by the grid view to prevent N tiles
       blasting audio simultaneously. */
   defaultMuted?: boolean;
@@ -37,7 +44,14 @@ interface DashPlayerProps {
   controlledMuted?: boolean;
 }
 
-export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: DashPlayerProps) {
+export function DashPlayer({
+  dashUrl,
+  active,
+  streamCode,
+  recordingInfo,
+  defaultMuted,
+  controlledMuted,
+}: DashPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<MediaPlayerClass | null>(null);
   const [state, setState] = useState<PlayerState>('loading');
@@ -64,6 +78,42 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
   useEffect(() => {
     applyVolume(videoRef);
   }, [applyVolume]);
+
+  // Timeshift state — null = follow live edge.
+  const [timeshiftMs, setTimeshiftMs] = useState<number | null>(null);
+
+  // Full slider window: recording boot → live edge. Mirrors StreamPlayer (HLS).
+  const dvrRange = useMemo(() => {
+    if (!recordingInfo) return null;
+    const startMs = Date.parse(recordingInfo.dvr_range.from);
+    const lastMs = recordingInfo.dvr_range.to ? Date.parse(recordingInfo.dvr_range.to) : Date.now();
+    if (!Number.isFinite(startMs) || !Number.isFinite(lastMs)) return null;
+    if (lastMs <= startMs) return null;
+    return { startMs, endMs: lastMs };
+  }, [recordingInfo]);
+
+  const availableRanges = useMemo<MsRange[]>(() => {
+    if (!dvrRange || !recordingInfo) return [];
+    if (recordingInfo.hour_count <= 0) return [];
+    const dataSpanMs = recordingInfo.hour_count * 3600 * 1000;
+    const start = Math.max(dvrRange.startMs, dvrRange.endMs - dataSpanMs);
+    return [{ start, end: dvrRange.endMs }];
+  }, [dvrRange, recordingInfo]);
+
+  const gapRanges = useMemo<MsRange[]>(() => {
+    if (!recordingInfo?.gaps) return [];
+    return recordingInfo.gaps
+      .map((g) => ({ start: g.from_ms, end: g.to_ms }))
+      .filter((g) => Number.isFinite(g.start) && Number.isFinite(g.end) && g.end > g.start);
+  }, [recordingInfo]);
+
+  // Source URL — live MPD or static timeshift MPD. The server renders a
+  // VOD-flavoured MPD whenever any timeshift param is set on `index.mpd`.
+  const sourceUrl = useMemo(() => {
+    if (timeshiftMs == null || !streamCode) return dashUrl;
+    const fromSec = Math.floor(timeshiftMs / 1000) + 1;
+    return recordingsApi.dashTimeshiftUrl(streamCode, { from: fromSec });
+  }, [dashUrl, streamCode, timeshiftMs]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -240,7 +290,7 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     });
     player.setAutoPlay(true);
     player.attachView(video);
-    player.attachSource(dashUrl);
+    player.attachSource(sourceUrl);
 
     return () => {
       video.removeEventListener('playing', onPlaying);
@@ -254,7 +304,7 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
       }
       playerRef.current = null;
     };
-  }, [dashUrl, active]);
+  }, [sourceUrl, active]);
 
   function manualRetry() {
     const video = videoRef.current;
@@ -262,7 +312,7 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
     if (!video || !player) return;
     setState('loading');
     try {
-      player.attachSource(dashUrl);
+      player.attachSource(sourceUrl);
     } catch {
       setState('error');
     }
@@ -308,44 +358,61 @@ export function DashPlayer({ dashUrl, active, defaultMuted, controlledMuted }: D
       <video ref={videoRef} className="h-full w-full" playsInline autoPlay />
 
       {state === 'playing' && (
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="flex items-center gap-1.5 text-xs font-medium text-white">
-            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            LIVE · DASH
-          </span>
-          <div className="flex items-center gap-1">
-            {videoReps.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                    {triggerLabel}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[180px]">
-                  <DropdownMenuLabel>Quality</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={selectedRepId} onValueChange={selectQuality}>
-                    <DropdownMenuRadioItem value={AUTO}>Auto</DropdownMenuRadioItem>
-                    {videoReps.map((r) => (
-                      <DropdownMenuRadioItem key={r.id} value={r.id}>
-                        {formatRep(r)}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <VolumeControl
-              volume={volume}
-              muted={muted}
-              onToggleMute={toggleMute}
-              onVolumeChange={setVolume}
+        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 px-3 pb-2 pt-3 bg-gradient-to-t from-black/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+          {dvrRange && (
+            <TimelineSlider
+              startMs={dvrRange.startMs}
+              endMs={dvrRange.endMs}
+              valueMs={timeshiftMs}
+              onChange={setTimeshiftMs}
+              availableRanges={availableRanges}
+              gaps={gapRanges}
             />
+          )}
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+              <span
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  timeshiftMs == null ? 'bg-red-500 animate-pulse' : 'bg-white/40',
+                )}
+              />
+              {timeshiftMs == null ? 'LIVE · DASH' : 'TIMESHIFT · DASH'}
+            </span>
+            <div className="flex items-center gap-1">
+              {videoReps.length > 1 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      {triggerLabel}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[180px]">
+                    <DropdownMenuLabel>Quality</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={selectedRepId} onValueChange={selectQuality}>
+                      <DropdownMenuRadioItem value={AUTO}>Auto</DropdownMenuRadioItem>
+                      {videoReps.map((r) => (
+                        <DropdownMenuRadioItem key={r.id} value={r.id}>
+                          {formatRep(r)}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <VolumeControl
+                volume={volume}
+                muted={muted}
+                onToggleMute={toggleMute}
+                onVolumeChange={setVolume}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,13 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 
@@ -127,6 +134,27 @@ export function DvrSection({ codeFieldName = 'code' }: DvrSectionProps = {}) {
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="dvr.profiles"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Renditions to archive</FormLabel>
+                <Select value={field.value || 'best'} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="best">Best rendition only</SelectItem>
+                    <SelectItem value="all">All renditions</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

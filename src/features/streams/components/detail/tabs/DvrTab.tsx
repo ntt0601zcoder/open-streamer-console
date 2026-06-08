@@ -13,6 +13,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type { Stream } from '@/api/types';
 import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
@@ -38,6 +45,7 @@ function toFormValues(stream: Stream): DvrFormValues {
     segment_duration: dvr?.segment_duration,
     max_size_gb: dvr?.max_size_gb,
     storage_path: dvr?.storage_path ?? '',
+    profiles: dvr?.profiles === 'all' ? 'all' : 'best',
   };
 }
 
@@ -206,6 +214,31 @@ export function DvrTab({ stream }: DvrTabProps) {
                       </FormControl>
                       <FormDescription>
                         Overrides the default DVR root directory for this stream
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="profiles"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Renditions to archive</FormLabel>
+                      <Select value={field.value || 'best'} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="best">Best rendition only</SelectItem>
+                          <SelectItem value="all">All renditions</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Which ABR renditions the CMAF archive records
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

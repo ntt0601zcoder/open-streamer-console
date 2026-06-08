@@ -13,27 +13,35 @@ export interface TimeshiftOptions {
 }
 
 export interface DvrRange {
-  /** Earliest segment timestamp (RFC3339). */
-  started_at: string;
-  /** Most recent segment timestamp (RFC3339). Advances while recording. */
-  last_segment_at?: string;
+  /** Earliest recorded timestamp (RFC3339). */
+  from: string;
+  /** Most recent recorded timestamp (RFC3339). Advances while recording. */
+  to?: string;
 }
 
 export interface DvrGap {
-  /** Wall-clock time the gap began (signal loss / server restart). */
-  from: string;
-  /** Wall-clock time recording resumed. */
-  to: string;
-  /** Gap duration in Go's `time.Duration` JSON form (nanoseconds). */
-  duration?: number;
+  /** Wall-clock start of the gap, in Unix milliseconds. */
+  from_ms: number;
+  /** Wall-clock end of the gap, in Unix milliseconds. */
+  to_ms: number;
+  /** Free-form server-side label for why the gap exists (e.g. "discontinuity"). */
+  reason: string;
 }
+
+export const RecordingFormat = { cmaf: 'cmaf' } as const;
+export type RecordingFormat = (typeof RecordingFormat)[keyof typeof RecordingFormat];
 
 export interface RecordingInfo {
   stream_code: string;
   status: RecordingStatus;
+  /** On-disk archive format. Currently always "cmaf". */
+  format: RecordingFormat;
   dvr_range: DvrRange;
   gaps?: DvrGap[];
-  segment_count: number;
+  /** Number of ABR renditions kept on disk (1 = best only, N = all). */
+  profile_count: number;
+  /** Hours of recorded data (one CMAF blob per hour per profile). */
+  hour_count: number;
   total_size_bytes: number;
 }
 
@@ -65,4 +73,12 @@ export const recordingsApi = {
    */
   timeshiftUrl: (code: string, opts: TimeshiftOptions = {}) =>
     appendQuery(`${BASE_URL}/${code}/index.m3u8`, opts),
+
+  /**
+   * Build a timeshift DASH manifest URL. Same `index.mpd` endpoint —
+   * server renders a static MPD covering the requested window when any
+   * timeshift param is set (CMAF blob archive, Phase 4).
+   */
+  dashTimeshiftUrl: (code: string, opts: TimeshiftOptions = {}) =>
+    appendQuery(`${BASE_URL}/${code}/index.mpd`, opts),
 };

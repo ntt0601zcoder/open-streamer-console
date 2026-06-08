@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Stream } from '@/api/types';
 import { dashUrl, hlsUrl } from '@/lib/streamUrls';
 import { cn } from '@/lib/utils';
-import { useConfigDefaults } from '@/features/config/hooks/useServerConfig';
 import { useRecordingInfo } from '@/features/streams/hooks/useRecordingInfo';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
 import { InputBytesChart } from './InputBytesChart';
@@ -49,15 +48,12 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
     ? proto
     : (availableProtos[0] ?? null);
 
+  // Poll DVR status whenever the operator is viewing a DVR-enabled stream over
+  // a CMAF-capable protocol — both HLS and DASH players now wire up timeshift.
   const { data: recordingInfo } = useRecordingInfo(
     stream.code,
-    dvrEnabled && hlsEnabled && effectiveProto === 'hls',
+    dvrEnabled && (effectiveProto === 'hls' || effectiveProto === 'dash'),
   );
-  const { data: defaults } = useConfigDefaults();
-  const segmentDurationSec =
-    (resolved.dvr?.segment_duration && resolved.dvr.segment_duration > 0
-      ? resolved.dvr.segment_duration
-      : defaults?.dvr?.segment_duration) ?? 4;
 
   const externalUrl =
     effectiveProto === 'hls'
@@ -97,10 +93,14 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
                   active={isRunning}
                   streamCode={stream.code}
                   recordingInfo={recordingInfo}
-                  segmentDurationSec={segmentDurationSec}
                 />
               ) : (
-                <DashPlayer dashUrl={dashUrl(stream.code)} active={isRunning} />
+                <DashPlayer
+                  dashUrl={dashUrl(stream.code)}
+                  active={isRunning}
+                  streamCode={stream.code}
+                  recordingInfo={recordingInfo}
+                />
               )}
             </Suspense>
           )}

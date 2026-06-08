@@ -165,6 +165,7 @@ export const dvrFormSchema = z.object({
   segment_duration: z.coerce.number().int().min(0).optional(),
   max_size_gb: z.coerce.number().min(0).optional(),
   storage_path: z.string(),
+  profiles: z.enum(['best', 'all']),
 });
 
 export type DvrFormValues = z.infer<typeof dvrFormSchema>;

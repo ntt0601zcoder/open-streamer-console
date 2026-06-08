@@ -193,6 +193,12 @@ export interface StreamDVRConfig {
   segment_duration?: number;
   max_size_gb?: number;
   storage_path?: string;
+  /**
+   * Selects which renditions the CMAF blob archive records.
+   * "" or "best" = the best rendition only (default); "all" = every
+   * rendition in the ABR ladder.
+   */
+  profiles?: string;
 }
 
 export interface ThumbnailConfig {

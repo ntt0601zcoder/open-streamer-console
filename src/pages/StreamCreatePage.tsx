@@ -67,6 +67,7 @@ const DEFAULT_VALUES: CreateStreamValues = {
     segment_duration: undefined,
     max_size_gb: undefined,
     storage_path: '',
+    profiles: 'best',
   },
 };
 
