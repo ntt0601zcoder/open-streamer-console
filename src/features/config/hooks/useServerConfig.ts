@@ -14,12 +14,14 @@ export function useServerConfig() {
   });
 }
 
-/** The leading semver core (x.y.z) of a version string, ignoring any `v`
- * prefix or `-suffix` (rc/avsync-test/git-describe). null when absent. */
+/** The leading major.minor of a version string, ignoring any `v` prefix,
+ * trailing patch, or `-suffix` (rc/avsync-test/git-describe). Patch
+ * differences are tolerated — we only warn when the API surface might have
+ * shifted. null when absent. */
 function semverCore(v: string | undefined | null): string | null {
   if (!v) return null;
-  const m = v.match(/\d+\.\d+\.\d+/);
-  return m ? m[0] : null;
+  const m = v.match(/(\d+)\.(\d+)/);
+  return m ? `${m[1]}.${m[2]}` : null;
 }
 
 export interface VersionState {
