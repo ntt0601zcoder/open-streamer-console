@@ -40,12 +40,6 @@ export interface HooksConfig {
 
 export interface IngestorConfig {
   hls_max_segment_buffer?: number;
-  /**
-   * When true, ingest URLs (and their redirects / playlist hosts) may resolve
-   * to RFC1918 / IPv6-ULA / RFC6598 addresses. Default false. Loopback and
-   * link-local / cloud-metadata are always blocked.
-   */
-  allow_private_targets?: boolean;
 }
 
 // ─── Listeners (shared by ingest + play) ───────────────────────────────────────

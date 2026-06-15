@@ -53,7 +53,6 @@ type ServerValues = z.infer<typeof serverSchema>;
 
 const ingestorSchema = z.object({
   hls_max_segment_buffer: z.coerce.number().int().min(0).optional(),
-  allow_private_targets: z.boolean().optional(),
 });
 type IngestorValues = z.infer<typeof ingestorSchema>;
 
@@ -701,10 +700,7 @@ function IngestorSection() {
   const update = useUpdateGlobalConfig();
   const form = useForm<IngestorValues>({
     resolver: zodResolver(ingestorSchema),
-    values: {
-      hls_max_segment_buffer: cfg?.hls_max_segment_buffer,
-      allow_private_targets: cfg?.allow_private_targets ?? false,
-    },
+    values: { hls_max_segment_buffer: cfg?.hls_max_segment_buffer },
   });
 
   const maxBufferPlaceholder =
@@ -757,36 +753,6 @@ function IngestorSection() {
                     Maximum number of pre-fetched HLS segments held in memory.
                   </FormDescription>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">SSRF guard</CardTitle>
-            <CardDescription>
-              Dial-time IP check on HTTP / HLS pull inputs. Loopback and link-local / cloud-metadata
-              (169.254.0.0/16) are always blocked.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="allow_private_targets"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3 space-y-0">
-                  <FormControl>
-                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div>
-                    <FormLabel>Allow private targets</FormLabel>
-                    <FormDescription>
-                      Permit ingest URLs that resolve to RFC1918 / IPv6-ULA / RFC6598 ranges. Enable
-                      only on trusted networks with on-prem sources.
-                    </FormDescription>
-                  </div>
                 </FormItem>
               )}
             />
