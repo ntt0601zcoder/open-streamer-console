@@ -3,11 +3,14 @@ import {
   Film,
   ImageIcon,
   Layers,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   Radio,
   Settings,
+  ShieldCheck,
   SlidersHorizontal,
+  UserCircle2,
   Users,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -15,11 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { getApiCredentials, setApiCredentials } from '@/api/client';
 import { useServerConfig, useVersionState } from '@/features/config/hooks/useServerConfig';
 
 const navItems = [
   { to: '/streams', label: 'Streams', icon: Radio, end: false },
   { to: '/templates', label: 'Templates', icon: Layers, end: false },
+  { to: '/policies', label: 'Policies', icon: ShieldCheck, end: false },
   { to: '/vod', label: 'VOD', icon: Film, end: false },
   { to: '/sessions', label: 'Sessions', icon: Users, end: false },
   { to: '/watermarks', label: 'Watermarks', icon: ImageIcon, end: false },
@@ -96,6 +101,8 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
         ))}
       </nav>
 
+      <AccountFooter open={open} />
+
       {/* Theme toggle */}
       <div className={cn('border-t p-2', open ? '' : 'flex justify-center')}>
         <ThemeToggle compact={!open} />
@@ -146,5 +153,44 @@ export function Sidebar({ open, onToggle }: SidebarProps) {
         </Tooltip>
       )}
     </aside>
+  );
+}
+
+function AccountFooter({ open }: { open: boolean }) {
+  const creds = getApiCredentials();
+  if (!creds) return null;
+
+  function signOut() {
+    setApiCredentials(null);
+    window.location.href = '/login';
+  }
+
+  return (
+    <div className={cn('border-t p-2', open ? 'flex items-center gap-2' : 'flex justify-center')}>
+      {open && (
+        <>
+          <UserCircle2 className="h-4 w-4 shrink-0 text-sidebar-foreground/60" />
+          <span className="min-w-0 flex-1 truncate text-xs text-sidebar-foreground/80">
+            {creds.username}
+          </span>
+        </>
+      )}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            onClick={signOut}
+            title={open ? 'Sign out' : `Sign out (${creds.username})`}
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          {open ? 'Sign out' : `Sign out — ${creds.username}`}
+        </TooltipContent>
+      </Tooltip>
+    </div>
   );
 }

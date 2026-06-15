@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StreamDetailHeader } from '@/features/streams/components/detail/StreamDetailHeader';
 import { StreamPreview } from '@/features/streams/components/detail/StreamPreview';
 import { TemplateInheritanceBanner } from '@/features/streams/components/detail/TemplateInheritanceBanner';
+import { AuthTab } from '@/features/streams/components/detail/tabs/AuthTab';
 import { DvrTab } from '@/features/streams/components/detail/tabs/DvrTab';
 import { GeneralTab } from '@/features/streams/components/detail/tabs/GeneralTab';
 import { InputTab } from '@/features/streams/components/detail/tabs/InputTab';
@@ -58,6 +59,7 @@ export function StreamDetailPage() {
           <TabsTrigger value="transcoder">Transcoder</TabsTrigger>
           <TabsTrigger value="dvr">DVR</TabsTrigger>
           <TabsTrigger value="watermark">Watermark</TabsTrigger>
+          <TabsTrigger value="auth">Auth</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
         </TabsList>
 
@@ -83,6 +85,10 @@ export function StreamDetailPage() {
 
         <TabsContent value="watermark" className="mt-6">
           <WatermarkTab stream={stream} />
+        </TabsContent>
+
+        <TabsContent value="auth" className="mt-6">
+          <AuthTab stream={stream} />
         </TabsContent>
 
         <TabsContent value="sessions" className="mt-6">

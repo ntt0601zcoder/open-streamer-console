@@ -33,12 +33,13 @@ import { OutputSection } from '@/features/streams/components/sections/OutputSect
 import { PrefixesSection } from '@/features/streams/components/sections/PrefixesSection';
 import { TranscoderSection } from '@/features/streams/components/sections/TranscoderSection';
 import { parsePids, templateSchema, type TemplateFormValues } from '@/features/streams/schemas';
+import { usePolicies } from '@/features/policies/hooks/usePolicies';
 import { templateKeys, useTemplate } from '@/features/templates/hooks/useTemplates';
 import { listToRecord, recordToList, type KeyValuePair } from '@/lib/kvList';
 
 const EMPTY_VALUES: TemplateFormValues = {
   code: '',
-  general: { name: '', description: '', stream_key: '', tags: '' },
+  general: { name: '', description: '', stream_key: '', tags: '', playback_policy: '' },
   prefixes: [],
   inputs: [],
   protocols: { hls: true, dash: false, rtmp: false, rtsp: false, srt: false, mpegts: false },
@@ -193,6 +194,7 @@ function GeneralSection({
   form: UseFormReturn<TemplateFormValues>;
   isEdit: boolean;
 }) {
+  const { data: policies } = usePolicies();
   return (
     <Card>
       <CardHeader>
@@ -279,6 +281,34 @@ function GeneralSection({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="general.playback_policy"
+          render={({ field }) => (
+            <FormItem className="sm:col-span-2">
+              <FormLabel>Playback policy</FormLabel>
+              <Select
+                onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                value={field.value ? field.value : '__none__'}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="__none__">Public (no policy)</SelectItem>
+                  {(policies ?? []).map((p) => (
+                    <SelectItem key={p.code} value={p.code}>
+                      {p.name ? `${p.name} (${p.code})` : p.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </CardContent>
     </Card>
   );
@@ -298,6 +328,7 @@ function templateToFormValues(t: Template): TemplateFormValues {
       description: t.description ?? '',
       stream_key: t.stream_key ?? '',
       tags: (t.tags ?? []).join(', '),
+      playback_policy: t.playback_policy ?? '',
     },
     prefixes: (t.prefixes ?? []).map((value) => ({ value })),
     inputs: (t.inputs ?? []).map((inp, i) => ({
@@ -428,6 +459,7 @@ function buildTemplateBody(v: TemplateFormValues, existing: Template | null): Te
     description: v.general.description || undefined,
     stream_key: v.general.stream_key || undefined,
     tags: tags.length ? tags : undefined,
+    playback_policy: v.general.playback_policy || undefined,
     prefixes: prefixes.length ? prefixes : undefined,
     inputs: v.inputs.length
       ? v.inputs.map((inp, i) => ({

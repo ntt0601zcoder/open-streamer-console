@@ -470,6 +470,8 @@ export interface Stream {
   transcoder?: TranscoderConfig;
   watermark?: WatermarkConfig;
   tags?: string[];
+  /** Code of the media-auth Policy to enforce on playback. Empty = public. */
+  playback_policy?: string;
   /**
    * Optional reference to a {@link Template} code. Config-like fields left
    * empty on the stream inherit from the template at runtime; the server
@@ -500,6 +502,7 @@ export type SessionProto = (typeof SessionProto)[keyof typeof SessionProto];
 
 export const SessionCloseReason = {
   idle: 'idle',
+  max_lifetime: 'max_lifetime',
   client_gone: 'client_gone',
   shutdown: 'shutdown',
   kicked: 'kicked',
@@ -591,6 +594,7 @@ export type StreamBody = {
   transcoder?: TranscoderConfig;
   watermark?: WatermarkConfig;
   tags?: string[];
+  playback_policy?: string;
   template?: string;
 };
 
@@ -628,6 +632,31 @@ export interface Template {
   transcoder?: TranscoderConfig;
   watermark?: WatermarkConfig;
   tags?: string[];
+  /** Inherited by streams whose own `playback_policy` is empty. */
+  playback_policy?: string;
 }
 
 export type TemplateBody = Omit<Template, 'code'>;
+
+// ─── Media-auth policies ──────────────────────────────────────────────────────
+
+export interface Policy {
+  code: string;
+  name?: string;
+  description?: string;
+  /** When true, playback requires a valid signed token verified with token_secret. */
+  require_token?: boolean;
+  /** HMAC-SHA256 verification key. Required when require_token is true. */
+  token_secret?: string;
+  allow_ips?: string[];
+  deny_ips?: string[];
+  /** ISO 3166-1 alpha-2 — requires a GeoIP DB. */
+  allow_countries?: string[];
+  deny_countries?: string[];
+  allow_user_agents?: string[];
+  deny_user_agents?: string[];
+  /** Exact or parent-domain match on Referer host. */
+  allowed_domains?: string[];
+}
+
+export type PolicyBody = Omit<Policy, 'code'>;

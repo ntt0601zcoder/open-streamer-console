@@ -10,6 +10,8 @@ export const generalSchema = z.object({
   tags: z.string(), // comma-separated — converted to/from string[]
   /** Optional template code to inherit config-like fields from. '' = none. */
   template: z.string(),
+  /** Media-auth Policy code. '' = public (no policy). */
+  playback_policy: z.string(),
 });
 
 export type GeneralFormValues = z.infer<typeof generalSchema>;
@@ -198,6 +200,7 @@ export const templateGeneralSchema = z.object({
   description: z.string(),
   stream_key: z.string(),
   tags: z.string(),
+  playback_policy: z.string(),
 });
 
 export const templateSchema = z.object({

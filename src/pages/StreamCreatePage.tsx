@@ -38,13 +38,22 @@ import { OutputSection } from '@/features/streams/components/sections/OutputSect
 import { TranscoderSection } from '@/features/streams/components/sections/TranscoderSection';
 import { streamKeys } from '@/features/streams/hooks/useStreams';
 import { createStreamSchema, parsePids, type CreateStreamValues } from '@/features/streams/schemas';
+import { usePolicies } from '@/features/policies/hooks/usePolicies';
 import { useTemplates } from '@/features/templates/hooks/useTemplates';
 import { listToRecord } from '@/lib/kvList';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const DEFAULT_VALUES: CreateStreamValues = {
   code: '',
-  general: { name: '', description: '', stream_key: '', disabled: false, tags: '', template: '' },
+  general: {
+    name: '',
+    description: '',
+    stream_key: '',
+    disabled: false,
+    tags: '',
+    template: '',
+    playback_policy: '',
+  },
   inputs: [{ url: '', priority: 0 }],
   protocols: { hls: true, dash: false, rtmp: false, rtsp: false, srt: false, mpegts: false },
   push: [],
@@ -211,6 +220,7 @@ function buildCreateBody(v: CreateStreamValues): StreamBody {
     disabled: v.general.disabled,
     tags: tags.length ? tags : undefined,
     template: v.general.template || undefined,
+    playback_policy: v.general.playback_policy || undefined,
     inputs: v.inputs.map((inp, i) => ({
       ...inp,
       priority: i,
@@ -228,6 +238,7 @@ function buildCreateBody(v: CreateStreamValues): StreamBody {
 // ─── General section ──────────────────────────────────────────────────────────
 
 function GeneralSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
+  const { data: policies } = usePolicies();
   const { data: templates } = useTemplates();
   return (
     <Card>
@@ -342,6 +353,34 @@ function GeneralSection({ form }: { form: UseFormReturn<CreateStreamValues> }) {
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="general.playback_policy"
+          render={({ field }) => (
+            <FormItem className="sm:col-span-2">
+              <FormLabel>Playback policy</FormLabel>
+              <Select
+                onValueChange={(v) => field.onChange(v === '__none__' ? '' : v)}
+                value={field.value ? field.value : '__none__'}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="__none__">Public (no policy)</SelectItem>
+                  {(policies ?? []).map((p) => (
+                    <SelectItem key={p.code} value={p.code}>
+                      {p.name ? `${p.name} (${p.code})` : p.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

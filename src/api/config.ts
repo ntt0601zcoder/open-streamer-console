@@ -133,7 +133,27 @@ export interface SessionsConfig {
   max_lifetime_sec?: number;
 }
 
+// ─── Authentication ────────────────────────────────────────────────────────────
+
+export interface APIUser {
+  username?: string;
+  /** bcrypt — generate with `htpasswd -nbB <user> <pass>`. */
+  password_hash?: string;
+  /** `read` or `write`. */
+  role?: string;
+}
+
+export interface APIAuthConfig {
+  enabled?: boolean;
+  users?: APIUser[];
+}
+
+export interface AuthConfig {
+  api?: APIAuthConfig;
+}
+
 export interface GlobalConfig {
+  auth?: AuthConfig;
   buffer?: BufferConfig;
   hooks?: HooksConfig;
   ingestor?: IngestorConfig;

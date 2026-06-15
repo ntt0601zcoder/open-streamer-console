@@ -3,6 +3,13 @@ import { Layout } from '@/components/Layout';
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    lazy: async () => {
+      const { LoginPage } = await import('@/pages/LoginPage');
+      return { Component: LoginPage };
+    },
+  },
+  {
     path: '/',
     element: <Layout />,
     children: [
@@ -72,6 +79,13 @@ export const router = createBrowserRouter([
         lazy: async () => {
           const { HooksPage } = await import('@/pages/HooksPage');
           return { Component: HooksPage };
+        },
+      },
+      {
+        path: 'policies',
+        lazy: async () => {
+          const { PoliciesPage } = await import('@/pages/PoliciesPage');
+          return { Component: PoliciesPage };
         },
       },
       {

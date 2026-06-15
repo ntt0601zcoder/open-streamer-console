@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Code2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { Code2, Plus, Trash2 } from 'lucide-react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -152,6 +152,20 @@ const sessionsSchema = z.object({
 });
 type SessionsValues = z.infer<typeof sessionsSchema>;
 
+const authSchema = z.object({
+  api: z.object({
+    enabled: z.boolean(),
+    users: z.array(
+      z.object({
+        username: z.string(),
+        password_hash: z.string(),
+        role: z.enum(['', 'read', 'write']),
+      }),
+    ),
+  }),
+});
+type AuthValues = z.infer<typeof authSchema>;
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function toLines(arr?: string[]): string {
@@ -189,6 +203,7 @@ export function SettingsPage() {
       <Tabs defaultValue="server">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="server">Server</TabsTrigger>
+          <TabsTrigger value="auth">Auth</TabsTrigger>
           <TabsTrigger value="listeners">Listeners</TabsTrigger>
           <TabsTrigger value="ingestor">Ingestor</TabsTrigger>
           <TabsTrigger value="publisher-hls">HLS</TabsTrigger>
@@ -203,6 +218,9 @@ export function SettingsPage() {
 
         <TabsContent value="server" className="mt-6">
           <ServerSection />
+        </TabsContent>
+        <TabsContent value="auth" className="mt-6">
+          <AuthSection />
         </TabsContent>
         <TabsContent value="listeners" className="mt-6">
           <ListenersSection />
@@ -480,6 +498,185 @@ function ServerSection() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        <SaveRow
+          isDirty={form.formState.isDirty}
+          isPending={update.isPending}
+          onDiscard={() => form.reset()}
+        />
+      </form>
+    </Form>
+  );
+}
+
+// ─── Auth section ──────────────────────────────────────────────────────────────
+
+function AuthSection() {
+  const { data: serverConfig } = useServerConfig();
+  const cfg = serverConfig?.global_config?.auth;
+  const update = useUpdateGlobalConfig();
+  const form = useForm<AuthValues>({
+    resolver: zodResolver(authSchema),
+    values: {
+      api: {
+        enabled: cfg?.api?.enabled ?? false,
+        users: (cfg?.api?.users ?? []).map((u) => ({
+          username: u.username ?? '',
+          password_hash: u.password_hash ?? '',
+          role: (u.role === 'read' || u.role === 'write' ? u.role : '') as '' | 'read' | 'write',
+        })),
+      },
+    },
+  });
+
+  const userFields = useFieldArray({ control: form.control, name: 'api.users' });
+  const apiEnabled = form.watch('api.enabled');
+
+  function onSubmit(values: AuthValues) {
+    update.mutate(
+      {
+        auth: {
+          api: {
+            enabled: values.api.enabled,
+            users: values.api.users
+              .filter((u) => u.username || u.password_hash)
+              .map((u) => ({
+                username: u.username || undefined,
+                password_hash: u.password_hash || undefined,
+                role: u.role || undefined,
+              })),
+          },
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Auth settings saved');
+          form.reset(values);
+        },
+        onError: (err) => toast.error(err instanceof Error ? err.message : 'Save failed'),
+      },
+    );
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Management API auth</CardTitle>
+            <CardDescription>
+              Generate <code>password_hash</code> with{' '}
+              <code>htpasswd -nbB &lt;user&gt; &lt;pass&gt;</code>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="api.enabled"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <FormLabel>Require Basic-auth</FormLabel>
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-2">
+              {userFields.fields.length > 0 && (
+                <div className="grid gap-2 px-1 text-xs font-medium text-muted-foreground sm:grid-cols-[2fr_3fr_1.2fr_2.25rem]">
+                  <span>Username</span>
+                  <span>Password hash (bcrypt)</span>
+                  <span>Role</span>
+                  <span />
+                </div>
+              )}
+              {userFields.fields.map((row, i) => (
+                <div
+                  key={row.id}
+                  className="grid items-start gap-2 sm:grid-cols-[2fr_3fr_1.2fr_2.25rem]"
+                >
+                  <FormField
+                    control={form.control}
+                    name={`api.users.${i}.username`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input placeholder="operator" {...field} disabled={!apiEnabled} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`api.users.${i}.password_hash`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="$2y$05$…"
+                            className="font-mono text-xs"
+                            {...field}
+                            disabled={!apiEnabled}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`api.users.${i}.role`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
+                          disabled={!apiEnabled}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="read">read</SelectItem>
+                            <SelectItem value="write">write</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => userFields.remove(i)}
+                    disabled={!apiEnabled}
+                    title="Remove user"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => userFields.append({ username: '', password_hash: '', role: 'read' })}
+                disabled={!apiEnabled}
+                className="gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add user
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

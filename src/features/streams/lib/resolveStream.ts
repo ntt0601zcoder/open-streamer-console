@@ -42,6 +42,8 @@ export function resolveStream(stream: Stream, template: Template | null): Stream
   if (!out.dvr && template.dvr) out.dvr = template.dvr;
   if (!out.watermark && template.watermark) out.watermark = template.watermark;
   if (!out.thumbnail && template.thumbnail) out.thumbnail = template.thumbnail;
+  if (!out.playback_policy && template.playback_policy)
+    out.playback_policy = template.playback_policy;
 
   return out;
 }

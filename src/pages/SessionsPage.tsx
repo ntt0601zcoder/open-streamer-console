@@ -205,17 +205,29 @@ function SessionRow({ session }: { session: PlaySession }) {
   return (
     <TableRow>
       <TableCell>
-        <Badge variant="secondary" className="font-mono uppercase">
-          {session.proto}
-        </Badge>
-        {session.secure && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Lock className="ml-1 inline h-3 w-3 text-emerald-500" />
-            </TooltipTrigger>
-            <TooltipContent>TLS / SRTS / RTMPS</TooltipContent>
-          </Tooltip>
-        )}
+        <div className="flex flex-wrap items-center gap-1">
+          <Badge variant="secondary" className="font-mono uppercase">
+            {session.proto}
+          </Badge>
+          {session.secure && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Lock className="h-3 w-3 text-emerald-500" />
+              </TooltipTrigger>
+              <TooltipContent>TLS / SRTS / RTMPS</TooltipContent>
+            </Tooltip>
+          )}
+          {session.dvr && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="h-4 px-1 text-[9px] font-medium uppercase">
+                  DVR
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>Playlist request carried a timeshift query param.</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <Link to={`/streams/${session.stream_code}`} className="font-mono text-xs hover:underline">

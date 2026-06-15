@@ -47,6 +47,7 @@ function toFormValues(stream: Stream): GeneralFormValues {
     disabled: stream.disabled ?? false,
     tags: stream.tags?.join(', ') ?? '',
     template: stream.template ?? '',
+    playback_policy: stream.playback_policy ?? '',
   };
 }
 
