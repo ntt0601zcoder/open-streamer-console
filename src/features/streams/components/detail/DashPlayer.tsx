@@ -304,7 +304,7 @@ export function DashPlayer({
       }
       playerRef.current = null;
     };
-  }, [sourceUrl, active]);
+  }, [sourceUrl, active, setMuted]);
 
   function manualRetry() {
     const video = videoRef.current;

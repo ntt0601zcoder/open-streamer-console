@@ -25,5 +25,14 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+  {
+    // shadcn primitives co-locate `cva` variants and helper consts with their
+    // component exports — that's the upstream pattern and we don't want the
+    // fast-refresh rule complaining about every vendor file.
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   prettier,
 );

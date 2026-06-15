@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Stream } from '@/api/types';
+import type { Policy, Stream } from '@/api/types';
 import { useFormConfigSync } from '@/features/streams/hooks/useFormConfigSync';
 import { useSaveStream } from '@/features/streams/hooks/useStreams';
 import { useStreamTemplate } from '@/features/streams/hooks/useStreamTemplate';
@@ -176,7 +176,7 @@ function EffectivePolicyCard({
   loading,
 }: {
   code: string;
-  policy: import('@/api/types').Policy | null;
+  policy: Policy | null;
   loading: boolean;
 }) {
   return (

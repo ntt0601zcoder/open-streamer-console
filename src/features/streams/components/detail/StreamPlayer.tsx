@@ -227,7 +227,7 @@ export function StreamPlayer({
         }
       });
     },
-    [sourceUrl],
+    [sourceUrl, setMuted],
   );
 
   useEffect(() => {
