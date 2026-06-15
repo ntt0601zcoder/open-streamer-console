@@ -30,10 +30,22 @@ export interface HooksConfig {
   batch_flush_interval_sec?: number;
   /** Global default queue cap. Per-hook overrides win. 0 = code default. */
   batch_max_queue_items?: number;
+  /**
+   * Confines file-type hooks to this directory. When set, a file hook's
+   * target must resolve inside it (prevents arbitrary host-file writes).
+   * Empty = legacy "any absolute path" behaviour.
+   */
+  file_root_dir?: string;
 }
 
 export interface IngestorConfig {
   hls_max_segment_buffer?: number;
+  /**
+   * When true, ingest URLs (and their redirects / playlist hosts) may resolve
+   * to RFC1918 / IPv6-ULA / RFC6598 addresses. Default false. Loopback and
+   * link-local / cloud-metadata are always blocked.
+   */
+  allow_private_targets?: boolean;
 }
 
 // ─── Listeners (shared by ingest + play) ───────────────────────────────────────

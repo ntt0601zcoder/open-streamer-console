@@ -53,6 +53,7 @@ type ServerValues = z.infer<typeof serverSchema>;
 
 const ingestorSchema = z.object({
   hls_max_segment_buffer: z.coerce.number().int().min(0).optional(),
+  allow_private_targets: z.boolean().optional(),
 });
 type IngestorValues = z.infer<typeof ingestorSchema>;
 
@@ -130,6 +131,7 @@ const hooksSchema = z.object({
   batch_max_items: z.coerce.number().int().min(0).optional(),
   batch_flush_interval_sec: z.coerce.number().int().min(0).optional(),
   batch_max_queue_items: z.coerce.number().int().min(0).optional(),
+  file_root_dir: z.string().optional(),
 });
 type HooksValues = z.infer<typeof hooksSchema>;
 
@@ -699,7 +701,10 @@ function IngestorSection() {
   const update = useUpdateGlobalConfig();
   const form = useForm<IngestorValues>({
     resolver: zodResolver(ingestorSchema),
-    values: { hls_max_segment_buffer: cfg?.hls_max_segment_buffer },
+    values: {
+      hls_max_segment_buffer: cfg?.hls_max_segment_buffer,
+      allow_private_targets: cfg?.allow_private_targets ?? false,
+    },
   });
 
   const maxBufferPlaceholder =
@@ -752,6 +757,36 @@ function IngestorSection() {
                     Maximum number of pre-fetched HLS segments held in memory.
                   </FormDescription>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">SSRF guard</CardTitle>
+            <CardDescription>
+              Dial-time IP check on HTTP / HLS pull inputs. Loopback and link-local / cloud-metadata
+              (169.254.0.0/16) are always blocked.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FormField
+              control={form.control}
+              name="allow_private_targets"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-3 space-y-0">
+                  <FormControl>
+                    <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                  <div>
+                    <FormLabel>Allow private targets</FormLabel>
+                    <FormDescription>
+                      Permit ingest URLs that resolve to RFC1918 / IPv6-ULA / RFC6598 ranges. Enable
+                      only on trusted networks with on-prem sources.
+                    </FormDescription>
+                  </div>
                 </FormItem>
               )}
             />
@@ -1548,6 +1583,7 @@ function HooksSection() {
       batch_max_items: cfg?.batch_max_items,
       batch_flush_interval_sec: cfg?.batch_flush_interval_sec,
       batch_max_queue_items: cfg?.batch_max_queue_items,
+      file_root_dir: cfg?.file_root_dir ?? '',
     },
   });
 
@@ -1565,6 +1601,7 @@ function HooksSection() {
           batch_max_items: values.batch_max_items,
           batch_flush_interval_sec: values.batch_flush_interval_sec,
           batch_max_queue_items: values.batch_max_queue_items,
+          file_root_dir: values.file_root_dir || undefined,
         },
       },
       {
@@ -1681,6 +1718,29 @@ function HooksSection() {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="file_root_dir"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>File-hook root directory</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="/var/log/open-streamer/hooks"
+                      className="placeholder:italic"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    File-type hook targets must resolve inside this directory. Empty = legacy "any
+                    absolute path" (not recommended).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
         <SaveRow
