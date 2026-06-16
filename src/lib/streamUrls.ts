@@ -15,20 +15,10 @@ export function mpegtsUrl(code: string) {
   return `${BASE_URL}/${code}/mpegts`;
 }
 
-/**
- * Build an RTMP push/play URL. When `streamKey` is set the server requires
- * publishers to append `?key=<streamKey>`; the play URL ignores the query,
- * so it's safe to include in both directions.
- */
-export function rtmpUrl(
-  code: string,
-  ports: ServerPorts | undefined,
-  streamKey?: string,
-): string | null {
+export function rtmpUrl(code: string, ports: ServerPorts | undefined): string | null {
   const port = ports?.rtmp_port;
   if (!port) return null;
-  const base = `rtmp://${hostname}:${port}/live/${code}`;
-  return streamKey ? `${base}?key=${encodeURIComponent(streamKey)}` : base;
+  return `rtmp://${hostname}:${port}/live/${code}`;
 }
 
 export function rtspUrl(code: string, ports: ServerPorts | undefined): string | null {
