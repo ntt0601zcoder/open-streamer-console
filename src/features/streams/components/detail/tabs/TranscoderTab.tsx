@@ -57,6 +57,7 @@ function toFormValues(stream: Stream): TranscoderFormValues {
       channels: t?.audio?.channels,
       sample_rate: t?.audio?.sample_rate,
       normalize: t?.audio?.normalize ?? false,
+      volume: t?.audio?.volume ?? '',
     },
     video: {
       copy: t?.video?.copy ?? true,
@@ -532,6 +533,24 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
                               Apply EBU R128 normalization
                             </FormDescription>
                           </div>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="audio.volume"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Output volume</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="1 (unity) — e.g. 2, 0.5, +9dB, -6dB"
+                              className="placeholder:italic"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />

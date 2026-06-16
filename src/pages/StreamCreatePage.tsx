@@ -66,6 +66,7 @@ const DEFAULT_VALUES: CreateStreamValues = {
       channels: undefined,
       sample_rate: undefined,
       normalize: false,
+      volume: '',
     },
     video: { copy: true, interlace: undefined, profiles: [] },
     global: { hw: undefined, deviceid: undefined, fps: undefined, gop: undefined },

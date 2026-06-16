@@ -218,6 +218,12 @@ export interface AudioTranscodeConfig {
   language?: string;
   normalize?: boolean;
   copy?: boolean;
+  /**
+   * Output gain on the re-encode path. Linear multiplier (`2`, `0.5`) or
+   * decibels (`+9dB`, `-6dB`). Empty / `1` / `0dB` = unity. Boost is clamped
+   * to full scale to avoid clipping. Copy/passthrough audio ignores this.
+   */
+  volume?: string;
 }
 
 export const ResizeMode = {

@@ -110,6 +110,7 @@ export const transcoderFormSchema = z.object({
     channels: z.coerce.number().int().min(0).optional(),
     sample_rate: z.coerce.number().int().min(0).optional(),
     normalize: z.boolean(),
+    volume: z.string(),
   }),
   video: z.object({
     copy: z.boolean(),

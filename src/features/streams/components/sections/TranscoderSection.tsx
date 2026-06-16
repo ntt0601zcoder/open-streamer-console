@@ -383,6 +383,24 @@ export function TranscoderSection() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={control}
+                  name="transcoder.audio.volume"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Output volume</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="1 (unity) — e.g. 2, 0.5, +9dB, -6dB"
+                          className="placeholder:italic"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             )}
           </Card>

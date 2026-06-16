@@ -60,6 +60,7 @@ const EMPTY_VALUES: TemplateFormValues = {
       channels: undefined,
       sample_rate: undefined,
       normalize: false,
+      volume: '',
     },
     video: { copy: true, interlace: undefined, profiles: [] },
     global: { hw: undefined, deviceid: undefined, fps: undefined, gop: undefined },
@@ -373,6 +374,7 @@ function templateToFormValues(t: Template): TemplateFormValues {
             channels: tc.audio?.channels,
             sample_rate: tc.audio?.sample_rate,
             normalize: tc.audio?.normalize ?? false,
+            volume: tc.audio?.volume ?? '',
           },
           video: {
             copy: tc.video?.copy ?? transcoderDefaults.video.copy,

@@ -185,7 +185,11 @@ export function OutputTab({ stream }: OutputTabProps) {
                   { key: 'hls', field: 'protocols.hls', url: hlsUrl(stream.code) },
                   { key: 'dash', field: 'protocols.dash', url: dashUrl(stream.code) },
                   { key: 'mpegts', field: 'protocols.mpegts', url: mpegtsUrl(stream.code) },
-                  { key: 'rtmp', field: 'protocols.rtmp', url: rtmpUrl(stream.code, ports) },
+                  {
+                    key: 'rtmp',
+                    field: 'protocols.rtmp',
+                    url: rtmpUrl(stream.code, ports, stream.stream_key),
+                  },
                   { key: 'rtsp', field: 'protocols.rtsp', url: rtspUrl(stream.code, ports) },
                   { key: 'srt', field: 'protocols.srt', url: srtUrl(stream.code, ports) },
                 ] as const
