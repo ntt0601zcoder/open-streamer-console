@@ -1,7 +1,7 @@
 {
   "name": "open-streamer-console",
   "private": true,
-  "version": "4.4.0",
+  "version": "1.1.0",
   "type": "module",
   "engines": {
     "node": ">=22"
