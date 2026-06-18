@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, type FieldErrors } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,6 +163,14 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
     );
   }
 
+  // Surface validation errors that would otherwise be silently swallowed by
+  // RHF (handleSubmit calls onSubmit only when validation passes — without
+  // this the user sees nothing when a hidden field fails zod).
+  function onInvalid(errors: FieldErrors<TranscoderFormValues>) {
+    const first = firstFieldError(errors);
+    toast.error(first ? `${first.path}: ${first.message}` : 'Form validation failed');
+  }
+
   function buildTranscoderConfig(values: TranscoderFormValues): TranscoderConfig {
     const { copy, interlace, profiles } = values.video;
     return {
@@ -214,7 +222,7 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-10">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit, onInvalid)(e)} className="space-y-10">
         {readOnly && <RuntimeReadOnlyBanner />}
         {stream.template && tplState.inherited.transcoder && (
           <InheritedSectionNotice
@@ -580,6 +588,24 @@ export function TranscoderTab({ stream }: TranscoderTabProps) {
       </form>
     </Form>
   );
+}
+
+/** Walk RHF's nested error object and return the first leaf error. */
+function firstFieldError(
+  errors: FieldErrors<TranscoderFormValues>,
+  path: string[] = [],
+): { path: string; message: string } | null {
+  for (const [key, value] of Object.entries(errors)) {
+    if (!value) continue;
+    if (typeof value === 'object' && 'message' in value && typeof value.message === 'string') {
+      return { path: [...path, key].join('.'), message: value.message };
+    }
+    if (typeof value === 'object') {
+      const nested = firstFieldError(value as FieldErrors<TranscoderFormValues>, [...path, key]);
+      if (nested) return nested;
+    }
+  }
+  return null;
 }
 
 /**

@@ -110,7 +110,9 @@ export const transcoderFormSchema = z.object({
     channels: z.coerce.number().int().min(0).optional(),
     sample_rate: z.coerce.number().int().min(0).optional(),
     normalize: z.boolean(),
-    volume: z.string(),
+    // optional so a stream persisted before the volume field existed doesn't
+    // block submission with a silent zod failure when audio.volume is absent.
+    volume: z.string().optional(),
   }),
   video: z.object({
     copy: z.boolean(),
