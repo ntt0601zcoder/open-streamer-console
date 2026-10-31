@@ -38,7 +38,7 @@ export function createPlayerDiag(capacity = 500): PlayerDiag {
   let buf: DiagEvent[] = [];
   return {
     record(e) {
-      buf.push(e);
+      buf.push({ ...e });
       if (buf.length > capacity) buf = buf.slice(buf.length - capacity);
     },
     events: () => buf.slice(),
@@ -51,6 +51,11 @@ export function stripQuery(url: string): string {
   return url.split('#')[0].split('?')[0];
 }
 
+/** Strip query/fragment from every http(s) URL embedded in free text. */
+export function scrubUrls(text: string): string {
+  return text.replace(/https?:\/\/\S+/g, (u) => stripQuery(u));
+}
+
 /** Record a diagnostic event stamped with the current wall-clock time. */
 export function recordNow(
   diag: PlayerDiag | null | undefined,
@@ -58,7 +63,12 @@ export function recordNow(
   detail: string,
   fatal?: boolean,
 ): void {
-  diag?.record({ t: Date.now(), kind, detail, ...(fatal === undefined ? {} : { fatal }) });
+  diag?.record({
+    t: Date.now(),
+    kind,
+    detail: scrubUrls(detail),
+    ...(fatal === undefined ? {} : { fatal }),
+  });
 }
 
 /** Publish `diag` as the active player's buffer (replacing any stale one). */
@@ -93,5 +103,30 @@ export function hlsErrorRecorder(diag: PlayerDiag) {
       .filter(Boolean)
       .join(' ');
     recordNow(diag, 'hls_error', extra ? `${parts} ${extra}` : parts, !!data.fatal);
+  };
+}
+
+/**
+ * Map a dash.js ERROR event to a diagnostic payload. `fatal` is only set when
+ * dash.js itself marks the event fatal; otherwise it is left undefined (unknown).
+ */
+export function dashErrorInfo(e: unknown): { detail: string; fatal?: boolean } {
+  const obj = (e ?? {}) as {
+    fatal?: unknown;
+    message?: unknown;
+    error?: { code?: unknown; message?: unknown; fatal?: unknown } | string;
+  };
+  const inner = typeof obj.error === 'object' && obj.error ? obj.error : undefined;
+  const code = inner?.code != null ? String(inner.code) : '?';
+  const message = String(
+    inner?.message ??
+      (typeof obj.error === 'string' ? obj.error : '') ??
+      obj.message ??
+      'DASH error',
+  );
+  const flag = typeof inner?.fatal === 'boolean' ? inner.fatal : obj.fatal;
+  return {
+    detail: `code=${code} ${message}`.trim(),
+    ...(typeof flag === 'boolean' ? { fatal: flag } : {}),
   };
 }

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { copyText } from '@/lib/clipboard';
 import {
   createPlayerDiag,
+  dashErrorInfo,
   installPlayerDiag,
   recordNow,
   stripQuery,
@@ -191,7 +192,8 @@ export function DashPlayer({
         obj?.event?.message ||
         obj?.message ||
         'DASH error';
-      recordNow(diag, 'dash_error', msg, true);
+      const info = dashErrorInfo(e);
+      recordNow(diag, 'dash_error', info.detail, info.fatal);
       setErrorMsg(msg);
       setState('error');
     }

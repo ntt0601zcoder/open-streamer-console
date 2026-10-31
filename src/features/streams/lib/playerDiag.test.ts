@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { createPlayerDiag, hlsErrorRecorder, stripQuery, type DiagEvent } from './playerDiag';
+import {
+  createPlayerDiag,
+  dashErrorInfo,
+  hlsErrorRecorder,
+  installPlayerDiag,
+  recordNow,
+  scrubUrls,
+  stripQuery,
+  uninstallPlayerDiag,
+  type DiagEvent,
+} from './playerDiag';
 
 const ev = (n: number): DiagEvent => ({ t: n, kind: 'state', detail: `e${n}` });
 
@@ -36,5 +46,48 @@ describe('playerDiag', () => {
 
   it('stripQuery removes query and hash', () => {
     expect(stripQuery('http://h/a.m3u8?token=1#x')).toBe('http://h/a.m3u8');
+  });
+
+  it('stripQuery handles relative and malformed URLs', () => {
+    expect(stripQuery('/live/a/index.m3u8?t=1')).toBe('/live/a/index.m3u8');
+    expect(stripQuery('not a url?x=1#y')).toBe('not a url');
+    expect(stripQuery('')).toBe('');
+  });
+
+  it('scrubs URLs embedded in detail', () => {
+    const d = createPlayerDiag();
+    recordNow(d, 'hls_error', 'load failed https://h/s.ts?token=SECRET#f retrying', false);
+    expect(d.events()[0].detail).toBe('load failed https://h/s.ts retrying');
+    expect(scrubUrls('a http://x/y?z=1 b')).toBe('a http://x/y b');
+  });
+
+  it('record stores a copy', () => {
+    const d = createPlayerDiag();
+    const e = ev(1);
+    d.record(e);
+    e.detail = 'mutated';
+    expect(d.events()[0].detail).toBe('e1');
+  });
+
+  it('install/uninstall only clears when still current', () => {
+    const a = createPlayerDiag();
+    const b = createPlayerDiag();
+    installPlayerDiag(a);
+    expect(window.__osPlayerDiag).toBe(a);
+    installPlayerDiag(b);
+    uninstallPlayerDiag(a);
+    expect(window.__osPlayerDiag).toBe(b);
+    uninstallPlayerDiag(b);
+    expect(window.__osPlayerDiag).toBeUndefined();
+  });
+
+  it('dash error event: code in detail, fatal undefined unless dash.js says so', () => {
+    const d = createPlayerDiag();
+    const info = dashErrorInfo({ type: 'error', error: { code: 25, message: 'manifest parse' } });
+    recordNow(d, 'dash_error', info.detail, info.fatal);
+    expect(d.events()[0].detail).toBe('code=25 manifest parse');
+    expect(d.events()[0].fatal).toBeUndefined();
+    expect('fatal' in d.events()[0]).toBe(false);
+    expect(dashErrorInfo({ error: { code: 1, message: 'x', fatal: true } }).fatal).toBe(true);
   });
 });
