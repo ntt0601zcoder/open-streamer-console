@@ -183,17 +183,9 @@ export function DashPlayer({
       setState('error');
     }
     function onDashError(e: unknown) {
-      const obj = e as { error?: unknown; event?: { message?: string }; message?: string };
-      const inner = obj?.error;
-      const msg =
-        (typeof inner === 'object' && inner && 'message' in inner
-          ? String((inner as { message?: string }).message ?? '')
-          : '') ||
-        obj?.event?.message ||
-        obj?.message ||
-        'DASH error';
       const info = dashErrorInfo(e);
       recordNow(diag, 'dash_error', info.detail, info.fatal);
+      const msg = info.message;
       setErrorMsg(msg);
       setState('error');
     }

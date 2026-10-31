@@ -53,7 +53,7 @@ export function stripQuery(url: string): string {
 
 /** Strip query/fragment from every http(s) URL embedded in free text. */
 export function scrubUrls(text: string): string {
-  return text.replace(/https?:\/\/\S+/g, (u) => stripQuery(u));
+  return text.replace(/https?:\/\/\S+/gi, (u) => stripQuery(u));
 }
 
 /** Record a diagnostic event stamped with the current wall-clock time. */
@@ -89,7 +89,6 @@ interface HlsErrorLike {
   fatal?: boolean;
   url?: string;
   response?: { code?: number };
-  reason?: string;
 }
 
 /** Handler factory for `Hls.Events.ERROR`: records every error, fatal or not. */
@@ -107,26 +106,31 @@ export function hlsErrorRecorder(diag: PlayerDiag) {
 }
 
 /**
- * Map a dash.js ERROR event to a diagnostic payload. `fatal` is only set when
+ * Map a dash.js ERROR event to a diagnostic payload. `message` is the
+ * human-readable text (also used by the console UI). `fatal` is only set when
  * dash.js itself marks the event fatal; otherwise it is left undefined (unknown).
  */
-export function dashErrorInfo(e: unknown): { detail: string; fatal?: boolean } {
+export function dashErrorInfo(e: unknown): { message: string; detail: string; fatal?: boolean } {
   const obj = (e ?? {}) as {
     fatal?: unknown;
     message?: unknown;
+    event?: { message?: unknown };
     error?: { code?: unknown; message?: unknown; fatal?: unknown } | string;
   };
   const inner = typeof obj.error === 'object' && obj.error ? obj.error : undefined;
+  const candidates = [
+    inner?.message,
+    typeof obj.error === 'string' ? obj.error : undefined,
+    obj.event?.message,
+    obj.message,
+  ];
+  const message =
+    candidates.find((m): m is string => typeof m === 'string' && m.length > 0) ?? 'DASH error';
   const code = inner?.code != null ? String(inner.code) : '?';
-  const message = String(
-    inner?.message ??
-      (typeof obj.error === 'string' ? obj.error : '') ??
-      obj.message ??
-      'DASH error',
-  );
   const flag = typeof inner?.fatal === 'boolean' ? inner.fatal : obj.fatal;
   return {
-    detail: `code=${code} ${message}`.trim(),
+    message,
+    detail: `code=${code} ${message}`,
     ...(typeof flag === 'boolean' ? { fatal: flag } : {}),
   };
 }

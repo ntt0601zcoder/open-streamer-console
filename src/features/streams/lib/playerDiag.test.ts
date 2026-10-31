@@ -90,4 +90,16 @@ describe('playerDiag', () => {
     expect('fatal' in d.events()[0]).toBe(false);
     expect(dashErrorInfo({ error: { code: 1, message: 'x', fatal: true } }).fatal).toBe(true);
   });
+
+  it('dash error message fallbacks', () => {
+    expect(dashErrorInfo({ message: 'x' }).detail).toBe('code=? x');
+    expect(dashErrorInfo({ error: 'boom' }).detail).toBe('code=? boom');
+    expect(dashErrorInfo({ error: { code: 25 } }).detail).toBe('code=25 DASH error');
+    expect(dashErrorInfo({}).detail).toBe('code=? DASH error');
+    expect(dashErrorInfo(undefined).message).toBe('DASH error');
+  });
+
+  it('scrubs uppercase scheme URLs', () => {
+    expect(scrubUrls('see HTTPS://h/a?t=1')).toBe('see HTTPS://h/a');
+  });
 });
