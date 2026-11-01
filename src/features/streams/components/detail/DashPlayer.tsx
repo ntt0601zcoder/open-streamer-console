@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MediaPlayer, type MediaPlayerClass, type Representation } from 'dashjs';
-import { Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
+import { ClipboardCopy, Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+import { copyText } from '@/lib/clipboard';
+import {
+  createPlayerDiag,
+  dashErrorInfo,
+  installPlayerDiag,
+  recordNow,
+  stripQuery,
+  uninstallPlayerDiag,
+  type PlayerDiag,
+} from '@/features/streams/lib/playerDiag';
 import { recordingsApi, type RecordingInfo } from '@/api/recordings';
 import { cn } from '@/lib/utils';
 import { usePlayerVolume } from '@/features/streams/hooks/usePlayerVolume';
@@ -54,6 +65,7 @@ export function DashPlayer({
 }: DashPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<MediaPlayerClass | null>(null);
+  const diagRef = useRef<PlayerDiag | null>(null);
   const [state, setState] = useState<PlayerState>('loading');
   const [errorMsg, setErrorMsg] = useState<string>('');
   // Video representations + the operator's pick. `selected === AUTO` means
@@ -121,6 +133,12 @@ export function DashPlayer({
     setState('loading');
     setErrorMsg('');
 
+    // Fresh diagnostics buffer per source so a stale player's events are never read.
+    const diag = createPlayerDiag();
+    diagRef.current = diag;
+    installPlayerDiag(diag);
+    recordNow(diag, 'state', `source ${stripQuery(sourceUrl)}`);
+
     const player = MediaPlayer().create();
     playerRef.current = player;
     setVideoReps([]);
@@ -160,23 +178,22 @@ export function DashPlayer({
     }
     function onVideoError() {
       const err = video?.error;
+      recordNow(diag, 'video_error', err ? `code=${err.code} ${err.message}` : 'unknown', true);
       setErrorMsg(err ? `Video error (code ${err.code}): ${err.message}` : 'Video error');
       setState('error');
     }
     function onDashError(e: unknown) {
-      const obj = e as { error?: unknown; event?: { message?: string }; message?: string };
-      const inner = obj?.error;
-      const msg =
-        (typeof inner === 'object' && inner && 'message' in inner
-          ? String((inner as { message?: string }).message ?? '')
-          : '') ||
-        obj?.event?.message ||
-        obj?.message ||
-        'DASH error';
+      const info = dashErrorInfo(e);
+      recordNow(diag, 'dash_error', info.detail, info.fatal);
+      const msg = info.message;
       setErrorMsg(msg);
       setState('error');
     }
 
+    function onWaiting() {
+      recordNow(diag, 'stall', 'waiting');
+    }
+    video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
     video.addEventListener('canplay', onPlaying);
     video.addEventListener('canplay', onCanplay);
@@ -189,6 +206,7 @@ export function DashPlayer({
     if (events.QUALITY_CHANGE_RENDERED) {
       player.on(events.QUALITY_CHANGE_RENDERED, (e: unknown) => {
         const rep = (e as { newRepresentation?: { id?: string } })?.newRepresentation;
+        recordNow(diag, 'level_switch', `representation=${rep?.id ?? '?'}`);
         if (rep?.id) setCurrentRepId(rep.id);
       });
     }
@@ -293,6 +311,9 @@ export function DashPlayer({
     player.attachSource(sourceUrl);
 
     return () => {
+      uninstallPlayerDiag(diag);
+      if (diagRef.current === diag) diagRef.current = null;
+      video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('canplay', onPlaying);
       video.removeEventListener('canplay', onCanplay);
@@ -305,6 +326,17 @@ export function DashPlayer({
       playerRef.current = null;
     };
   }, [sourceUrl, active, setMuted]);
+
+  // Record player state transitions.
+  useEffect(() => {
+    recordNow(diagRef.current, 'state', state);
+  }, [state]);
+
+  async function copyDiagnostics() {
+    const ok = await copyText(diagRef.current?.toJSON() ?? '[]');
+    if (ok) toast.success('Player diagnostics copied');
+    else toast.error('Could not copy diagnostics');
+  }
 
   function manualRetry() {
     const video = videoRef.current;
@@ -406,6 +438,16 @@ export function DashPlayer({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
+                onClick={copyDiagnostics}
+                title="Copy player diagnostics"
+              >
+                <ClipboardCopy className="h-3.5 w-3.5" />
+                Diagnostics
+              </Button>
               <VolumeControl
                 volume={volume}
                 muted={muted}

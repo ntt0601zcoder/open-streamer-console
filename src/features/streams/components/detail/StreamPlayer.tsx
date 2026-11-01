@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Hls, { type Level } from 'hls.js';
-import { Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
+import { ClipboardCopy, Loader2, RefreshCw, Settings, VideoOff, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
+import { copyText } from '@/lib/clipboard';
+import {
+  createPlayerDiag,
+  hlsErrorRecorder,
+  installPlayerDiag,
+  recordNow,
+  stripQuery,
+  uninstallPlayerDiag,
+  type PlayerDiag,
+} from '@/features/streams/lib/playerDiag';
 import { recordingsApi, type RecordingInfo } from '@/api/recordings';
 import { cn } from '@/lib/utils';
 import { usePlayerVolume } from '@/features/streams/hooks/usePlayerVolume';
@@ -56,6 +67,7 @@ export function StreamPlayer({
   const hlsRef = useRef<Hls | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaErrorCountRef = useRef(0);
+  const diagRef = useRef<PlayerDiag | null>(null);
   const [state, setState] = useState<PlayerState>('loading');
   const {
     volume,
@@ -191,10 +203,12 @@ export function StreamPlayer({
       });
 
       hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+        recordNow(diagRef.current, 'level_switch', `level=${data.level}`);
         setAutoLevel(data.level);
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (diagRef.current) hlsErrorRecorder(diagRef.current)(_event, data);
         if (!data.fatal) return;
 
         // Timeshift slice returned 404 — the requested window has no segments
@@ -205,22 +219,27 @@ export function StreamPlayer({
           data.type === Hls.ErrorTypes.NETWORK_ERROR &&
           data.response?.code === 404
         ) {
+          recordNow(diagRef.current, 'recover', 'timeshift 404, back to live');
           setTimeshiftMs(null);
           return;
         }
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          recordNow(diagRef.current, 'recover', 'startLoad after network error');
           hls.startLoad();
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           mediaErrorCountRef.current += 1;
           if (mediaErrorCountRef.current === 1) {
+            recordNow(diagRef.current, 'recover', 'recoverMediaError');
             hls.recoverMediaError();
           } else {
+            recordNow(diagRef.current, 'retry', 'reinit hls in 3s after repeated media error');
             setState('retrying');
             clearRetryTimer();
             retryTimerRef.current = setTimeout(() => initHls(video), 3000);
           }
         } else {
+          recordNow(diagRef.current, 'retry', 'reinit hls in 5s after fatal error');
           setState('retrying');
           clearRetryTimer();
           retryTimerRef.current = setTimeout(() => initHls(video), 5000);
@@ -236,6 +255,22 @@ export function StreamPlayer({
 
     setState('loading');
 
+    // Fresh diagnostics buffer per source so a stale player's events are never read.
+    const diag = createPlayerDiag();
+    diagRef.current = diag;
+    installPlayerDiag(diag);
+    recordNow(diag, 'state', `source ${stripQuery(sourceUrl)}`);
+    const onVideoError = () => {
+      const err = video.error;
+      recordNow(diag, 'video_error', err ? `code=${err.code} ${err.message}` : 'unknown', true);
+    };
+    video.addEventListener('error', onVideoError);
+    const cleanupDiag = () => {
+      video.removeEventListener('error', onVideoError);
+      uninstallPlayerDiag(diag);
+      if (diagRef.current === diag) diagRef.current = null;
+    };
+
     // Safari / iOS — native HLS
     if (!Hls.isSupported()) {
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -245,17 +280,23 @@ export function StreamPlayer({
       } else {
         setState('unsupported');
       }
-      return;
+      return cleanupDiag;
     }
 
     initHls(video);
 
     return () => {
+      cleanupDiag();
       clearRetryTimer();
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
   }, [sourceUrl, active, initHls]);
+
+  // Record player state transitions.
+  useEffect(() => {
+    recordNow(diagRef.current, 'state', state);
+  }, [state]);
 
   // Stall watchdog — hls.js's internal nudging occasionally gives up on small
   // MSE hiccups. If the video is waiting for data but the buffer already has
@@ -296,6 +337,7 @@ export function StreamPlayer({
     }
 
     function onWaiting() {
+      recordNow(diagRef.current, 'stall', `waiting buffered_ahead=${bufferedAhead().toFixed(2)}s`);
       waitingSince = Date.now();
       if (intervalId) return;
       intervalId = setInterval(() => {
@@ -328,6 +370,12 @@ export function StreamPlayer({
       video.removeEventListener('playing', onPlaying);
     };
   }, [active, state]);
+
+  async function copyDiagnostics() {
+    const ok = await copyText(diagRef.current?.toJSON() ?? '[]');
+    if (ok) toast.success('Player diagnostics copied');
+    else toast.error('Could not copy diagnostics');
+  }
 
   function manualRetry() {
     const video = videoRef.current;
@@ -414,6 +462,16 @@ export function StreamPlayer({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1.5 px-2 text-xs text-white/80 hover:text-white hover:bg-white/20"
+                onClick={copyDiagnostics}
+                title="Copy player diagnostics"
+              >
+                <ClipboardCopy className="h-3.5 w-3.5" />
+                Diagnostics
+              </Button>
               <VolumeControl
                 volume={volume}
                 muted={muted}
